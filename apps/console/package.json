@@ -6,7 +6,10 @@
     "dev": "next dev --port 3003",
     "build": "next build",
     "start": "next start",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:cf": "next build && npx opennextjs-cloudflare build --skipNextBuild",
+    "deploy": "npm run build:cf && wrangler pages deploy .open-next/assets --project-name wokspec-console --branch main --commit-dirty=true",
+    "preview": "npm run build:cf && wrangler pages dev .open-next/assets"
   },
   "dependencies": {
     "clsx": "2.1.1",
@@ -18,12 +21,14 @@
     "zod": "^3.25.3"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.17.1",
     "@types/node": "20.14.0",
     "@types/react": "18.3.3",
     "@types/react-dom": "18.3.0",
     "autoprefixer": "10.4.19",
     "postcss": "8.4.38",
     "tailwindcss": "3.4.4",
-    "typescript": "5.4.5"
+    "typescript": "5.4.5",
+    "wrangler": "^4.69.0"
   }
 }

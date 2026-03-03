@@ -7,7 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "build:cf": "next build && npx opennextjs-cloudflare build --skipNextBuild",
+    "deploy": "npm run build:cf && wrangler pages deploy .open-next/assets --project-name woktool --branch main --commit-dirty=true",
+    "preview": "npm run build:cf && wrangler pages dev .open-next/assets"
   },
   "dependencies": {
     "@imgly/background-removal": "^1.7.0",
@@ -35,6 +38,7 @@
     "zod": "^3.25.3"
   },
   "devDependencies": {
+    "@opennextjs/cloudflare": "^1.17.1",
     "@types/node": "20.14.0",
     "@types/qrcode": "^1.5.6",
     "@types/react": "18.3.3",
@@ -46,7 +50,8 @@
     "eslint-config-next": "14.2.15",
     "postcss": "8.4.38",
     "tailwindcss": "3.4.4",
-    "typescript": "5.4.5"
+    "typescript": "5.4.5",
+    "wrangler": "^4.69.0"
   },
   "engines": {
     "node": ">=20"
