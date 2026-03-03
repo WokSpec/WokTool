@@ -441,6 +441,16 @@ export const TOOLS: ToolDef[] = [
     isNew: true,
   },
   {
+    id: 'yt-downloader',
+    label: 'YouTube Downloader',
+    description: 'Download YouTube videos as MP4 or extract audio as M4A/WebM. Paste a URL, pick a format, download.',
+    href: '/tools/yt-downloader',
+    icon: '▶️',
+    tags: ['audio', 'misc'],
+    status: 'live',
+    isNew: true,
+  },
+  {
     id: 'link-scraper',
     label: 'Link Scraper',
     description: 'Extract all links, images, and metadata from any public webpage. Export as JSON or copy to clipboard.',
