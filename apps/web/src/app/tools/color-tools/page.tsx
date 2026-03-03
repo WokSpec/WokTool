@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Color Utilities',
   description: 'Convert hex/RGB/HSL, check WCAG contrast ratios, generate color harmonies. Free.',
-  openGraph: { title: 'Color Utilities — WokGen', description: 'Convert hex/RGB/HSL, check WCAG contrast ratios, generate color harmonies. Free.', type: 'website' },
+  openGraph: { title: 'Color Utilities — WokTool', description: 'Convert hex/RGB/HSL, check WCAG contrast ratios, generate color harmonies. Free.', type: 'website' },
 };
 import ToolShell from '@/components/tools/ToolShell';
 import ColorTool from '@/components/tools/ColorTool';

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Open Graph Preview',
   description: 'Preview how your URL looks on Twitter, Facebook, LinkedIn, Discord, and Slack. Free.',
-  openGraph: { title: 'Open Graph Preview — WokGen', description: 'Preview how your URL looks on Twitter, Facebook, LinkedIn, Discord, and Slack. Free.', type: 'website' },
+  openGraph: { title: 'Open Graph Preview — WokTool', description: 'Preview how your URL looks on Twitter, Facebook, LinkedIn, Discord, and Slack. Free.', type: 'website' },
 };
 import ToolShell from '@/components/tools/ToolShell';
 import OgPreviewTool from '@/components/tools/OgPreviewTool';

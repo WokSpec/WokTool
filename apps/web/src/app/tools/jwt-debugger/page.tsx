@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 export const metadata: Metadata = {
-  title: 'JWT Debugger — WokGen',
+  title: 'JWT Debugger — WokTool',
   description: 'Decode and inspect JWT tokens. View header, payload, and expiry. No data leaves your browser.',
 };
 import ToolShell from '@/components/tools/ToolShell';

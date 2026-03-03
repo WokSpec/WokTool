@@ -268,7 +268,7 @@ export default function ToolsPage() {
           </p>
           <p>
             Missing a tool?{' '}
-            <a href="https://github.com/WokSpec/WokGen/issues" target="_blank" rel="noopener noreferrer" className="toolhub-footer-link">
+            <a href="https://github.com/WokSpec/WokTool/issues" target="_blank" rel="noopener noreferrer" className="toolhub-footer-link">
               Request it on GitHub
             </a>
             {' · '}

@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Hash Generator',
   description: 'Generate MD5, SHA-1, SHA-256, SHA-512 hashes from text or files. Checksum verifier.',
-  openGraph: { title: 'Hash Generator — WokGen', description: 'Generate MD5, SHA-1, SHA-256, SHA-512 hashes from text or files. Checksum verifier.', type: 'website' },
+  openGraph: { title: 'Hash Generator — WokTool', description: 'Generate MD5, SHA-1, SHA-256, SHA-512 hashes from text or files. Checksum verifier.', type: 'website' },
 };
 import ToolShell from '@/components/tools/ToolShell';
 import HashTool from '@/components/tools/HashTool';

@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 export const metadata: Metadata = {
-  title: 'Markdown to HTML — WokGen',
+  title: 'Markdown to HTML — WokTool',
   description: 'Paste Markdown and get rendered HTML with a live preview. Client-side, no upload needed.',
 };
 import ToolShell from '@/components/tools/ToolShell';

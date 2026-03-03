@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 export const metadata: Metadata = {
-  title: 'Color Converter — WokGen',
+  title: 'Color Converter — WokTool',
   description: 'Convert colors between HEX, RGB, HSL, and HSV formats with a live color preview.',
 };
 import ToolShell from '@/components/tools/ToolShell';

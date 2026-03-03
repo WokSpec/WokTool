@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Type Scale',
   description: 'Generate a visual typography scale from a base size and ratio. Export as CSS custom properties.',
-  openGraph: { title: 'Type Scale — WokGen', description: 'Generate a visual typography scale. Export as CSS variables.', type: 'website' },
+  openGraph: { title: 'Type Scale — WokTool', description: 'Generate a visual typography scale. Export as CSS variables.', type: 'website' },
 };
 import ToolShell from '@/components/tools/ToolShell';
 import TypeScaleTool from '@/components/tools/TypeScaleTool';

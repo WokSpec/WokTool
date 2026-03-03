@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 export const metadata: Metadata = {
-  title: 'README Generator — WokGen',
+  title: 'README Generator — WokTool',
   description: 'Fill in project details and generate a professional README.md instantly.',
 };
 import ToolShell from '@/components/tools/ToolShell';

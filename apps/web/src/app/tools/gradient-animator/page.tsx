@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Gradient Animator',
   description: 'Animate CSS gradients with keyframe transitions. Color stops, angle control, speed slider, copy @keyframes CSS.',
-  openGraph: { title: 'Gradient Animator — WokGen', description: 'Build animated CSS gradient @keyframes with live preview.', type: 'website' },
+  openGraph: { title: 'Gradient Animator — WokTool', description: 'Build animated CSS gradient @keyframes with live preview.', type: 'website' },
 };
 import ToolShell from '@/components/tools/ToolShell';
 import GradientAnimatorTool from '@/components/tools/GradientAnimatorTool';

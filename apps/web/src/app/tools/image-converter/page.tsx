@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Image Converter',
   description: 'Convert PNG, JPG, WebP, AVIF images in bulk. Browser-only, no upload required. Free.',
-  openGraph: { title: 'Image Converter — WokGen', description: 'Convert PNG, JPG, WebP, AVIF images in bulk. Browser-only, no upload required. Free.', type: 'website' },
+  openGraph: { title: 'Image Converter — WokTool', description: 'Convert PNG, JPG, WebP, AVIF images in bulk. Browser-only, no upload required. Free.', type: 'website' },
 };
 import ToolShell from '@/components/tools/ToolShell';
 import ImageConverterTool from '@/components/tools/ImageConverterTool';

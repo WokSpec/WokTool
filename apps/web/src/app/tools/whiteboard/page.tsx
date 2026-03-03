@@ -5,7 +5,7 @@ import WhiteboardClient from './_client';
 export const metadata: Metadata = {
   title: 'Infinite Whiteboard',
   description: 'Free infinite canvas powered by tldraw. Shapes, arrows, stickies, freehand. Auto-saves locally.',
-  openGraph: { title: 'Infinite Whiteboard — WokGen', description: 'Free infinite canvas powered by tldraw. Shapes, arrows, stickies, freehand. Auto-saves locally.', type: 'website' },
+  openGraph: { title: 'Infinite Whiteboard — WokTool', description: 'Free infinite canvas powered by tldraw. Shapes, arrows, stickies, freehand. Auto-saves locally.', type: 'website' },
 };
 
 export default function Page() {

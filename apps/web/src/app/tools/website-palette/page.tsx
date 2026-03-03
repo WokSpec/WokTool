@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import WebsitePaletteTool from '@/components/tools/WebsitePaletteTool';
 
 export const metadata: Metadata = {
-  title: 'Website Palette — WokGen',
+  title: 'Website Palette — WokTool',
   description: 'Extract color palette from any website by scanning its HTML and CSS.',
 };
 

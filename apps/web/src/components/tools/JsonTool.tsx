@@ -140,9 +140,9 @@ export default function JsonTool() {
 
   const loadExample = () => {
     setInput(JSON.stringify({
-      name: 'WokGen',
+      name: 'WokTool',
       version: '2.0.0',
-      features: ['WokGen Studio', 'Free Tools', 'Open Source'],
+      features: ['WokTool Studio', 'Free Tools', 'Open Source'],
       meta: { free: true, models: 300 },
     }, null, 2));
   };

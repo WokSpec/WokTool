@@ -13,7 +13,7 @@ interface Snippet {
 
 const LANGUAGES = ['plaintext', 'javascript', 'typescript', 'python', 'bash', 'rust', 'go', 'css', 'html', 'json', 'sql', 'c', 'cpp', 'java', 'php', 'ruby', 'swift', 'kotlin', 'yaml', 'toml', 'dockerfile', 'graphql'];
 
-const STORAGE_KEY = 'wokgen_snippets';
+const STORAGE_KEY = 'woktool_snippets';
 
 function load(): Snippet[] {
   try {
@@ -112,7 +112,7 @@ export default function SnippetsTool() {
     const blob = new Blob([JSON.stringify(snippets, null, 2)], { type: 'application/json' });
     const a = document.createElement('a');
     a.href = URL.createObjectURL(blob);
-    a.download = 'wokgen-snippets.json';
+    a.download = 'woktool-snippets.json';
     a.click();
   };
 

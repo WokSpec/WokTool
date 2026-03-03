@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 export const metadata: Metadata = {
-  title: 'Tech Stack Badge Builder — WokGen',
+  title: 'Tech Stack Badge Builder — WokTool',
   description: 'Select technologies and generate shields.io badge markdown for your README.',
 };
 import ToolShell from '@/components/tools/ToolShell';

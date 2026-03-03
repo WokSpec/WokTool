@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 export const metadata: Metadata = {
-  title: 'Changelog Writer — WokGen',
+  title: 'Changelog Writer — WokTool',
   description: 'Paste git log output or bullet points and get a properly formatted CHANGELOG.md entry.',
 };
 import ToolShell from '@/components/tools/ToolShell';

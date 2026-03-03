@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Social Media Resizer',
   description: 'Export one image to all platform sizes: Instagram, Twitter, YouTube, TikTok, LinkedIn. ZIP download.',
-  openGraph: { title: 'Social Media Resizer — WokGen', description: 'Export one image to all platform sizes: Instagram, Twitter, YouTube, TikTok, LinkedIn. ZIP download.', type: 'website' },
+  openGraph: { title: 'Social Media Resizer — WokTool', description: 'Export one image to all platform sizes: Instagram, Twitter, YouTube, TikTok, LinkedIn. ZIP download.', type: 'website' },
 };
 import ToolShell from '@/components/tools/ToolShell';
 import SocialResizeTool from '@/components/tools/SocialResizeTool';

@@ -70,7 +70,7 @@ export default function ToolShell({
             <p className="tool-shell-soon-desc">
               This tool is in development. Check back soon or{' '}
               <a
-                href={`https://github.com/WokSpec/WokGen/issues`}
+                href={`https://github.com/WokSpec/WokTool/issues`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="tool-link"

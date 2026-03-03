@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 export const metadata: Metadata = {
-  title: 'Invoice Generator — WokGen',
+  title: 'Invoice Generator — WokTool',
   description: 'Create and print professional invoices right in your browser. No account required.',
 };
 import ToolShell from '@/components/tools/ToolShell';

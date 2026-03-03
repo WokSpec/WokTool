@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-export const metadata: Metadata = { title: 'Timestamp Converter', description: 'Convert between Unix timestamps, ISO 8601, UTC, and local time.', openGraph: { title: 'Timestamp Converter — WokGen', description: 'Convert between Unix timestamps, ISO 8601, UTC, and local time.', type: 'website' } };
+export const metadata: Metadata = { title: 'Timestamp Converter', description: 'Convert between Unix timestamps, ISO 8601, UTC, and local time.', openGraph: { title: 'Timestamp Converter — WokTool', description: 'Convert between Unix timestamps, ISO 8601, UTC, and local time.', type: 'website' } };
 
 import ToolShell from '@/components/tools/ToolShell';
 import TimestampTool from '@/components/tools/TimestampTool';

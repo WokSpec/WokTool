@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 export const metadata: Metadata = {
-  title: 'Privacy Policy Generator — WokGen',
+  title: 'Privacy Policy Generator — WokTool',
   description: 'Generate a privacy policy for your website from a simple form. Copy or download as .txt.',
 };
 import ToolShell from '@/components/tools/ToolShell';

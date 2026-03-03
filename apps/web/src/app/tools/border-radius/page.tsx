@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Border Radius Visualizer',
   description: 'Interactive border-radius builder with per-corner sliders. Live preview and one-click CSS copy.',
-  openGraph: { title: 'Border Radius Visualizer — WokGen', description: 'Interactive border-radius builder. Live preview and copy CSS.', type: 'website' },
+  openGraph: { title: 'Border Radius Visualizer — WokTool', description: 'Interactive border-radius builder. Live preview and copy CSS.', type: 'website' },
 };
 import ToolShell from '@/components/tools/ToolShell';
 import BorderRadiusTool from '@/components/tools/BorderRadiusTool';

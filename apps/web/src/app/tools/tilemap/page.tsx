@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Tilemap Generator',
   description: 'Paint tilemaps with layers. Export Tiled-compatible JSON. Upload any tileset PNG.',
-  openGraph: { title: 'Tilemap Generator — WokGen', description: 'Paint tilemaps with layers. Export Tiled-compatible JSON. Upload any tileset PNG.', type: 'website' },
+  openGraph: { title: 'Tilemap Generator — WokTool', description: 'Paint tilemaps with layers. Export Tiled-compatible JSON. Upload any tileset PNG.', type: 'website' },
 };
 import ToolShell from '@/components/tools/ToolShell';
 import TilemapTool from '@/components/tools/TilemapTool';

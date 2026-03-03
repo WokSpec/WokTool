@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-export const metadata: Metadata = { title: 'Word Counter', description: 'Count words, characters, sentences, and estimate reading time.', openGraph: { title: 'Word Counter — WokGen', description: 'Count words, characters, sentences, and estimate reading time.', type: 'website' } };
+export const metadata: Metadata = { title: 'Word Counter', description: 'Count words, characters, sentences, and estimate reading time.', openGraph: { title: 'Word Counter — WokTool', description: 'Count words, characters, sentences, and estimate reading time.', type: 'website' } };
 
 import ToolShell from '@/components/tools/ToolShell';
 import WordCounterTool from '@/components/tools/WordCounterTool';

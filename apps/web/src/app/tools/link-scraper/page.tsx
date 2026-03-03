@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import LinkScraperTool from '@/components/tools/LinkScraperTool';
 
 export const metadata: Metadata = {
-  title: 'Link Scraper — WokGen Tools',
+  title: 'Link Scraper — WokTool Tools',
   description: 'Extract all links, images, meta tags, and assets from any public webpage.',
 };
 

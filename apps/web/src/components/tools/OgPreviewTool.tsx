@@ -153,11 +153,11 @@ function SlackCard({ f }: { f: OgFields }) {
 
 export default function OgPreviewTool() {
   const [fields, setFields] = useState<OgFields>({
-    title: 'WokGen — Free AI Image Generator',
+    title: 'WokTool — Free Browser Tools',
     description: 'Generate stunning AI images for free. No sign-up required. 300+ models available.',
     image: '',
-    siteName: 'WokGen',
-    url: 'https://wokgen.com',
+    siteName: 'WokTool',
+    url: 'https://tools.wokspec.org',
   });
   const [platform, setPlatform] = useState<Platform>('twitter');
   const [copiedTags, setCopiedTags] = useState(false);

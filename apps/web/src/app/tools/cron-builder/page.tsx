@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 export const metadata: Metadata = {
-  title: 'Cron Builder — WokGen',
+  title: 'Cron Builder — WokTool',
   description: 'Build and validate cron expressions with human-readable descriptions and next run dates.',
 };
 import ToolShell from '@/components/tools/ToolShell';

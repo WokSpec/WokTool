@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 export const metadata: Metadata = {
-  title: 'Link Checker — WokGen',
+  title: 'Link Checker — WokTool',
   description: 'Check HTTP status codes for a list of URLs. Runs entirely in your browser.',
 };
 

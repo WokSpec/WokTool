@@ -76,7 +76,7 @@ export default function MediaDownloaderTool() {
           </button>
         </div>
         <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-          Only public URLs are supported. No media is stored on WokGen servers.
+          Only public URLs are supported. No media is stored on WokTool servers.
         </p>
       </div>
 

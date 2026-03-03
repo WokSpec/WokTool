@@ -177,7 +177,7 @@ export default function ShadowGeneratorTool() {
                 color: 'var(--fg)',
                 textShadow: shadows.map(s => shadowToCss(s, 'text')).join(', '),
               }}>
-                WokGen
+                WokTool
               </span>
             )}
           </div>

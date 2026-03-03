@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 export const metadata: Metadata = {
-  title: 'JSON to TypeScript Types — WokGen',
+  title: 'JSON to TypeScript Types — WokTool',
   description: 'Paste any JSON and instantly get TypeScript interface/type definitions. Client-side.',
 };
 import ToolShell from '@/components/tools/ToolShell';

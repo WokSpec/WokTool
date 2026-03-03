@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 export const metadata: Metadata = {
-  title: 'Base Converter — WokGen',
+  title: 'Base Converter — WokTool',
   description: 'Convert numbers between binary, octal, decimal, and hexadecimal instantly.',
 };
 import ToolShell from '@/components/tools/ToolShell';

@@ -17,7 +17,7 @@ const hello = "world";
 
 > Blockquote text here.
 
-[Link to WokGen](https://wokgen.wokspec.org)
+[Link to WokTool](https://tools.wokspec.org)
 `;
 
 function markdownToHtml(md: string): string {

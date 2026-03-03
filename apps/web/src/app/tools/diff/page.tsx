@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 export const metadata: Metadata = {
-  title: 'Text Diff — WokGen',
+  title: 'Text Diff — WokTool',
   description: 'Compare two texts side by side and see lines added, removed, and unchanged.',
 };
 import ToolShell from '@/components/tools/ToolShell';

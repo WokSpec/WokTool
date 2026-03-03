@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Gradient Generator',
   description: 'Build CSS gradients (linear, radial, conic) with live preview. Adjust stops and copy CSS.',
-  openGraph: { title: 'Gradient Generator — WokGen', description: 'Build CSS gradients with live preview. Copy CSS instantly.', type: 'website' },
+  openGraph: { title: 'Gradient Generator — WokTool', description: 'Build CSS gradients with live preview. Copy CSS instantly.', type: 'website' },
 };
 import ToolShell from '@/components/tools/ToolShell';
 import GradientGeneratorTool from '@/components/tools/GradientGeneratorTool';

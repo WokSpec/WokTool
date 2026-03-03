@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 export const metadata: Metadata = {
   title: 'Regex Tester',
   description: 'Test regular expressions with live match highlighting. Group captures. Common presets.',
-  openGraph: { title: 'Regex Tester — WokGen', description: 'Test regular expressions with live match highlighting. Group captures. Common presets.', type: 'website' },
+  openGraph: { title: 'Regex Tester — WokTool', description: 'Test regular expressions with live match highlighting. Group captures. Common presets.', type: 'website' },
 };
 
 import ToolShell from '@/components/tools/ToolShell';

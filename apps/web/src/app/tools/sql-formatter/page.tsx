@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 export const metadata: Metadata = {
-  title: 'SQL Formatter — WokGen',
+  title: 'SQL Formatter — WokTool',
   description: 'Format and prettify SQL queries with keyword capitalization and proper indentation.',
 };
 import ToolShell from '@/components/tools/ToolShell';

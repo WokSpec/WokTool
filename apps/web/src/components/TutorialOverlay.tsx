@@ -122,7 +122,7 @@ export default function TutorialOverlay({ tutorial, onComplete, onSkip }: Tutori
 
 // ── Hook for per-page tutorial management ─────────────────────────────────
 
-const STORAGE_KEY = 'wokgen:completed-tutorials';
+const STORAGE_KEY = 'woktool:completed-tutorials';
 
 function getCompleted(): Set<string> {
   if (typeof window === 'undefined') return new Set();

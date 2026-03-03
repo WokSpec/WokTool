@@ -93,7 +93,7 @@ const greet = (name) => \`Hello, \${name}!\`;
 
 > A blockquote example.
 
-[Visit WokGen](https://wokgen.dev)
+[Visit WokTool](https://tools.wokspec.org)
 `;
 
 export default function MdToHtmlTool() {

@@ -1,5 +1,5 @@
 import type { Metadata } from 'next';
-export const metadata: Metadata = { title: 'HTTP Status Codes', description: 'Quick reference for all HTTP status codes with descriptions.', openGraph: { title: 'HTTP Status Codes — WokGen', description: 'Quick reference for all HTTP status codes with descriptions.', type: 'website' } };
+export const metadata: Metadata = { title: 'HTTP Status Codes', description: 'Quick reference for all HTTP status codes with descriptions.', openGraph: { title: 'HTTP Status Codes — WokTool', description: 'Quick reference for all HTTP status codes with descriptions.', type: 'website' } };
 
 import ToolShell from '@/components/tools/ToolShell';
 import HttpStatusTool from '@/components/tools/HttpStatusTool';

@@ -139,7 +139,7 @@ export default function SpritePackerTool() {
       packed.items.forEach(s => {
         frames[s.name] = { frame: { x: s.px, y: s.py, w: s.w, h: s.h }, rotated: false, trimmed: false, sourceSize: { w: s.w, h: s.h } };
       });
-      return JSON.stringify({ frames, meta: { app: 'WokGen Sprite Packer', size: { w: packed.width, h: packed.height }, image: 'spritesheet.png' } }, null, 2);
+      return JSON.stringify({ frames, meta: { app: 'WokTool Sprite Packer', size: { w: packed.width, h: packed.height }, image: 'spritesheet.png' } }, null, 2);
     }
     if (format === 'json-array') {
       return JSON.stringify(packed.items.map(s => ({ name: s.name, x: s.px, y: s.py, w: s.w, h: s.h })), null, 2);

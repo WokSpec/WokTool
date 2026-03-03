@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { MusicClient } from './_client';
 
 export const metadata: Metadata = {
-  title: 'AI Music Generator — WokGen',
+  title: 'AI Music Generator — WokTool',
   description: 'Generate background music from text descriptions with MusicGen (Meta). Free via HuggingFace.',
 };
 
