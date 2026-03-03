@@ -1,0 +1,166 @@
+import { NextRequest } from 'next/server';
+import { checkSsrf } from '@/lib/ssrf-check';
+import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limiter';
+
+export const dynamic = 'force-dynamic';
+
+/** Scrape via Firecrawl when API key is configured. Returns enriched result with markdown. */
+async function scrapeWithFirecrawl(url: string) {
+  const apiKey = process.env.FIRECRAWL_API_KEY;
+  if (!apiKey) return null;
+
+  const res = await fetch('https://api.firecrawl.dev/v1/scrape', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify({ url, formats: ['markdown', 'links', 'metadata'] }),
+    signal: AbortSignal.timeout(20_000),
+  });
+
+  if (!res.ok) return null;
+  const json = await res.json();
+  if (!json.success || !json.data) return null;
+
+  const { markdown, links: rawLinks, metadata } = json.data;
+  const base = new URL(url);
+
+  const links: Array<{ url: string; text: string; type: 'internal' | 'external' }> =
+    (rawLinks || []).slice(0, 200).map((href: string) => {
+      try {
+        const abs = new URL(href, base).toString();
+        return { url: abs, text: '', type: new URL(abs).hostname === base.hostname ? 'internal' : 'external' };
+      } catch { return null; }
+    }).filter(Boolean);
+
+  return {
+    title: metadata?.title || '',
+    description: metadata?.description || '',
+    meta: { 'og:image': metadata?.ogImage || '', statusCode: String(metadata?.statusCode || '') },
+    links,
+    images: metadata?.ogImage ? [{ url: metadata.ogImage, alt: '' }] : [],
+    markdown,
+    source: 'firecrawl' as const,
+  };
+}
+
+export async function POST(req: NextRequest) {
+  const rl = checkRateLimit(getRateLimitKey(req, 'link-scraper'), 20, 60_000);
+  if (!rl.ok) {
+    return Response.json({ error: 'Too many requests. Try again in a minute.' }, {
+      status: 429,
+      headers: { 'Retry-After': String(Math.ceil((rl.resetAt - Date.now()) / 1000)) },
+    });
+  }
+
+  try {
+    const body = await req.json();
+    const { url } = body;
+
+    if (!url || typeof url !== 'string') {
+      return Response.json({ error: 'URL is required' }, { status: 400 });
+    }
+
+    let parsed: URL;
+    try { parsed = new URL(url); } catch {
+      return Response.json({ error: 'Invalid URL' }, { status: 400 });
+    }
+
+    if (!['http:', 'https:'].includes(parsed.protocol)) {
+      return Response.json({ error: 'Only HTTP/HTTPS URLs are supported' }, { status: 400 });
+    }
+
+    const ssrf = checkSsrf(url);
+    if (ssrf.ok === false) {
+      return Response.json({ error: 'URL not allowed' }, { status: 403 });
+    }
+
+    // Try Firecrawl first if API key is configured
+    const firecrawlResult = await scrapeWithFirecrawl(url).catch(() => null);
+    if (firecrawlResult) {
+      return Response.json(firecrawlResult);
+    }
+
+    let html: string;
+    let finalUrl = url;
+    try {
+      const res = await fetch(url, {
+        signal: AbortSignal.timeout(15_000),
+        headers: { 'User-Agent': 'WokTool-LinkScraper/1.0' },
+        redirect: 'follow',
+      });
+      if (!res.ok) return Response.json({ error: `Upstream returned ${res.status}` }, { status: 502 });
+      finalUrl = res.url || url;
+      const ssrfFinal = checkSsrf(finalUrl);
+      if (ssrfFinal.ok === false) return Response.json({ error: ssrfFinal.reason }, { status: 403 });
+      html = await res.text();
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : 'Unknown error';
+      return Response.json({ error: `Failed to fetch URL: ${msg}` }, { status: 502 });
+    }
+
+    const base = new URL(finalUrl);
+
+    // Extract title
+    const titleMatch = html.match(/<title[^>]*>([^<]+)<\/title>/i);
+    const title = titleMatch ? titleMatch[1].trim() : '';
+
+    // Extract meta tags
+    const meta: Record<string, string> = {};
+    const metaRegex = /<meta[^>]+>/gi;
+    let mm;
+    while ((mm = metaRegex.exec(html)) !== null) {
+      const tag = mm[0];
+      const nameMatch = tag.match(/(?:name|property)=["']([^"']+)["']/i);
+      const contentMatch = tag.match(/content=["']([^"']+)["']/i);
+      if (nameMatch && contentMatch) {
+        meta[nameMatch[1]] = contentMatch[1];
+      }
+    }
+
+    const description = meta['description'] || meta['og:description'] || '';
+
+    // Extract links
+    const links: Array<{ url: string; text: string; type: 'internal' | 'external' }> = [];
+    const linkSeen = new Set<string>();
+    const linkRegex = /<a[^>]+href=["']([^"'#][^"']*)["'][^>]*>([^<]*(?:<[^/][^>]*>[^<]*<\/[^>]+>[^<]*)*)<\/a>/gi;
+    while ((mm = linkRegex.exec(html)) !== null) {
+      const raw = mm[1];
+      const text = mm[2].replace(/<[^>]+>/g, '').trim().slice(0, 100);
+      if (!raw || raw.startsWith('javascript:') || raw.startsWith('mailto:')) continue;
+      try {
+        const abs = new URL(raw, base).toString();
+        if (linkSeen.has(abs)) continue;
+        linkSeen.add(abs);
+        const isInternal = new URL(abs).hostname === base.hostname;
+        links.push({ url: abs, text, type: isInternal ? 'internal' : 'external' });
+      } catch { /* skip */ }
+    }
+
+    // Extract images
+    const images: Array<{ url: string; alt: string }> = [];
+    const imgSeen = new Set<string>();
+    const imgRegex = /<img[^>]+src=["']([^"']+)["'][^>]*(?:alt=["']([^"']*)["'])?[^>]*>/gi;
+    while ((mm = imgRegex.exec(html)) !== null) {
+      const raw = mm[1];
+      const alt = mm[2] || '';
+      if (!raw || raw.startsWith('data:')) continue;
+      try {
+        const abs = new URL(raw, base).toString();
+        if (imgSeen.has(abs)) continue;
+        imgSeen.add(abs);
+        images.push({ url: abs, alt });
+      } catch { /* skip */ }
+    }
+
+    return Response.json({
+      title,
+      description,
+      meta,
+      links: links.slice(0, 200),
+      images: images.slice(0, 100),
+      source: 'basic' as const,
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'Unknown error';
+    return Response.json({ error: `Failed to scrape: ${msg}` }, { status: 500 });
+  }
+}

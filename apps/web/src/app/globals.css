@@ -591,3 +591,45 @@ body {
   .toolhub-content { padding: 1.25rem 1rem; }
   .toolhub-grid { grid-template-columns: repeat(auto-fill, minmax(160px, 1fr)); }
 }
+
+/* ============================================================
+   Hub Hero
+   ============================================================ */
+.toolhub-hero {
+  padding: 2rem 0 1rem;
+  text-align: center;
+}
+.toolhub-hero-title {
+  font-size: clamp(1.4rem, 3vw, 2rem);
+  font-weight: 700;
+  color: var(--text-primary, #fafafa);
+  line-height: 1.2;
+  margin-bottom: 0.5rem;
+}
+.toolhub-hero-sub {
+  font-size: 0.95rem;
+  color: var(--text-secondary, #a1a1aa);
+  max-width: 480px;
+  margin: 0 auto 1rem;
+  line-height: 1.5;
+}
+.toolhub-hero-chips {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.4rem;
+}
+.toolhub-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.25rem 0.7rem;
+  border-radius: 20px;
+  font-size: 0.78rem;
+  background: var(--bg-elevated, #161616);
+  border: 1px solid var(--border, rgba(255,255,255,0.08));
+  color: var(--text-secondary, #a1a1aa);
+}
+@media (max-width: 640px) {
+  .toolhub-hero { padding: 1rem 0 0.5rem; }
+  .toolhub-hero-title { font-size: 1.25rem; }
+}

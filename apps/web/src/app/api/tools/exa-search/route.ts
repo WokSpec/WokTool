@@ -1,0 +1,56 @@
+import { NextRequest } from 'next/server';
+import { apiSuccess, API_ERRORS } from '@/lib/api-response';
+import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limiter';
+import { z } from 'zod';
+import { validateBody } from '@/lib/validate';
+import { log } from '@/lib/logger';
+
+const ExaSearchSchema = z.object({
+  query:              z.string().min(1, 'query is required').max(500),
+  numResults:         z.number().int().min(1).max(20).optional().default(10),
+  startPublishedDate: z.string().optional(),
+  category:           z.string().optional(),
+});
+
+export const runtime = 'nodejs';
+
+export async function POST(req: NextRequest) {
+  try {
+    const rl = checkRateLimit(getRateLimitKey(req, 'exa-search'), 20, 60_000);
+    if (!rl.ok) return API_ERRORS.RATE_LIMITED();
+
+    const apiKey = process.env.EXA_API_KEY;
+    if (!apiKey) {
+      return new Response(JSON.stringify({ error: 'Exa API not configured. Add EXA_API_KEY to your environment.', code: 'NOT_CONFIGURED' }), {
+        status: 503,
+        headers: { 'Content-Type': 'application/json' },
+      });
+    }
+
+    const { data: body, error: bodyError } = await validateBody(req, ExaSearchSchema);
+    if (bodyError) return bodyError as Response;
+
+    const exaBody: Record<string, unknown> = {
+      query: body.query,
+      num_results: body.numResults || 10,
+      use_autoprompt: true,
+      text: { max_characters: 800 },
+      highlights: { num_sentences: 2, highlights_per_url: 1 },
+    };
+    if (body.startPublishedDate) exaBody.start_published_date = body.startPublishedDate;
+    if (body.category) exaBody.category = body.category;
+
+    const res = await fetch('https://api.exa.ai/search', {
+      method: 'POST',
+      headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify(exaBody),
+    });
+
+    if (!res.ok) return API_ERRORS.INTERNAL();
+    const data = await res.json();
+    return apiSuccess({ results: data.results });
+  } catch (err) {
+    log.error('POST /api/tools/exa-search failed', { err });
+    return API_ERRORS.INTERNAL();
+  }
+}

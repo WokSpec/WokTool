@@ -184,12 +184,31 @@ export default function ToolsHubClient() {
 
       {/* ── Main content ───────────────────────────────────────────────── */}
       <div className="toolhub-content">
+        {/* Hero — only shown when not filtering */}
+        {!activeTag && !search.trim() && (
+          <div className="toolhub-hero">
+            <h1 className="toolhub-hero-title">
+              The best open-source tooling website
+            </h1>
+            <p className="toolhub-hero-sub">
+              80+ free, browser-based tools for developers & designers.
+              No login. No tracking. Your data never leaves your device.
+            </p>
+            <div className="toolhub-hero-chips">
+              <span className="toolhub-chip">✓ No account required</span>
+              <span className="toolhub-chip">✓ 100% client-side</span>
+              <span className="toolhub-chip">✓ Open source</span>
+              <span className="toolhub-chip">✓ Always free</span>
+            </div>
+          </div>
+        )}
+
         {/* Search */}
         <div className="toolhub-search-wrap">
           <input
             className="toolhub-search"
             type="search"
-            placeholder="Search tools…"
+            placeholder="Search 80+ tools…"
             value={search}
             onChange={e => handleSearchChange(e.target.value)}
             autoComplete="off"
