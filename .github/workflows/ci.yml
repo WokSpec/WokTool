@@ -43,4 +43,4 @@ jobs:
       - run: npm run build
         working-directory: apps/web
         env:
-          NEXT_PUBLIC_BASE_URL: https://woktool.wokspec.org
+          NEXT_PUBLIC_BASE_URL: https://tools.wokspec.org

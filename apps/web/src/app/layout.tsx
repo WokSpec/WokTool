@@ -13,7 +13,7 @@ export const metadata: Metadata = {
   },
   description:
     '80+ free, open-source browser-based tools for developers and designers. No login required. Runs entirely client-side — your data never leaves your browser.',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? 'https://woktool.wokspec.org'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_BASE_URL ?? 'https://tools.wokspec.org'),
   openGraph: {
     siteName: 'WokTool',
     type: 'website',

@@ -1,7 +1,7 @@
 import { MetadataRoute } from 'next';
 import { TOOLS } from '@/lib/tools-registry';
 
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://woktool.wokspec.org';
+const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL ?? 'https://tools.wokspec.org';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const toolEntries: MetadataRoute.Sitemap = TOOLS.filter(t => t.status !== 'soon').map(tool => ({

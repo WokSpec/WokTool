@@ -9,7 +9,7 @@ No login required. No data leaves your browser. Everything runs client-side.
 [![Next.js](https://img.shields.io/badge/Next.js-14-black?logo=next.js)](https://nextjs.org)
 [![Open Source](https://img.shields.io/badge/Open%20Source-%E2%9D%A4-red)](https://github.com/WokSpec/WokTool)
 
-**Live:** [woktool.wokspec.org](https://woktool.wokspec.org)
+**Live:** [tools.wokspec.org](https://tools.wokspec.org)
 
 ---
 
