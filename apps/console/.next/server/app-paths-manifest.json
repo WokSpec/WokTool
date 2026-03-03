@@ -1,0 +1,17 @@
+{
+  "/_not-found/page": "app/_not-found/page.js",
+  "/api/eral/chat/route": "app/api/eral/chat/route.js",
+  "/api/admin/clients/route": "app/api/admin/clients/route.js",
+  "/api/ghl/automations/route": "app/api/ghl/automations/route.js",
+  "/api/ghl/contacts/route": "app/api/ghl/contacts/route.js",
+  "/login/page": "app/login/page.js",
+  "/api/ghl/pipelines/route": "app/api/ghl/pipelines/route.js",
+  "/page": "app/page.js",
+  "/(console)/admin/page": "app/(console)/admin/page.js",
+  "/(console)/admin/clients/new/page": "app/(console)/admin/clients/new/page.js",
+  "/(console)/dashboard/automations/page": "app/(console)/dashboard/automations/page.js",
+  "/(console)/dashboard/crm/page": "app/(console)/dashboard/crm/page.js",
+  "/(console)/dashboard/page": "app/(console)/dashboard/page.js",
+  "/(console)/dashboard/settings/page": "app/(console)/dashboard/settings/page.js",
+  "/(console)/dashboard/ai/page": "app/(console)/dashboard/ai/page.js"
+}

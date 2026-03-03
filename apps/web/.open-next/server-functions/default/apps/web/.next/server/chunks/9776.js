@@ -1,0 +1,1 @@
+"use strict";exports.id=9776,exports.ids=[9776],exports.modules={89776:(o,e,s)=>{s.r(e),s.d(e,{default:()=>t});let t=(0,s(53189).createProxy)(String.raw`/home/user9007/main/projects/wokspec/WokTool/apps/web/src/components/tools/PdfTool.tsx#default`)}};

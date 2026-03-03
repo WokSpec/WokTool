@@ -1,0 +1,19 @@
+{
+  "name": "woktool",
+  "version": "1.0.0",
+  "description": "WokTool — the best open-source tooling website. 80+ free browser-based tools.",
+  "private": true,
+  "workspaces": [
+    "apps/*"
+  ],
+  "scripts": {
+    "dev": "npm run dev --workspace=apps/web",
+    "build": "npm run build --workspace=apps/web",
+    "start": "npm run start --workspace=apps/web",
+    "lint": "npm run lint --workspace=apps/web",
+    "typecheck": "npm run typecheck --workspace=apps/web"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

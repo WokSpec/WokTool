@@ -1,0 +1,51 @@
+{
+  "../../../node_modules/@imgly/background-removal/dist/index.mjs -> onnxruntime-web": {
+    "id": 85090,
+    "files": [
+      "static/chunks/5090.ddb800397e43cff6.js"
+    ]
+  },
+  "../../../node_modules/@imgly/background-removal/dist/index.mjs -> onnxruntime-web/webgpu": {
+    "id": 85090,
+    "files": [
+      "static/chunks/5090.ddb800397e43cff6.js"
+    ]
+  },
+  "app/tools/whiteboard/_client.tsx -> react": {
+    "id": 7653,
+    "files": []
+  },
+  "app/tools/whiteboard/_client.tsx -> react-dom/client": {
+    "id": 42291,
+    "files": []
+  },
+  "app/tools/whiteboard/_client.tsx -> tldraw": {
+    "id": 65997,
+    "files": [
+      "static/chunks/9af238c7.be6e6334878ac91d.js",
+      "static/chunks/fd8d879a.247e090d1f5ea7cf.js",
+      "static/chunks/22747d63.b074637541499b7d.js",
+      "static/chunks/7955-c0547aae8ec5a8e5.js",
+      "static/chunks/1238.658875fb776b9d53.js"
+    ]
+  },
+  "components/tools/BackgroundRemoverTool.tsx -> @imgly/background-removal": {
+    "id": 30742,
+    "files": [
+      "static/chunks/923a1a03.f11ddeb490a70267.js"
+    ]
+  },
+  "components/tools/ColorPaletteTool.tsx -> color-thief-browser": {
+    "id": 44025,
+    "files": [
+      "static/chunks/4025.9f520a3d26fdaa1d.js"
+    ]
+  },
+  "components/tools/SocialResizeTool.tsx -> jszip": {
+    "id": 82159,
+    "files": [
+      "static/chunks/7955-c0547aae8ec5a8e5.js",
+      "static/chunks/2159-bbd3dbe0bf060254.js"
+    ]
+  }
+}
