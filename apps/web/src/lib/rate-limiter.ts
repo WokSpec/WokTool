@@ -3,6 +3,16 @@
 interface RateLimitEntry { count: number; resetAt: number; }
 const store = new Map<string, RateLimitEntry>();
 
+// Sweep expired entries every 5 minutes to prevent unbounded memory growth
+if (typeof setInterval !== 'undefined') {
+  setInterval(() => {
+    const now = Date.now();
+    for (const [key, entry] of store) {
+      if (now > entry.resetAt) store.delete(key);
+    }
+  }, 5 * 60 * 1000).unref?.();
+}
+
 export function checkRateLimit(key: string, maxRequests: number, windowMs: number): { ok: boolean; remaining: number; resetAt: number } {
   const now = Date.now();
   const entry = store.get(key);
