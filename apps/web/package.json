@@ -8,19 +8,19 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "build:cf": "next build && npx opennextjs-cloudflare build --skipNextBuild --dangerouslyUseUnsupportedNextVersion",
-    "deploy": "npm run build:cf && wrangler pages deploy .open-next/assets --project-name woktool --branch main --commit-dirty=true",
-    "preview": "npm run build:cf && wrangler pages dev .open-next/assets"
+    "deploy": "vercel --prod --yes"
   },
   "dependencies": {
     "@distube/ytdl-core": "^4.16.12",
     "@imgly/background-removal": "^1.7.0",
+    "@types/js-yaml": "^4.0.9",
     "class-variance-authority": "^0.7.1",
     "clsx": "2.1.1",
     "color-thief-browser": "^2.0.2",
     "date-fns": "^4.1.0",
     "framer-motion": "^12.34.3",
     "gifenc": "^1.0.3",
+    "js-yaml": "^4.1.1",
     "jszip": "^3.10.1",
     "lucide-react": "^0.575.0",
     "marked": "^17.0.3",
@@ -39,7 +39,6 @@
     "zod": "^3.25.3"
   },
   "devDependencies": {
-    "@opennextjs/cloudflare": "^1.17.1",
     "@types/node": "20.14.0",
     "@types/qrcode": "^1.5.6",
     "@types/react": "18.3.3",

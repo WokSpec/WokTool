@@ -15,19 +15,33 @@ export interface ToolDef {
 
 export type ToolTag =
   | 'image' | 'design' | 'dev' | 'gamedev' | 'pdf'
-  | 'text' | 'crypto' | 'audio' | 'collab' | 'misc';
+  | 'text' | 'crypto' | 'audio' | 'collab' | 'misc'
+  | 'security' | 'calculator' | 'css' | 'network'
+  | 'converter' | 'reference' | 'devops' | 'seo' | 'json'
+  | 'fun' | 'productivity';
 
 export const TAG_LABELS: Record<ToolTag, string> = {
-  image:   'Image',
-  design:  'Design',
-  dev:     'Dev',
-  gamedev: 'Game Dev',
-  pdf:     'PDF',
-  text:    'Text',
-  crypto:  '₿ Crypto',
-  audio:   'Audio',
-  collab:  'Collab',
-  misc:    'Misc',
+  image:      'Image',
+  design:     'Design',
+  dev:        'Dev',
+  gamedev:    'Game Dev',
+  pdf:        'PDF',
+  text:       'Text',
+  crypto:     '₿ Crypto',
+  audio:      'Audio',
+  collab:     'Collab',
+  misc:       'Misc',
+  security:   'Security',
+  calculator: 'Calculator',
+  css:        'CSS',
+  network:    'Network',
+  converter:  'Converter',
+  reference:  'Reference',
+  devops:     'DevOps',
+  seo:        'SEO',
+  json:       'JSON',
+  fun:        'Fun',
+  productivity: 'Productivity',
 };
 
 export const TOOLS: ToolDef[] = [
@@ -450,6 +464,49 @@ export const TOOLS: ToolDef[] = [
     status: 'live',
     isNew: true,
   },
+
+  // ── Dev Tools (new) ──────────────────────────────────────────────────
+  { id: 'yaml-json',        label: 'YAML / JSON / TOML',    description: 'Convert between YAML, JSON, and TOML formats instantly.',         href: '/tools/yaml-json',        icon: '🔄', tags: ['dev', 'converter'], status: 'live', clientOnly: true, isNew: true },
+  { id: 'curl-builder',     label: 'cURL Builder',           description: 'Build cURL commands visually — method, headers, auth, body.',      href: '/tools/curl-builder',     icon: '🌐', tags: ['dev', 'network'],   status: 'live', clientOnly: true, isNew: true },
+  { id: 'env-formatter',    label: 'ENV Formatter',          description: 'Format, sort, validate and convert .env files to JSON or exports.', href: '/tools/env-formatter',    icon: '📄', tags: ['dev'],             status: 'live', clientOnly: true, isNew: true },
+  { id: 'semver-calc',      label: 'Semver Calculator',      description: 'Calculate, compare, bump and validate semantic version strings.',   href: '/tools/semver-calc',      icon: '🔢', tags: ['dev'],             status: 'live', clientOnly: true, isNew: true },
+  { id: 'docker-gen',       label: 'Docker Run Builder',     description: 'Build docker run commands visually with ports, volumes, env vars.', href: '/tools/docker-gen',       icon: '🐳', tags: ['dev', 'devops'],   status: 'live', clientOnly: true, isNew: true },
+  { id: 'http-headers-ref', label: 'HTTP Headers Reference', description: 'Searchable reference for all 50+ HTTP headers with examples.',     href: '/tools/http-headers-ref', icon: '📡', tags: ['dev', 'reference'],status: 'live', clientOnly: true, isNew: true },
+  { id: 'nginx-config',     label: 'Nginx Config Generator', description: 'Generate nginx server block configs with SSL, proxying and more.',  href: '/tools/nginx-config',     icon: '⚙️', tags: ['dev', 'devops'],   status: 'live', clientOnly: true, isNew: true },
+  { id: 'meta-tag-gen',     label: 'Meta Tag Generator',     description: 'Generate complete HTML meta tags for SEO, OG, and Twitter cards.', href: '/tools/meta-tag-gen',     icon: '🏷️', tags: ['dev', 'seo'],      status: 'live', clientOnly: true, isNew: true },
+  { id: 'json-schema',      label: 'JSON Schema Generator',  description: 'Auto-generate a JSON Schema (draft-07) from any JSON sample.',     href: '/tools/json-schema',      icon: '📐', tags: ['dev', 'json'],     status: 'live', clientOnly: true, isNew: true },
+  { id: 'ip-lookup',        label: 'IP Lookup',              description: 'Look up IP address geolocation, ISP, timezone, and ASN.',          href: '/tools/ip-lookup',        icon: '🔍', tags: ['dev', 'network'],  status: 'live', clientOnly: true, isNew: true },
+  { id: 'dns-lookup',       label: 'DNS Lookup',             description: 'Query DNS records (A, MX, TXT, NS, CNAME…) via DNS-over-HTTPS.',   href: '/tools/dns-lookup',       icon: '🌐', tags: ['dev', 'network'],  status: 'live', clientOnly: true, isNew: true },
+
+  // ── Security / Crypto (new) ──────────────────────────────────────────
+  { id: 'aes-tool',         label: 'AES Encrypt / Decrypt',  description: 'AES-256-GCM encryption and decryption using the Web Crypto API.',  href: '/tools/aes-tool',         icon: '🔐', tags: ['crypto', 'security'], status: 'live', clientOnly: true, isNew: true },
+  { id: 'hmac-gen',         label: 'HMAC Generator',         description: 'Generate and verify HMAC signatures (SHA-256/384/512).',            href: '/tools/hmac-gen',         icon: '🔑', tags: ['crypto', 'security'], status: 'live', clientOnly: true, isNew: true },
+  { id: 'pw-strength',      label: 'Password Strength',      description: 'Analyze password strength, estimate crack time, generate secure passwords.', href: '/tools/pw-strength', icon: '🛡️', tags: ['crypto', 'security'], status: 'live', clientOnly: true, isNew: true },
+
+  // ── Image (new) ──────────────────────────────────────────────────────
+  { id: 'exif-viewer',      label: 'EXIF Viewer',            description: 'View EXIF metadata, GPS coordinates, and camera settings from images.', href: '/tools/exif-viewer',   icon: '📷', tags: ['image'],             status: 'live', clientOnly: true, isNew: true },
+  { id: 'img-to-base64',    label: 'Image to Base64',        description: 'Convert images to base64 data URIs for use in CSS, HTML or JSON.',  href: '/tools/img-to-base64',    icon: '🖼️', tags: ['image', 'dev'],      status: 'live', clientOnly: true, isNew: true },
+  { id: 'svg-optimizer',    label: 'SVG Optimizer',          description: 'Minify and optimize SVG files, removing bloat and reducing file size.', href: '/tools/svg-optimizer', icon: '⚡', tags: ['image', 'dev'],      status: 'live', clientOnly: true, isNew: true },
+
+  // ── Design / CSS (new) ──────────────────────────────────────────────
+  { id: 'css-clippath',     label: 'CSS Clip-Path Maker',    description: 'Visual clip-path editor with draggable points and live CSS output.', href: '/tools/css-clippath',    icon: '✂️', tags: ['design', 'css'],    status: 'live', clientOnly: true, isNew: true },
+  { id: 'glassmorphism',    label: 'Glassmorphism Generator',description: 'Generate glassmorphism card CSS with blur, transparency sliders.',   href: '/tools/glassmorphism',    icon: '🪟', tags: ['design', 'css'],    status: 'live', clientOnly: true, isNew: true },
+  { id: 'neumorphism',      label: 'Neumorphism Generator',  description: 'Generate soft UI neumorphism box-shadow CSS with live preview.',     href: '/tools/neumorphism',      icon: '🔘', tags: ['design', 'css'],    status: 'live', clientOnly: true, isNew: true },
+  { id: 'css-animation',    label: 'CSS Animation Builder',  description: 'Build CSS keyframe animations with presets and live preview.',        href: '/tools/css-animation',    icon: '🎬', tags: ['design', 'css'],    status: 'live', clientOnly: true, isNew: true },
+
+  // ── Text (new) ───────────────────────────────────────────────────────
+  { id: 'lorem-ipsum',      label: 'Lorem Ipsum Generator',  description: 'Generate lorem ipsum placeholder text — paragraphs, sentences or words.', href: '/tools/lorem-ipsum', icon: '📝', tags: ['text'],             status: 'live', clientOnly: true, isNew: true },
+  { id: 'ascii-art',        label: 'ASCII Art Generator',    description: 'Convert text to large ASCII art block letters with multiple fonts.',  href: '/tools/ascii-art',        icon: '🎨', tags: ['text', 'fun'],      status: 'live', clientOnly: true, isNew: true },
+  { id: 'markdown-table',   label: 'Markdown Table Builder', description: 'Visually build Markdown tables; import from CSV, export markdown.',   href: '/tools/markdown-table',   icon: '📊', tags: ['text', 'dev'],      status: 'live', clientOnly: true, isNew: true },
+  { id: 'word-frequency',   label: 'Word Frequency Counter', description: 'Analyze word frequency, reading time, and Flesch readability score.', href: '/tools/word-frequency',   icon: '📈', tags: ['text'],             status: 'live', clientOnly: true, isNew: true },
+
+  // ── Calculators / Productivity (new) ────────────────────────────────
+  { id: 'unit-converter',   label: 'Unit Converter',         description: 'Convert between units of length, weight, temperature, speed, and more.', href: '/tools/unit-converter', icon: '📏', tags: ['misc', 'calculator'], status: 'live', clientOnly: true, isNew: true },
+  { id: 'date-calculator',  label: 'Date Calculator',        description: 'Calculate age, date differences, add/subtract time, and week numbers.', href: '/tools/date-calculator', icon: '📅', tags: ['misc', 'calculator'], status: 'live', clientOnly: true, isNew: true },
+  { id: 'percentage-calc',  label: 'Percentage Calculator',  description: 'Percentage of a number, % change, tip calculator, and more.',          href: '/tools/percentage-calc',  icon: '💯', tags: ['misc', 'calculator'], status: 'live', clientOnly: true, isNew: true },
+  { id: 'compound-interest',label: 'Compound Interest Calc', description: 'Calculate compound interest with year-by-year breakdown and chart.',    href: '/tools/compound-interest',icon: '💰', tags: ['misc', 'calculator'], status: 'live', clientOnly: true, isNew: true },
+  { id: 'pomodoro',         label: 'Pomodoro Timer',         description: 'Focus timer: 25min work, 5min break, with audio notifications.',        href: '/tools/pomodoro',         icon: '⏱️', tags: ['misc', 'productivity'], status: 'live', clientOnly: true, isNew: true },
+
   {
     id: 'link-scraper',
     label: 'Link Scraper',

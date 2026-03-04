@@ -751,3 +751,114 @@ body {
   .yt-dl-thumb { width: 100%; height: auto; }
   .yt-dl-input-row { flex-direction: column; }
 }
+
+/* === TOOL: yaml-json / curl-builder / env-formatter / semver-calc === */
+/* === TOOL: docker-gen / http-headers-ref / nginx-config              === */
+/* === TOOL: meta-tag-gen / json-schema / ip-lookup                    === */
+
+.tool-two-panel {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+
+.tool-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.tool-panel-label {
+  color: var(--text-secondary, rgba(255,255,255,0.6));
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.tool-textarea {
+  width: 100%;
+  min-height: 320px;
+  padding: 0.75rem;
+  border-radius: 8px;
+  border: 1px solid var(--border, rgba(255,255,255,0.08));
+  background: var(--bg-input, #111);
+  color: var(--text, #ededed);
+  font-family: monospace;
+  font-size: 0.85rem;
+  resize: vertical;
+  outline: none;
+}
+
+.tool-textarea:focus {
+  border-color: var(--border-focus, #6366f1);
+}
+
+.tool-textarea[readonly] {
+  background: var(--bg-elevated, #161616);
+}
+
+.tool-input {
+  padding: 0.45rem 0.75rem;
+  border-radius: 6px;
+  border: 1px solid var(--border, rgba(255,255,255,0.08));
+  background: var(--bg-input, #111);
+  color: var(--text, #ededed);
+  font-size: 0.875rem;
+  outline: none;
+  width: 100%;
+}
+
+.tool-input:focus {
+  border-color: var(--border-focus, #6366f1);
+}
+
+.tool-select {
+  padding: 0.45rem 0.65rem;
+  border-radius: 6px;
+  border: 1px solid var(--border, rgba(255,255,255,0.08));
+  background: var(--bg-elevated, #161616);
+  color: var(--text, #ededed);
+  font-size: 0.875rem;
+  cursor: pointer;
+  outline: none;
+}
+
+.tool-code-preview {
+  margin: 0;
+  padding: 1rem;
+  border-radius: 10px;
+  background: var(--bg-elevated, #161616);
+  border: 1px solid var(--border, rgba(255,255,255,0.08));
+  color: var(--accent-2, #a5b4fc);
+  font-family: monospace;
+  font-size: 0.82rem;
+  white-space: pre-wrap;
+  word-break: break-all;
+  min-height: 200px;
+}
+
+.tool-error-box {
+  padding: 0.75rem 1rem;
+  border-radius: 8px;
+  background: var(--danger-bg, rgba(248,113,113,0.1));
+  border: 1px solid var(--danger-border, rgba(248,113,113,0.25));
+  color: var(--danger, #f87171);
+  font-size: 0.875rem;
+  font-family: monospace;
+}
+
+.tool-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.15rem 0.45rem;
+  border-radius: 4px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
+
+@media (max-width: 700px) {
+  .tool-two-panel {
+    grid-template-columns: 1fr;
+  }
+}
