@@ -51,7 +51,7 @@
     "eslint-config-next": "14.2.15",
     "postcss": "8.4.38",
     "tailwindcss": "3.4.4",
-    "typescript": "5.4.5",
+    "typescript": "5.9.3",
     "wrangler": "^4.69.0"
   },
   "engines": {
