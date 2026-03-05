@@ -3,10 +3,15 @@
 import Link from 'next/link';
 import { useState, useMemo, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Star } from 'lucide-react';
+import { Search, X, Star } from 'lucide-react';
 import { TOOLS, TAG_LABELS } from '@/lib/tools-registry';
 import type { ToolTag, ToolDef } from '@/lib/tools-registry';
 import TutorialOverlay, { useTutorial, TOOLS_TUTORIAL } from '@/components/TutorialOverlay';
+import { TAG_COLORS, POPULAR_IDS } from '@/components/CommandPalette';
+
+declare global {
+  interface Window { __openToolPalette?: () => void; }
+}
 
 const SIDEBAR_CATEGORIES: Array<{ tag: ToolTag | null; label: string }> = [
   { tag: null,       label: 'All Tools' },
@@ -17,6 +22,13 @@ const SIDEBAR_CATEGORIES: Array<{ tag: ToolTag | null; label: string }> = [
   { tag: 'audio',   label: 'Audio' },
   { tag: 'crypto',  label: '₿ Crypto/Web3' },
   { tag: 'collab',  label: 'Collab' },
+];
+
+const STATS = [
+  { value: String(TOOLS.length) + '+', label: 'tools' },
+  { value: '8', label: 'categories' },
+  { value: '100%', label: 'client-side' },
+  { value: 'Free', label: 'forever' },
 ];
 
 function countForTag(tag: ToolTag | null) {
@@ -30,13 +42,19 @@ function countForTag(tag: ToolTag | null) {
 interface ToolCardProps {
   tool: ToolDef;
   starred: boolean;
+  accent?: string;
   onStar: (id: string, e: React.MouseEvent) => void;
   onVisit: (id: string) => void;
 }
 
-function ToolCard({ tool, starred, onStar, onVisit }: ToolCardProps) {
+function ToolCard({ tool, starred, accent, onStar, onVisit }: ToolCardProps) {
   return (
-    <Link href={tool.href} className="toolhub-card" onClick={() => onVisit(tool.id)}>
+    <Link
+      href={tool.href}
+      className="toolhub-card"
+      style={accent ? { '--card-accent': accent } as React.CSSProperties : undefined}
+      onClick={() => onVisit(tool.id)}
+    >
       <div className="toolhub-card-top">
         <span className="toolhub-card-icon" aria-hidden="true">
           {tool.icon}
@@ -159,6 +177,12 @@ export default function ToolsHubClient() {
     .map(id => TOOLS.find(t => t.id === id))
     .filter((t): t is ToolDef => t !== undefined);
 
+  const popularTools = POPULAR_IDS
+    .map(id => TOOLS.find(t => t.id === id))
+    .filter((t): t is ToolDef => t !== undefined);
+
+  const showPopular = !search.trim() && !activeTag && recentTools.length === 0 && starredTools.length === 0;
+
   const cardProps = { starred: false, onStar: toggleStar, onVisit: trackRecent };
 
   return (
@@ -188,31 +212,54 @@ export default function ToolsHubClient() {
         {!activeTag && !search.trim() && (
           <div className="toolhub-hero">
             <h1 className="toolhub-hero-title">
-              The best open-source tooling website
+              The open toolkit for{' '}
+              <span className="toolhub-hero-accent">builders</span>
             </h1>
             <p className="toolhub-hero-sub">
-              80+ free, browser-based tools for developers & designers.
+              {TOOLS.length}+ free, browser-based tools for developers &amp; designers.
               No login. No tracking. Your data never leaves your device.
             </p>
-            <div className="toolhub-hero-chips">
-              <span className="toolhub-chip">✓ No account required</span>
-              <span className="toolhub-chip">✓ 100% client-side</span>
-              <span className="toolhub-chip">✓ Open source</span>
-              <span className="toolhub-chip">✓ Always free</span>
+            <div className="toolhub-stats-row">
+              {STATS.map(s => (
+                <div key={s.label} className="toolhub-stat">
+                  <span className="toolhub-stat-value">{s.value}</span>
+                  <span className="toolhub-stat-label">{s.label}</span>
+                </div>
+              ))}
             </div>
           </div>
         )}
 
         {/* Search */}
         <div className="toolhub-search-wrap">
+          <Search className="toolhub-search-icon" size={16} aria-hidden="true" />
           <input
             className="toolhub-search"
             type="search"
-            placeholder="Search 80+ tools…"
+            placeholder={`Search ${TOOLS.length}+ tools…`}
             value={search}
             onChange={e => handleSearchChange(e.target.value)}
             autoComplete="off"
           />
+          {search ? (
+            <button
+              type="button"
+              className="toolhub-search-clear"
+              onClick={() => handleSearchChange('')}
+              aria-label="Clear search"
+            >
+              <X size={14} />
+            </button>
+          ) : (
+            <button
+              type="button"
+              className="toolhub-search-kbd"
+              onClick={() => window.__openToolPalette?.()}
+              aria-label="Open command palette"
+            >
+              <kbd>⌘K</kbd>
+            </button>
+          )}
         </div>
 
         {/* Recently Used */}
@@ -221,7 +268,9 @@ export default function ToolsHubClient() {
             <h2 className="toolhub-section-title">Recently Used</h2>
             <div className="toolhub-grid">
               {recentTools.map(tool => (
-                <ToolCard key={tool.id} tool={tool} {...cardProps} starred={starredIds.includes(tool.id)} />
+                <ToolCard key={tool.id} tool={tool} {...cardProps}
+                  accent={TAG_COLORS[tool.tags[0] as ToolTag]}
+                  starred={starredIds.includes(tool.id)} />
               ))}
             </div>
           </section>
@@ -233,7 +282,23 @@ export default function ToolsHubClient() {
             <h2 className="toolhub-section-title">Starred</h2>
             <div className="toolhub-grid">
               {starredTools.map(tool => (
-                <ToolCard key={tool.id} tool={tool} {...cardProps} starred={true} />
+                <ToolCard key={tool.id} tool={tool} {...cardProps}
+                  accent={TAG_COLORS[tool.tags[0] as ToolTag]}
+                  starred={true} />
+              ))}
+            </div>
+          </section>
+        )}
+
+        {/* Popular — shown only before user has history */}
+        {showPopular && (
+          <section className="toolhub-section">
+            <h2 className="toolhub-section-title">Popular</h2>
+            <div className="toolhub-grid">
+              {popularTools.map(tool => (
+                <ToolCard key={tool.id} tool={tool} {...cardProps}
+                  accent={TAG_COLORS[tool.tags[0] as ToolTag]}
+                  starred={starredIds.includes(tool.id)} />
               ))}
             </div>
           </section>
@@ -244,12 +309,17 @@ export default function ToolsHubClient() {
           grouped.map(({ tag, label, tools }) => (
             <section key={tag} className="toolhub-section">
               <h2 className="toolhub-section-title">
+                {TAG_COLORS[tag] && (
+                  <span className="toolhub-cat-dot" style={{ background: TAG_COLORS[tag] }} aria-hidden="true" />
+                )}
                 {label}
                 <span className="toolhub-section-count">{tools.length}</span>
               </h2>
               <div className="toolhub-grid">
                 {tools.map(tool => (
-                  <ToolCard key={tool.id} tool={tool} {...cardProps} starred={starredIds.includes(tool.id)} />
+                  <ToolCard key={tool.id} tool={tool} {...cardProps}
+                    accent={TAG_COLORS[tag]}
+                    starred={starredIds.includes(tool.id)} />
                 ))}
               </div>
             </section>
@@ -258,6 +328,9 @@ export default function ToolsHubClient() {
           /* Filtered / searched view */
           <section className="toolhub-section">
             <h2 className="toolhub-section-title">
+              {activeTag && TAG_COLORS[activeTag] && (
+                <span className="toolhub-cat-dot" style={{ background: TAG_COLORS[activeTag] }} aria-hidden="true" />
+              )}
               {activeTag ? TAG_LABELS[activeTag] : 'Results'}
               <span className="toolhub-section-count">{filtered.length}</span>
             </h2>
@@ -272,7 +345,9 @@ export default function ToolsHubClient() {
             ) : (
               <div className="toolhub-grid">
                 {filtered.map(tool => (
-                  <ToolCard key={tool.id} tool={tool} {...cardProps} starred={starredIds.includes(tool.id)} />
+                  <ToolCard key={tool.id} tool={tool} {...cardProps}
+                    accent={TAG_COLORS[tool.tags[0] as ToolTag]}
+                    starred={starredIds.includes(tool.id)} />
                 ))}
               </div>
             )}
