@@ -1,0 +1,76 @@
+version: "2"
+language: "en"
+
+reviews:
+  profile: "assertive"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  auto_review:
+    enabled: true
+    drafts: false
+    base_branches: ["main"]
+
+  path_filters:
+    - "!**/*.lock"
+    - "!**/node_modules/**"
+    - "!**/.next/**"
+
+  path_instructions:
+    # ── Tools registry ───────────────────────────────────────────────────────
+    - path: "apps/web/src/lib/tools-registry.ts"
+      instructions: |
+        This is the single source of truth for all tools. Check:
+        - Every entry has a unique id (kebab-case matching the /tools/{id} route).
+        - href must be /tools/{id} matching the id.
+        - tags array is non-empty; first tag is the primary category.
+        - icon is a single emoji.
+        - description is 1-2 sentences, clear and accurate.
+        - status is 'live' | 'beta' | 'soon'.
+
+    # ── Tool components ──────────────────────────────────────────────────────
+    - path: "apps/web/src/components/tools/**"
+      instructions: |
+        Tool components are 100% client-side — no external API calls, no user data exfiltration.
+        Check:
+        - Has 'use client' directive.
+        - No fetch() to external services with user data.
+        - Uses ToolShell wrapper for consistent layout.
+        - Accessible: interactive elements have aria-labels; keyboard operable.
+
+    # ── Tool pages ───────────────────────────────────────────────────────────
+    - path: "apps/web/src/app/tools/**"
+      instructions: |
+        - page.tsx should only export metadata and a Suspense-wrapped client component.
+        - page-client.tsx is the 'use client' implementation.
+        - New tool directories must have a corresponding entry in tools-registry.ts.
+
+    # ── Hub / CommandPalette ─────────────────────────────────────────────────
+    - path: "apps/web/src/app/tools/page-client.tsx"
+      instructions: |
+        - TAG_COLORS imported from CommandPalette.tsx — do not duplicate color definitions.
+        - POPULAR_IDS is a curated list — changes here affect first-time user experience.
+        - URL sync uses router.replace — ensure category and q params stay consistent.
+
+    - path: "apps/web/src/components/CommandPalette.tsx"
+      instructions: |
+        - TAG_COLORS here is the source of truth for category accent colors across the hub.
+        - POPULAR_IDS must reference valid tool IDs from the registry.
+        - Keyboard navigation: ArrowUp/ArrowDown/Enter/Escape must all work correctly.
+
+    # ── CSS ──────────────────────────────────────────────────────────────────
+    - path: "apps/web/src/app/globals.css"
+      instructions: |
+        - Use CSS variables (design tokens) — never hardcode hex colors or spacing values.
+        - Class naming conventions: .toolhub-* for hub, .tool-shell-* for tool pages, .cmd-* for palette.
+        - Mobile breakpoints should be at @media (max-width: 640px).
+
+    # ── CI workflows ─────────────────────────────────────────────────────────
+    - path: ".github/workflows/**"
+      instructions: |
+        - Typecheck step must NOT have continue-on-error: true.
+        - Pin actions to specific versions (@v4 etc).
+
+chat:
+  auto_reply: true

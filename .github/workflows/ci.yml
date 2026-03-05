@@ -26,7 +26,6 @@ jobs:
       - name: Typecheck
         run: npx tsc --noEmit
         working-directory: apps/web
-        continue-on-error: true
 
   build:
     name: Build
