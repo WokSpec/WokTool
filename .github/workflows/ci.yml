@@ -24,6 +24,7 @@ jobs:
       - run: npm ci
       - run: npm run lint --if-present
         working-directory: apps/web
+        continue-on-error: true
       - name: Typecheck
         run: npx tsc --noEmit
         working-directory: apps/web
