@@ -1,7 +1,6 @@
 import { NextRequest } from 'next/server';
 import ytdl from '@distube/ytdl-core';
 import { checkRateLimit, getRateLimitKey } from '@/lib/rate-limiter';
-import { Readable } from 'stream';
 
 export const dynamic = 'force-dynamic';
 // Allow up to 60 s on Vercel Pro; on Hobby the hard cap is 10 s
@@ -30,7 +29,7 @@ export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
   const url = searchParams.get('url');
   const itag = searchParams.get('itag');
-  const label = searchParams.get('label') ?? 'download';
+  const customExt = searchParams.get('ext');
 
   if (!url || !itag) {
     return new Response('url and itag are required.', { status: 400 });
@@ -52,12 +51,12 @@ export async function GET(req: NextRequest) {
     }
 
     const isAudio = !format.hasVideo;
-    const ext = format.container ?? (isAudio ? 'm4a' : 'mp4');
+    const ext = customExt || format.container || (isAudio ? 'm4a' : 'mp4');
     const title = sanitizeFilename(info.videoDetails.title);
     const filename = `${title}.${ext}`;
 
     const mimeType = isAudio
-      ? `audio/${ext === 'webm' ? 'webm' : 'mp4'}`
+      ? (ext === 'mp3' ? 'audio/mpeg' : ext === 'wav' ? 'audio/wav' : `audio/${ext === 'webm' ? 'webm' : 'mp4'}`)
       : `video/${ext}`;
 
     const nodeStream = ytdl.downloadFromInfo(info, { format });

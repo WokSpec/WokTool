@@ -9,6 +9,8 @@ import type { ToolTag, ToolDef } from '@/lib/tools-registry';
 import TutorialOverlay, { useTutorial, TOOLS_TUTORIAL } from '@/components/TutorialOverlay';
 import { TAG_COLORS, POPULAR_IDS } from '@/components/CommandPalette';
 
+import MagicMirror from '@/components/MagicMirror';
+
 declare global {
   interface Window { __openToolPalette?: () => void; }
 }
@@ -229,6 +231,9 @@ export default function ToolsHubClient() {
             </div>
           </div>
         )}
+
+        {/* Magic Mirror */}
+        {!activeTag && !search.trim() && <MagicMirror />}
 
         {/* Search */}
         <div className="toolhub-search-wrap">

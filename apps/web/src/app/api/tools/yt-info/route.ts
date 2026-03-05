@@ -41,7 +41,6 @@ export async function POST(req: NextRequest) {
     // Build a clean list of downloadable formats
     const audioFormats = ytdl.filterFormats(info.formats, 'audioonly')
       .sort((a, b) => (b.audioBitrate ?? 0) - (a.audioBitrate ?? 0))
-      .slice(0, 4)
       .map(f => ({
         itag: f.itag,
         container: f.container,
@@ -49,6 +48,7 @@ export async function POST(req: NextRequest) {
         audioCodec: f.audioCodec,
         contentLength: f.contentLength,
         label: `Audio — ${f.audioBitrate ?? '?'}kbps ${f.container?.toUpperCase()}`,
+        ext: (f.container as string) === 'm4a' ? 'm4a' : 'webm',
         type: 'audio' as const,
       }));
 
@@ -56,18 +56,29 @@ export async function POST(req: NextRequest) {
       !!(f.hasVideo && f.hasAudio)
     )
       .sort((a, b) => (parseInt(b.qualityLabel ?? '0') || 0) - (parseInt(a.qualityLabel ?? '0') || 0))
-      .reduce<typeof info.formats>((acc, f) => {
-        if (!acc.some(x => x.qualityLabel === f.qualityLabel)) acc.push(f);
-        return acc;
-      }, [])
-      .slice(0, 5)
       .map(f => ({
         itag: f.itag,
         container: f.container,
         qualityLabel: f.qualityLabel,
         audioBitrate: f.audioBitrate,
         contentLength: f.contentLength,
-        label: `${f.qualityLabel} ${f.container?.toUpperCase()}`,
+        label: `Video — ${f.qualityLabel} ${f.container?.toUpperCase()}`,
+        ext: f.container || 'mp4',
+        type: 'video' as const,
+      }));
+
+    // Adaptive formats (Video only) - often higher quality
+    const adaptiveFormats = ytdl.filterFormats(info.formats, f => f.hasVideo && !f.hasAudio)
+      .sort((a, b) => (parseInt(b.qualityLabel ?? '0') || 0) - (parseInt(a.qualityLabel ?? '0') || 0))
+      .filter(f => parseInt(f.qualityLabel ?? '0') >= 1080)
+      .slice(0, 3)
+      .map(f => ({
+        itag: f.itag,
+        container: f.container,
+        qualityLabel: f.qualityLabel,
+        contentLength: f.contentLength,
+        label: `High-Res — ${f.qualityLabel} (No Audio) ${f.container?.toUpperCase()}`,
+        ext: f.container || 'mp4',
         type: 'video' as const,
       }));
 
@@ -77,7 +88,7 @@ export async function POST(req: NextRequest) {
       durationSeconds: parseInt(videoDetails.lengthSeconds),
       thumbnail: videoDetails.thumbnails.at(-1)?.url,
       viewCount: videoDetails.viewCount,
-      formats: [...audioFormats, ...videoFormats],
+      formats: [...audioFormats.slice(0, 6), ...videoFormats, ...adaptiveFormats],
     });
   } catch (e) {
     const msg = e instanceof Error ? e.message : 'Unknown error';

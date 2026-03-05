@@ -99,18 +99,39 @@ export default function CommandPalette() {
     return () => { delete (window as any).__openToolPalette; };
   }, [openPalette]);
 
+  const [recentIds, setRecentIds] = useState<string[]>([]);
+
+  // Load recents
+  useEffect(() => {
+    if (!open) return;
+    try {
+      const r = JSON.parse(localStorage.getItem('toolhub-recent') ?? '[]');
+      if (Array.isArray(r)) setRecentIds(r);
+    } catch { /* ignore */ }
+  }, [open]);
+
   const results = useMemo(() => {
     if (!query.trim()) {
-      return TOOLS.filter(t => POPULAR_IDS.includes(t.id))
-        .sort((a, b) => POPULAR_IDS.indexOf(a.id) - POPULAR_IDS.indexOf(b.id));
+      const recents = recentIds
+        .map(id => TOOLS.find(t => t.id === id))
+        .filter((t): t is any => t !== undefined)
+        .slice(0, 4);
+
+      const popular = TOOLS.filter(t => POPULAR_IDS.includes(t.id))
+        .sort((a, b) => POPULAR_IDS.indexOf(a.id) - POPULAR_IDS.indexOf(b.id))
+        .filter(t => !recentIds.includes(t.id))
+        .slice(0, 8);
+
+      return [...recents, ...popular];
     }
+
     const q = query.toLowerCase();
     return TOOLS.filter(t =>
       t.label.toLowerCase().includes(q) ||
       t.description.toLowerCase().includes(q) ||
       t.tags.some(tag => tag.includes(q) || TAG_LABELS[tag]?.toLowerCase().includes(q))
     ).slice(0, 14);
-  }, [query]);
+  }, [query, recentIds]);
 
   useEffect(() => { setActiveIdx(0); }, [query]);
 
