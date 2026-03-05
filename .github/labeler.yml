@@ -1,0 +1,41 @@
+# Maps labels to file path patterns
+# https://github.com/actions/labeler
+
+"new-tool":
+  - changed-files:
+    - any-glob-to-any-file: "apps/web/src/app/tools/*/page.tsx"
+
+"area:registry":
+  - changed-files:
+    - any-glob-to-any-file: "apps/web/src/lib/tools-registry.ts"
+
+"area:hub":
+  - changed-files:
+    - any-glob-to-any-file:
+      - "apps/web/src/app/page.tsx"
+      - "apps/web/src/app/tools/page-client.tsx"
+      - "apps/web/src/components/**"
+
+"area:ui":
+  - changed-files:
+    - any-glob-to-any-file:
+      - "apps/web/src/app/globals.css"
+      - "apps/web/src/app/**/*.tsx"
+
+"infrastructure":
+  - changed-files:
+    - any-glob-to-any-file:
+      - ".github/**"
+      - "apps/web/next.config.*"
+      - "wrangler.*"
+
+"dependencies":
+  - changed-files:
+    - any-glob-to-any-file: "**/package*.json"
+
+"docs":
+  - changed-files:
+    - any-glob-to-any-file:
+      - "*.md"
+      - "CLAUDE.md"
+      - ".github/copilot-instructions.md"

@@ -1,7 +1,7 @@
 {
   "name": "woktool",
   "version": "1.0.0",
-  "description": "WokTool — the best open-source tooling website. 80+ free browser-based tools.",
+  "description": "WokTool \u2014 the best open-source tooling website. 80+ free browser-based tools.",
   "private": true,
   "workspaces": [
     "apps/*"
@@ -11,9 +11,21 @@
     "build": "npm run build --workspace=apps/web",
     "start": "npm run start --workspace=apps/web",
     "lint": "npm run lint --workspace=apps/web",
-    "typecheck": "npm run typecheck --workspace=apps/web"
+    "typecheck": "npm run typecheck --workspace=apps/web",
+    "prepare": "husky || true"
   },
   "engines": {
     "node": ">=20"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.4.3",
+    "@commitlint/config-conventional": "^20.4.3",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.3.2"
+  },
+  "lint-staged": {
+    "apps/web/src/**/*.{ts,tsx}": [
+      "eslint --max-warnings 0 --fix"
+    ]
   }
 }
