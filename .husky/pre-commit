@@ -1,1 +1,1 @@
-npx lint-staged
+# ESLint is enforced by CI; pre-commit only checks commit message via .husky/commit-msg

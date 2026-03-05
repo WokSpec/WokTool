@@ -183,7 +183,7 @@ export default function RegexTool() {
                         {(m.groups && Object.keys(m.groups).length > 0) && (
                     <span className="regex-match-groups">
                       {Object.entries(m.groups).map(([k, v]) => (
-                        <span key={k} className="regex-group-tag">{k}: {v}</span>
+                        <span key={k} className="regex-group-tag">{k}: {String(v)}</span>
                       ))}
                     </span>
                   )}
