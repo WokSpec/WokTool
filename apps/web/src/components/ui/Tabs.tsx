@@ -17,7 +17,7 @@ interface TabsProps {
 
 export default function Tabs({ tabs, activeTab, onChange, className = '' }: TabsProps) {
   return (
-    <div className={`flex p-1 bg-white/[0.03] border border-white/[0.06] rounded-xl ${className}`}>
+    <div className={`flex bg-bg-surface border border-white/10 ${className}`}>
       {tabs.map((tab) => {
         const isActive = activeTab === tab.id;
         return (
@@ -25,14 +25,14 @@ export default function Tabs({ tabs, activeTab, onChange, className = '' }: Tabs
             key={tab.id}
             onClick={() => onChange(tab.id)}
             className={`
-              flex items-center justify-center gap-2.5 px-4 py-2 text-[11px] font-black uppercase tracking-widest rounded-lg transition-all flex-1
+              flex items-center justify-center gap-3 px-6 py-4 text-[10px] font-black uppercase tracking-[0.2em] transition-all flex-1
               ${isActive 
-                ? 'bg-white text-black shadow-[0_0_20px_rgba(255,255,255,0.1)]' 
-                : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.02]'
+                ? 'bg-white text-black' 
+                : 'text-white/20 hover:text-white hover:bg-white/[0.02]'
               }
             `}
           >
-            {tab.icon && <span className={isActive ? 'text-black' : 'opacity-40 group-hover:opacity-100'}>{tab.icon}</span>}
+            {tab.icon && <span>{tab.icon}</span>}
             {tab.label}
           </button>
         );

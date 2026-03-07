@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronLeft, Info, Github, ExternalLink } from 'lucide-react';
+import { ChevronLeft, Info, Github, ExternalLink, Command, ArrowRight } from 'lucide-react';
 
 interface ToolShellProps {
   id: string;
@@ -21,81 +21,116 @@ export default function ToolShell({
   comingSoon,
 }: ToolShellProps) {
   return (
-    <div className="min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
-      <div className="tool-shell">
-        {/* Navigation / Breadcrumb */}
-        <nav className="tool-shell-breadcrumb group" aria-label="Breadcrumb">
-          <Link href="/tools" className="flex items-center gap-2 text-zinc-500 hover:text-white transition-colors">
-            <ChevronLeft size={14} className="group-hover:-translate-x-1 transition-transform" />
-            <span className="text-[11px] font-bold uppercase tracking-widest">Dashboard</span>
-          </Link>
-          <span className="text-zinc-800">/</span>
-          <span className="text-[11px] font-bold uppercase tracking-widest text-zinc-300">{label}</span>
-        </nav>
+    <div className="min-h-screen bg-bg-base text-white pt-32 pb-24 px-6 lg:px-12">
+      <div className="max-w-[1440px] mx-auto">
+        {/* Navigation / Metadata */}
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-8 mb-16 border-b border-white/5 pb-8">
+            <nav className="flex items-center gap-4" aria-label="Breadcrumb">
+                <Link href="/" className="text-[10px] font-black uppercase tracking-[0.3em] text-white/30 hover:text-accent transition-colors flex items-center gap-2 group">
+                    <ChevronLeft size={12} className="group-hover:-translate-x-1 transition-transform" />
+                    Registry
+                </Link>
+                <span className="text-white/10 text-[10px]">/</span>
+                <span className="text-[10px] font-black uppercase tracking-[0.3em] text-white/60">{label}</span>
+            </nav>
 
-        {/* Hero Section for Tool */}
-        <header className="tool-shell-header flex flex-col md:flex-row md:items-end justify-between gap-8">
-          <div className="space-y-6 flex-1">
-            <div className="tool-shell-icon-badge">
-              {icon}
+            <div className="flex items-center gap-8">
+                <div className="flex items-center gap-3">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.4)]" />
+                    <span className="label-tech text-green-500">Live_Protocol</span>
+                </div>
+                <div className="flex items-center gap-3">
+                    <ShieldCheck size={12} className="text-white/20" />
+                    <span className="label-tech">Encrypted_Edge</span>
+                </div>
             </div>
-            <div>
-              <h1 className="tool-shell-title">{label}</h1>
-              <p className="tool-shell-desc">{description}</p>
-            </div>
-          </div>
+        </div>
 
-          <div className="flex gap-3">
-            <a 
-                href={`https://github.com/WokSpec/WokTool/tree/main/apps/web/src/app/tools/${id}`} 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-[11px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-all"
-            >
-                <Github size={14} />
-                <span>Source</span>
-            </a>
-            <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-[11px] font-bold uppercase tracking-widest text-zinc-400 hover:text-white hover:bg-white/[0.06] transition-all">
-                <Info size={14} />
-                <span>Docs</span>
-            </button>
-          </div>
+        {/* Hero Section */}
+        <header className="grid grid-cols-1 lg:grid-cols-12 gap-12 mb-24">
+            <div className="lg:col-span-8 space-y-8">
+                <div className="space-y-4">
+                    <span className="label-tech text-accent">Module_Initialization_Success</span>
+                    <h1 className="text-5xl lg:text-8xl font-black uppercase tracking-[-0.06em] leading-[0.85]">{label}</h1>
+                </div>
+                <p className="max-w-2xl text-lg lg:text-xl text-white/40 font-medium leading-relaxed uppercase tracking-tight">
+                    {description}
+                </p>
+            </div>
+
+            <div className="lg:col-span-4 flex flex-col justify-end gap-4 lg:items-end">
+                <div className="flex gap-2">
+                    <a 
+                        href={`https://github.com/WokSpec/WokTool/tree/main/apps/web/src/app/tools/${id}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="btn-v btn-v-secondary !px-4"
+                    >
+                        <Github size={14} /> SOURCE
+                    </a>
+                    <button className="btn-v btn-v-secondary !px-4">
+                        <Info size={14} /> DOCS
+                    </button>
+                </div>
+                <div className="label-tech !tracking-[0.4em] opacity-40">Build_4.2.1_Verified</div>
+            </div>
         </header>
 
         {/* Core Tool Container */}
-        <div className="tool-shell-body mt-12 animate-in fade-in slide-in-from-bottom-4 duration-1000">
+        <main className="relative">
           {comingSoon || !children ? (
-            <div className="flex flex-col items-center justify-center py-32 text-center space-y-8">
-              <div className="w-20 h-20 rounded-3xl bg-white/[0.02] border border-dashed border-white/10 flex items-center justify-center text-3xl opacity-20">⚙️</div>
-              <div className="space-y-2">
-                <h2 className="text-2xl font-black tracking-tighter">In Development</h2>
-                <p className="text-zinc-500 max-w-sm mx-auto">This professional utility is currently being synthesized. Check back shortly.</p>
+            <div className="py-48 flex flex-col items-center justify-center text-center space-y-12 border border-dashed border-white/10 bg-white/[0.01]">
+              <div className="text-4xl opacity-20">PROTOCOL_PENDING</div>
+              <div className="space-y-4">
+                <h2 className="text-2xl font-black uppercase tracking-tighter">Under Synthesis</h2>
+                <p className="text-white/30 text-xs font-black uppercase tracking-[0.2em] max-w-sm mx-auto">This professional utility is currently being engineered. System readiness expected shortly.</p>
               </div>
-              <Link href="/tools" className="btn-v btn-v-secondary">
-                ← Back to Dashboard
+              <Link href="/" className="btn-v btn-v-primary">
+                ← Return to Registry
               </Link>
             </div>
           ) : (
-            children
+            <div className="animate-slide-up">
+                {children}
+            </div>
           )}
-        </div>
+        </main>
 
-        {/* Tool Context Footer */}
-        <footer className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-8 opacity-40 hover:opacity-100 transition-opacity duration-500">
-            <div className="space-y-2">
-                <h4 className="text-[10px] font-black uppercase text-accent tracking-[0.2em]">Privacy</h4>
-                <p className="text-[11px] text-zinc-500 leading-relaxed">Processing happens strictly on your machine. No data is ever transmitted or stored.</p>
+        {/* Technical Footer */}
+        <footer className="mt-32 pt-12 border-t border-white/5 grid grid-cols-1 md:grid-cols-3 gap-12 opacity-40 hover:opacity-100 transition-opacity duration-700">
+            <div className="space-y-4">
+                <h4 className="label-tech text-white/60">Data_Isolation</h4>
+                <p className="text-[11px] font-bold text-white/30 leading-relaxed uppercase tracking-tight">Processing occurs strictly within the local environment. Zero retention protocol active. No external telemetry.</p>
             </div>
-            <div className="space-y-2">
-                <h4 className="text-[10px] font-black uppercase text-white tracking-[0.2em]">Open Source</h4>
-                <p className="text-[11px] text-zinc-500 leading-relaxed">Verified by the community. Part of the WokSpec Global Open Source Protocol.</p>
+            <div className="space-y-4">
+                <h4 className="label-tech text-white/60">Open_Blueprint</h4>
+                <p className="text-[11px] font-bold text-white/30 leading-relaxed uppercase tracking-tight">Verified by the global engineering collective. Part of the WokSpec open-source initiative.</p>
             </div>
-            <div className="space-y-2">
-                <h4 className="text-[10px] font-black uppercase text-white tracking-[0.2em]">Performance</h4>
-                <p className="text-[11px] text-zinc-500 leading-relaxed">Optimized for sub-millisecond response times using browser-native APIs.</p>
+            <div className="space-y-4">
+                <h4 className="label-tech text-white/60">Edge_Optimization</h4>
+                <p className="text-[11px] font-bold text-white/30 leading-relaxed uppercase tracking-tight">Low-latency architecture utilizing browser-native APIs for professional-grade performance.</p>
             </div>
         </footer>
       </div>
     </div>
   );
+}
+
+function ShieldCheck({ size, className }: { size: number; className?: string }) {
+    return (
+        <svg 
+            width={size} 
+            height={size} 
+            viewBox="0 0 24 24" 
+            fill="none" 
+            stroke="currentColor" 
+            strokeWidth="2.5" 
+            strokeLinecap="round" 
+            strokeLinejoin="round" 
+            className={className}
+        >
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10" />
+            <path d="m9 12 2 2 4-4" />
+        </svg>
+    );
 }

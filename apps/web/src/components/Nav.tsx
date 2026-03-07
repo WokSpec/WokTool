@@ -3,74 +3,123 @@
 import Link from 'next/link';
 import { TOOLS } from '@/lib/tools-registry';
 import CommandPalette from './CommandPalette';
-import { Search, Github } from 'lucide-react';
+import { Search, Github, Globe, Menu, X } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 const TOOL_COUNT = TOOLS.length;
 
-function openPalette() {
-  (window as any).__openToolPalette?.();
-}
-
 export default function Nav() {
+  const [scrolled, setScrolled] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 20);
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  const openPalette = () => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if ((window as any).__openToolPalette) (window as any).__openToolPalette();
+  };
+
   return (
     <>
-      <CommandPalette />
-      <nav className="sticky top-0 z-[100] w-full border-b border-white/[0.06] bg-black/60 backdrop-blur-xl">
-        <div className="mx-auto flex h-14 max-w-[1440px] items-center justify-between px-4 md:px-6">
-          {/* Left: Brand */}
-          <div className="flex items-center gap-8">
-            <Link href="/" className="flex items-center gap-2.5 transition-opacity hover:opacity-80">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-accent text-white shadow-lg shadow-accent/20">
-                <span className="text-base font-bold">W</span>
-              </div>
-              <div className="flex flex-col leading-none">
-                <span className="text-sm font-black uppercase tracking-tighter text-white">WokTool</span>
-                <span className="text-[10px] font-bold text-white/30">{TOOL_COUNT} UTILS</span>
-              </div>
-            </Link>
-
-            {/* Nav Links - Desktop */}
-            <div className="hidden items-center gap-6 md:flex">
-                <Link href="/tools" className="text-xs font-bold uppercase tracking-widest text-white/40 transition-colors hover:text-accent">Explorer</Link>
-                <a href="https://wokspec.org" target="_blank" rel="noopener noreferrer" className="text-xs font-bold uppercase tracking-widest text-white/40 transition-colors hover:text-white">WokSpec</a>
+      <div className="fixed top-0 left-0 right-0 z-[100] transition-all duration-500">
+        {/* Top Marquee Bar */}
+        <div className="bg-white text-black py-1 overflow-hidden whitespace-nowrap select-none border-b border-white">
+            <div className="flex animate-marquee-fast">
+                {[...Array(10)].map((_, i) => (
+                    <span key={i} className="text-[9px] font-black uppercase tracking-[0.3em] mx-8 flex items-center gap-2">
+                        System Online <div className="w-1 h-1 rounded-full bg-black animate-pulse" /> Live Protocols: {TOOL_COUNT} <div className="w-1 h-1 rounded-full bg-black animate-pulse" /> Edge Processing Active
+                    </span>
+                ))}
             </div>
-          </div>
-
-          {/* Center: Search Trigger */}
-          <button 
-            onClick={openPalette}
-            className="group hidden h-9 w-full max-w-[320px] items-center justify-between rounded-xl border border-white/5 bg-white/[0.03] px-3 transition-all hover:border-white/10 hover:bg-white/[0.05] lg:flex"
-          >
-            <div className="flex items-center gap-2 text-white/30 group-hover:text-white/50 transition-colors">
-              <Search size={14} />
-              <span className="text-xs font-medium">Quick search...</span>
-            </div>
-            <kbd className="flex h-5 items-center gap-1 rounded bg-black/40 px-1.5 font-mono text-[10px] font-bold text-white/20 border border-white/5">
-              <span>⌘</span>K
-            </kbd>
-          </button>
-
-          {/* Right: Actions */}
-          <div className="flex items-center gap-3">
-            <button 
-                onClick={openPalette}
-                className="flex h-9 w-9 items-center justify-center rounded-xl border border-white/5 bg-white/[0.03] transition-all hover:bg-white/[0.08] lg:hidden"
-            >
-                <Search size={16} className="text-white/40" />
-            </button>
-            
-            <a 
-                href="https://github.com/WokSpec/WokTool" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex h-9 items-center gap-2 rounded-xl bg-white text-black px-4 text-xs font-bold shadow-lg shadow-white/5 transition-all hover:-translate-y-0.5 hover:shadow-xl active:scale-95"
-            >
-                <Github size={14} />
-                <span className="hidden sm:inline">Star on GitHub</span>
-            </a>
-          </div>
         </div>
-      </nav>
+
+        <nav className={`transition-all duration-500 border-b ${scrolled ? 'bg-bg-base/80 backdrop-blur-xl border-white/10 py-3' : 'bg-transparent border-transparent py-6'}`}>
+          <div className="max-w-[1440px] mx-auto px-6 flex items-center justify-between">
+            <div className="flex items-center gap-12">
+                <Link href="/" className="group flex items-center gap-3">
+                    <div className="relative">
+                        <span className="text-xl lg:text-2xl font-black uppercase tracking-[-0.08em] text-white group-hover:text-accent transition-colors duration-500">WokTool</span>
+                        <div className="absolute -right-2 -top-1 w-1.5 h-1.5 bg-accent rounded-full scale-0 group-hover:scale-100 transition-transform duration-500" />
+                    </div>
+                    <span className="hidden lg:block h-4 w-[1px] bg-white/10" />
+                    <span className="hidden lg:block text-[9px] font-black uppercase tracking-[0.4em] text-white/20 group-hover:text-white/40 transition-colors">Industrial·Protocol</span>
+                </Link>
+
+                <div className="hidden lg:flex items-center gap-8">
+                    {['Imaging', 'Design', 'Media', 'Web3'].map(cat => (
+                        <Link key={cat} href={`/?category=${cat.toLowerCase().replace(' ', '')}`} className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 hover:text-white transition-colors">
+                            {cat}
+                        </Link>
+                    ))}
+                </div>
+            </div>
+
+            <div className="flex items-center gap-4">
+                <button 
+                    onClick={openPalette}
+                    className="hidden md:flex items-center gap-3 px-4 py-2 rounded-none border border-white/10 bg-white/5 hover:bg-white/10 hover:border-white/20 transition-all group"
+                >
+                    <Search size={14} className="text-white/40 group-hover:text-accent transition-colors" />
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40 group-hover:text-white">Quick Access</span>
+                    <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-sm bg-white/5 border border-white/10 text-[8px] font-mono text-white/20">
+                        <span className="text-white/40">⌘</span>K
+                    </div>
+                </button>
+
+                <a 
+                    href="https://github.com/WokSpec/WokTool" 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="p-2 text-white/40 hover:text-white transition-colors"
+                >
+                    <Github size={18} strokeWidth={2.5} />
+                </a>
+
+                <button 
+                    className="lg:hidden p-2 text-white/40 hover:text-white transition-colors"
+                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                >
+                    {mobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+                </button>
+            </div>
+          </div>
+        </nav>
+      </div>
+
+      {/* Mobile Menu Overlay */}
+      {mobileMenuOpen && (
+        <div className="fixed inset-0 z-[90] bg-bg-base flex flex-col pt-32 px-8 animate-in fade-in duration-300">
+            <div className="space-y-8">
+                {['Imaging', 'Design', 'Engineering', 'Media', 'Web3', 'Security'].map(cat => (
+                    <Link 
+                        key={cat} 
+                        href={`/?category=${cat.toLowerCase()}`}
+                        onClick={() => setMobileMenuOpen(false)}
+                        className="block text-4xl font-black uppercase tracking-tighter text-white hover:text-accent transition-colors"
+                    >
+                        {cat}
+                    </Link>
+                ))}
+            </div>
+            
+            <div className="mt-auto pb-12 space-y-6">
+                <div className="h-[1px] w-full bg-white/5" />
+                <div className="flex justify-between items-center text-[10px] font-black uppercase tracking-widest text-white/20">
+                    <span>© 2026 WokSpec</span>
+                    <div className="flex gap-6">
+                        <a href="https://wokspec.org" target="_blank" rel="noopener noreferrer">WokSpec.org</a>
+                        <a href="https://github.com/WokSpec/WokTool" target="_blank" rel="noopener noreferrer">Source</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+      )}
+
+      <CommandPalette />
     </>
   );
 }

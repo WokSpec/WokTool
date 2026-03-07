@@ -5,184 +5,239 @@
 @theme {
   /* ── WokTool "Industrial Premium" Palette (OKLCH) ── */
   --color-wok-void:    oklch(0% 0 0);
-  --color-wok-ink:     oklch(17.41% 0.016 257);
-  --color-wok-plum:    oklch(33.15% 0.114 316);
-  --color-wok-crimson: oklch(47.23% 0.176 19);
-  --color-wok-ember:   oklch(67.42% 0.179 48);
-  --color-wok-gold:    oklch(86.3% 0.15 86);
-  --color-wok-lime:    oklch(88.9% 0.2 115);
-  --color-wok-green:   oklch(67.5% 0.2 145);
-  --color-wok-teal:    oklch(45.1% 0.08 195);
-  --color-wok-navy:    oklch(30.2% 0.1 265);
-  --color-wok-blue:    oklch(45.5% 0.18 265);
-  --color-wok-sky:     oklch(71.8% 0.16 233);
-  --color-wok-ice:     oklch(89.2% 0.1 200);
-  --color-wok-snow:    oklch(97.3% 0.005 257);
-  --color-wok-mist:    oklch(74.5% 0.03 240);
-  --color-wok-slate:   oklch(49.2% 0.05 250);
-  --color-wok-dusk:    oklch(31.4% 0.06 260);
+  --color-wok-ink:     oklch(12% 0.01 260);
+  --color-wok-slate:   oklch(25% 0.02 260);
+  --color-wok-mist:    oklch(70% 0.02 260);
+  --color-wok-snow:    oklch(98% 0.005 260);
 
   /* ── Semantic Surfaces ── */
-  --color-bg-base:     oklch(10% 0.01 260);
-  --color-bg-subtle:   oklch(13% 0.015 260);
-  --color-bg-surface:  oklch(16% 0.02 260);
-  --color-bg-elevated: oklch(20% 0.025 260);
+  --color-bg-base:     oklch(8% 0.01 260);
+  --color-bg-subtle:   oklch(11% 0.015 260);
+  --color-bg-surface:  oklch(14% 0.02 260);
+  --color-bg-elevated: oklch(18% 0.025 260);
   
-  --color-border-subtle: oklch(100% 0 0 / 6%);
-  --color-border-base:   oklch(100% 0 0 / 12%);
-  --color-border-strong: oklch(100% 0 0 / 25%);
+  --color-border-subtle: oklch(100% 0 0 / 4%);
+  --color-border-base:   oklch(100% 0 0 / 8%);
+  --color-border-strong: oklch(100% 0 0 / 15%);
 
   /* ── Brand Accents ── */
-  --color-accent:        oklch(71.8% 0.16 233); /* Sky Blue */
-  --color-accent-strong: oklch(60% 0.2 240);
-  --color-accent-glow:   oklch(71.8% 0.16 233 / 15%);
+  --color-accent:        oklch(75% 0.15 230); /* Electric Blue */
+  --color-accent-strong: oklch(65% 0.2 230);
+  --color-accent-glow:   oklch(75% 0.15 230 / 12%);
 
-  /* ── Status ── */
-  --color-success: oklch(75% 0.18 150);
+  /* ── Functional Status ── */
+  --color-success: oklch(80% 0.18 145);
   --color-warning: oklch(85% 0.15 85);
-  --color-danger:  oklch(60% 0.2 25);
+  --color-danger:  oklch(65% 0.2 25);
 
   /* ── Typography ── */
   --font-sans:  "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-display: "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono:  "JetBrains Mono", "Fira Code", ui-monospace, monospace;
-  --font-pixel: "Press Start 2P", monospace;
 
-  /* ── Utilities ── */
-  --radius-xs: 4px;
-  --radius-sm: 8px;
-  --radius-md: 12px;
-  --radius-lg: 16px;
-  --radius-xl: 24px;
-  --radius-2xl: 32px;
+  /* ── Spacing & Radius ── */
+  --radius-xs: 2px;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 20px;
 
-  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
-  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
-  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
-  --shadow-glow: 0 0 20px 2px var(--color-accent-glow);
+  --shadow-glow: 0 0 30px 2px var(--color-accent-glow);
 
   /* ── Animations ── */
-  --animate-in:       fade-in 0.3s ease-out both;
-  --animate-out:      fade-out 0.2s ease-in both;
-  --animate-slide-up: slide-up 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
-  --animate-float:    float 6s ease-in-out infinite;
+  --animate-marquee: marquee 40s linear infinite;
+  --animate-marquee-fast: marquee 20s linear infinite;
+  --animate-in:      fade-in 0.4s cubic-bezier(0.16, 1, 0.3, 1) both;
+  --animate-slide-up: slide-up 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
 
+  @keyframes marquee {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
   @keyframes fade-in {
     from { opacity: 0; }
     to { opacity: 1; }
   }
-  @keyframes fade-out {
-    from { opacity: 1; }
-    to { opacity: 0; }
-  }
   @keyframes slide-up {
-    from { opacity: 0; transform: translateY(12px); }
+    from { opacity: 0; transform: translateY(20px); }
     to { opacity: 1; transform: translateY(0); }
   }
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
+  @keyframes zoom-in {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
   }
+  @keyframes slide-in-bottom {
+    from { opacity: 0; transform: translateY(16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+  @keyframes slide-in-right {
+    from { opacity: 0; transform: translateX(16px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slide-in-left {
+    from { opacity: 0; transform: translateX(-16px); }
+    to { opacity: 1; transform: translateX(0); }
+  }
+  @keyframes slide-in-top {
+    from { opacity: 0; transform: translateY(-16px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+}
+
+/* ── Utility Classes ── */
+@utility animate-in {
+  animation-duration: 500ms;
+  animation-fill-mode: both;
+  animation-timing-function: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@utility zoom-in-95 { animation-name: zoom-in; }
+@utility fade-in { animation-name: fade-in; }
+@utility slide-in-from-bottom-2 { animation-name: slide-in-bottom; }
+@utility slide-in-from-bottom-4 { animation-name: slide-in-bottom; }
+@utility slide-in-from-right-4 { animation-name: slide-in-right; }
+@utility slide-in-from-left-4 { animation-name: slide-in-left; }
+@utility slide-in-from-top-2 { animation-name: slide-in-top; }
+@utility slide-in-from-top-4 { animation-name: slide-in-top; }
+
+@utility bg-grid {
+  background-image: 
+    linear-gradient(to right, oklch(100% 0 0 / 2%) 1px, transparent 1px),
+    linear-gradient(to bottom, oklch(100% 0 0 / 2%) 1px, transparent 1px);
+  background-size: 60px 60px;
+}
+
+@utility text-glow {
+  text-shadow: 0 0 20px oklch(75% 0.15 230 / 30%);
+}
+
+@utility section-number {
+  @apply text-[10px] font-mono text-accent/40 mr-4;
+  content: counter(section, decimal-leading-zero);
 }
 
 /* ── Base Layer ── */
 @layer base {
   :root {
     color-scheme: dark;
-    --accent: oklch(71.8% 0.16 233);
   }
 
   * {
-    @apply border-border-subtle selection:bg-accent/20 selection:text-white;
+    @apply border-border-subtle selection:bg-accent/30 selection:text-white;
+    letter-spacing: -0.01em;
   }
 
   html {
-    @apply bg-bg-base text-white/90 antialiased scroll-smooth;
-    font-size: 15px;
+    @apply bg-bg-base text-white antialiased scroll-smooth;
+    font-size: 16px;
   }
 
   body {
-    @apply min-h-screen overflow-x-hidden selection:bg-accent/30;
+    @apply min-h-screen overflow-x-hidden;
     font-family: var(--font-sans);
   }
 
   h1, h2, h3, h4, h5, h6 {
-    @apply font-bold tracking-tight text-white;
+    @apply font-black uppercase tracking-tighter text-white;
+    line-height: 0.9;
+  }
+
+  /* ── Technical Interpuncts ── */
+  .dot-sep::after {
+    content: "·";
+    @apply mx-2 text-white/20;
   }
 
   /* ── Custom Scrollbar ── */
-  ::-webkit-scrollbar { width: 6px; height: 6px; }
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
   ::-webkit-scrollbar-track { @apply bg-transparent; }
-  ::-webkit-scrollbar-thumb { 
-    @apply bg-white/5 rounded-full transition-colors hover:bg-white/15; 
-  }
+  ::-webkit-scrollbar-thumb { @apply bg-white/10 hover:bg-accent/40 transition-colors; }
 }
 
 /* ── Component Layer ── */
 @layer components {
-  /* ── Glassmorphism ── */
-  .glass {
-    @apply bg-white/[0.03] backdrop-blur-2xl border border-white/[0.08] shadow-2xl;
-  }
-
-  /* ── Layout Primitives ── */
-  .tool-shell {
-    @apply max-w-[1400px] mx-auto px-4 sm:px-6 lg:px-8 py-12 lg:py-20 animate-in;
-  }
-
-  .tool-container {
-    @apply bg-bg-subtle border border-border-subtle rounded-3xl p-6 md:p-10 shadow-inner relative overflow-hidden;
-  }
-
-  /* ── Industrial Buttons ── */
   .btn-v {
-    @apply inline-flex items-center justify-center rounded-xl px-5 py-2.5 text-sm font-semibold transition-all active:scale-[0.97] disabled:opacity-40 disabled:pointer-events-none gap-2;
+    @apply inline-flex items-center justify-center font-black uppercase tracking-widest text-[10px] transition-all active:scale-[0.96] disabled:opacity-30 disabled:pointer-events-none gap-2 px-6 py-3 border;
   }
 
   .btn-v-primary {
-    @apply bg-white text-black hover:bg-white/90 shadow-lg shadow-white/5;
+    @apply bg-white text-black border-white hover:bg-transparent hover:text-white;
   }
 
   .btn-v-secondary {
-    @apply bg-white/5 border border-white/10 text-white hover:bg-white/10 hover:border-white/20;
+    @apply bg-transparent text-white border-white/10 hover:border-white/40 hover:bg-white/5;
   }
 
   .btn-v-accent {
-    @apply bg-accent text-black hover:bg-accent/90 shadow-lg shadow-accent/20;
+    @apply bg-accent text-black border-accent hover:bg-transparent hover:text-accent;
   }
 
-  /* ── Modern Cards ── */
   .card-v {
-    @apply relative bg-white/[0.02] border border-white/[0.05] rounded-2xl p-6 transition-all duration-300 hover:bg-white/[0.04] hover:border-white/[0.12] hover:-translate-y-1;
+    @apply relative bg-bg-subtle border border-border-base transition-all duration-500 hover:border-white/20 overflow-hidden;
   }
 
-  /* ── Form Inputs ── */
   .input-v {
-    @apply w-full bg-white/[0.03] border border-white/[0.08] rounded-xl px-4 py-2.5 text-sm transition-all focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent/40 placeholder:text-white/20;
+    @apply w-full bg-bg-surface border border-border-strong px-5 py-4 text-sm transition-all focus:outline-none focus:border-accent/60 placeholder:text-white/10 font-medium;
   }
-}
 
-/* ── Utility Classes ── */
-@utility bg-grid {
-  background-image: 
-    linear-gradient(to right, oklch(100% 0 0 / 3%) 1px, transparent 1px),
-    linear-gradient(to bottom, oklch(100% 0 0 / 3%) 1px, transparent 1px);
-  background-size: 40px 40px;
-}
+  .marquee-container {
+    @apply flex overflow-hidden select-none gap-12 py-4 border-y border-white/[0.03] bg-white/[0.01];
+  }
 
-@utility bg-mesh {
-  background: 
-    radial-gradient(at 0% 0%, oklch(71.8% 0.16 233 / 5%) 0px, transparent 50%),
-    radial-gradient(at 100% 100%, oklch(60% 0.2 316 / 5%) 0px, transparent 50%);
-}
+  .marquee-content {
+    @apply flex shrink-0 justify-around min-w-full gap-12 animate-marquee;
+  }
 
-@utility render-pixel {
-  image-rendering: pixelated;
-}
+  .label-tech {
+    @apply text-[9px] font-black uppercase tracking-[0.25em] text-white/30;
+  }
 
-@utility text-glow {
-  text-shadow: 0 0 15px oklch(71.8% 0.16 233 / 40%);
-}
+  /* ── Command Palette ── */
+  .cmd-backdrop {
+    @apply fixed inset-0 z-[200] bg-black/80 backdrop-blur-sm flex items-start justify-center pt-[15vh] px-6;
+  }
 
-@utility border-glow {
-  box-shadow: 0 0 20px -5px oklch(71.8% 0.16 233 / 30%);
+  .cmd-panel {
+    @apply w-full max-w-2xl bg-bg-base border border-white/10 shadow-2xl animate-in zoom-in-95 duration-200;
+  }
+
+  .cmd-header {
+    @apply flex items-center px-6 py-5 gap-4;
+  }
+
+  .cmd-input {
+    @apply flex-1 bg-transparent border-none text-sm font-black uppercase tracking-widest text-white placeholder:text-white/10 focus:outline-none focus:ring-0;
+  }
+
+  .cmd-list {
+    @apply max-h-[400px] overflow-y-auto border-t border-white/5;
+  }
+
+  .cmd-item {
+    @apply w-full flex items-center gap-4 px-6 py-4 text-left transition-colors border-b border-white/[0.02] hover:bg-white/[0.02];
+  }
+
+  .cmd-item.--active {
+    @apply bg-white text-black border-white;
+  }
+
+  .cmd-item.--active .cmd-item-name { @apply text-black; }
+  .cmd-item.--active .cmd-item-desc { @apply text-black/60; }
+  .cmd-item.--active .cmd-item-tag { @apply text-black/40; }
+
+  .cmd-item-name {
+    @apply text-[13px] font-black uppercase tracking-tight text-white;
+  }
+
+  .cmd-item-desc {
+    @apply text-[11px] font-bold text-white/30 truncate uppercase tracking-tight;
+  }
+
+  .cmd-item-tag {
+    @apply ml-auto text-[9px] font-black uppercase tracking-widest text-white/20;
+  }
+
+  .cmd-footer {
+    @apply px-6 py-3 border-t border-white/5 flex items-center gap-6 text-[9px] font-black uppercase tracking-widest text-white/20;
+  }
 }

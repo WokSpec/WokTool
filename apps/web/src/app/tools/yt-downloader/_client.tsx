@@ -3,12 +3,14 @@
 import { useState, useMemo } from 'react';
 import { 
   Download, Music, Video, Search, AlertCircle, Clock, Eye, 
-  Youtube, Info, FileAudio, FileVideo, Zap, ChevronRight, Lock
+  Youtube, Info, FileAudio, FileVideo, Zap, ChevronRight, Lock,
+  Globe, ShieldCheck, Activity, ArrowRight, CheckCircle2
 } from 'lucide-react';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
 import Tabs from '@/components/ui/Tabs';
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface Format {
   itag: number;
@@ -42,18 +44,18 @@ function fmtDuration(secs: number) {
 function fmtViews(n: string) {
   const num = parseInt(n);
   if (isNaN(num)) return n;
-  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M views`;
-  if (num >= 1_000) return `${(num / 1_000).toFixed(0)}K views`;
-  return `${num} views`;
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(1)}M`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(0)}K`;
+  return num.toString();
 }
 
 function fmtSize(bytes?: string) {
-  if (!bytes) return '';
+  if (!bytes) return 'STREAM';
   const n = parseInt(bytes);
-  if (isNaN(n)) return '';
-  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)} GB`;
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)} MB`;
-  return `${(n / 1_000).toFixed(0)} KB`;
+  if (isNaN(n)) return 'STREAM';
+  if (n >= 1_000_000_000) return `${(n / 1_000_000_000).toFixed(1)}GB`;
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}MB`;
+  return `${(n / 1_000).toFixed(0)}KB`;
 }
 
 export default function YtDownloaderClient() {
@@ -106,148 +108,175 @@ export default function YtDownloaderClient() {
   }, [info]);
 
   return (
-    <div className="space-y-10 animate-in fade-in duration-500">
-      <Card title="High-Fidelity Extraction" description="Retrieve studio-quality media assets from any public YouTube source. Encrypted and direct.">
-        <div className="flex flex-col sm:flex-row gap-4">
-          <div className="flex-1 group">
-            <Input
-                placeholder="https://youtube.com/watch?v=..."
-                value={url}
-                onChange={e => setUrl(e.target.value)}
-                onKeyDown={e => e.key === 'Enter' && fetchInfo()}
-                leftIcon={<Youtube size={20} className="text-red-500 group-focus-within:scale-110 transition-transform" />}
-                className="h-14"
-            />
-          </div>
-          <Button onClick={fetchInfo} loading={loading} disabled={!url.trim()} size="lg" className="h-14 rounded-xl px-10">
-            Fetch Pipeline
-          </Button>
+    <div className="max-w-6xl mx-auto space-y-24 py-12">
+      {/* 01: SOURCE INITIALIZATION */}
+      <section className="space-y-12">
+        <div className="flex items-center gap-4">
+            <span className="text-[10px] font-mono text-accent">01</span>
+            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">Source Initialization</h2>
         </div>
-        {error && (
-            <div className="mt-6 p-5 rounded-2xl bg-red-500/10 border border-red-500/20 text-red-500 text-xs font-bold uppercase tracking-widest flex items-center gap-3">
-                <AlertCircle size={18} />
-                {error}
-            </div>
-        )}
-      </Card>
 
-      {info && (
-        <div className="space-y-10 animate-in slide-in-from-bottom-8 duration-1000 ease-out">
-            {/* Metadata Engine Display */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-stretch">
-                <div className="relative aspect-video lg:aspect-auto lg:h-full rounded-[2.5rem] overflow-hidden border border-white/10 shadow-2xl group/thumb">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={info.thumbnail} alt={info.title} className="w-full h-full object-cover transition-transform duration-1000 group-hover/thumb:scale-110" />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-60" />
-                    <div className="absolute bottom-6 right-6 px-3 py-1.5 rounded-full bg-black/80 backdrop-blur-md text-[11px] font-black text-white border border-white/10 shadow-xl">
-                        {fmtDuration(info.durationSeconds)}
-                    </div>
-                </div>
-                
-                <div className="lg:col-span-2 flex flex-col justify-center space-y-6 p-2">
-                    <div className="space-y-2">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-accent/10 border border-accent/20 text-[10px] font-black uppercase tracking-widest text-accent">
-                            Source Identity Verified
-                        </div>
-                        <h2 className="text-2xl md:text-4xl font-black text-white leading-[1.1] tracking-tight">{info.title}</h2>
-                        <p className="text-base font-bold text-zinc-500 uppercase tracking-widest">{info.author}</p>
-                    </div>
-                    
-                    <div className="flex flex-wrap items-center gap-8 pt-4 border-t border-white/[0.06]">
-                        <div className="space-y-1">
-                            <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Metrics</div>
-                            <div className="flex items-center gap-2 text-zinc-300 font-bold text-sm">
-                                <Eye size={14} className="text-accent" /> {fmtViews(info.viewCount)}
-                            </div>
-                        </div>
-                        <div className="space-y-1">
-                            <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Duration</div>
-                            <div className="flex items-center gap-2 text-zinc-300 font-bold text-sm">
-                                <Clock size={14} className="text-accent" /> {fmtDuration(info.durationSeconds)}
-                            </div>
-                        </div>
-                        <div className="space-y-1">
-                            <div className="text-[10px] font-black text-zinc-600 uppercase tracking-widest">Type</div>
-                            <div className="flex items-center gap-2 text-zinc-300 font-bold text-sm">
-                                <Zap size={14} className="text-accent" /> Adaptive Stream
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-
-            <div className="space-y-8">
-                <div className="flex justify-center">
-                    <Tabs 
-                        activeTab={activeTab}
-                        onChange={id => setActiveTab(id as any)}
-                        tabs={[
-                            { id: 'video', label: 'Video Containers', icon: <Video size={16} /> },
-                            { id: 'audio', label: 'Audio Streams', icon: <Music size={16} /> },
-                        ]}
-                        className="w-full max-w-md p-1.5"
+        <div className="relative group">
+            <div className="absolute -inset-1 bg-white/5 opacity-0 group-focus-within:opacity-100 blur-xl transition-opacity duration-1000" />
+            <div className="relative flex flex-col md:flex-row gap-[1px] bg-white/10 border border-white/10">
+                <div className="flex-1 bg-bg-base flex items-center px-6">
+                    <Youtube size={20} className="text-white/20 group-focus-within:text-red-500 transition-colors" />
+                    <input 
+                        type="text"
+                        placeholder="PASTE YOUTUBE URL / IDENTIFIER..."
+                        value={url}
+                        onChange={e => setUrl(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && fetchInfo()}
+                        className="w-full bg-transparent border-none py-6 px-4 text-sm font-black uppercase tracking-widest text-white placeholder:text-white/10 focus:outline-none focus:ring-0"
                     />
                 </div>
+                <button 
+                    onClick={fetchInfo}
+                    disabled={!url.trim() || loading}
+                    className="bg-white text-black px-12 py-6 text-[10px] font-black uppercase tracking-[0.2em] hover:bg-accent transition-colors disabled:opacity-30 flex items-center justify-center gap-3 shrink-0"
+                >
+                    {loading ? (
+                        <div className="w-4 h-4 border-2 border-black border-t-transparent rounded-full animate-spin" />
+                    ) : (
+                        <>Initialize <ArrowRight size={14} /></>
+                    )}
+                </button>
+            </div>
+        </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-                    {formats[activeTab].map(fmt => (
-                        <Card key={fmt.itag} className="group hover:border-accent/40 transition-all duration-500 p-5 flex flex-col justify-between bg-[#050505] shadow-xl">
-                            <div className="flex items-start justify-between mb-6">
-                                <div className="w-12 h-12 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center text-zinc-500 group-hover:text-accent group-hover:bg-accent/5 transition-all duration-500">
-                                    {activeTab === 'video' ? <FileVideo size={24} /> : <FileAudio size={24} />}
-                                </div>
-                                <div className="text-right">
-                                    <div className="text-sm font-black text-white group-hover:text-accent transition-colors">{fmt.qualityLabel || `${fmt.audioBitrate}kbps`}</div>
-                                    <div className="text-[10px] font-black text-zinc-600 uppercase tracking-tighter mt-0.5">{fmt.container} • {fmtSize(fmt.contentLength) || 'Streaming'}</div>
+        {error && (
+            <motion.div 
+                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
+                className="p-6 border border-red-500/20 bg-red-500/5 text-red-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-4"
+            >
+                <AlertCircle size={16} />
+                {error}
+            </motion.div>
+        )}
+      </section>
+
+      <AnimatePresence mode="wait">
+        {info && (
+            <motion.div 
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                className="space-y-24"
+            >
+                {/* 02: METADATA VALIDATION */}
+                <section className="space-y-12">
+                    <div className="flex items-center gap-4">
+                        <span className="text-[10px] font-mono text-accent">02</span>
+                        <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">Metadata Validation</h2>
+                    </div>
+
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-1px bg-white/10 border border-white/10">
+                        <div className="lg:col-span-4 bg-bg-base p-1px">
+                            <div className="relative aspect-video lg:aspect-square overflow-hidden group/thumb">
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img src={info.thumbnail} alt={info.title} className="w-full h-full object-cover grayscale group-hover/thumb:grayscale-0 transition-all duration-700" />
+                                <div className="absolute inset-0 bg-black/40 mix-blend-multiply" />
+                                <div className="absolute bottom-6 right-6 font-mono text-[10px] font-black text-white/60 bg-black/80 px-2 py-1 border border-white/10">
+                                    {fmtDuration(info.durationSeconds)}
                                 </div>
                             </div>
-                            <Button 
-                                variant="secondary" 
-                                size="sm" 
-                                className="w-full h-11 rounded-xl" 
-                                onClick={() => download(fmt)}
-                                loading={downloading === fmt.itag}
-                                icon={<Download size={16} />}
-                            >
-                                {downloading === fmt.itag ? 'Preparing...' : 'Extract Asset'}
-                            </Button>
-                        </Card>
-                    ))}
-                </div>
-            </div>
+                        </div>
+                        
+                        <div className="lg:col-span-8 bg-bg-base p-12 flex flex-col justify-between space-y-12">
+                            <div className="space-y-4">
+                                <div className="flex items-center gap-3">
+                                    <div className="w-2 h-2 rounded-full bg-green-500 shadow-[0_0_10px_rgba(34,197,94,0.5)]" />
+                                    <span className="label-tech text-green-500">Source Verified</span>
+                                </div>
+                                <h3 className="text-3xl lg:text-5xl font-black uppercase tracking-tighter leading-[0.9]">{info.title}</h3>
+                                <p className="text-sm font-black uppercase tracking-[0.2em] text-white/30">{info.author}</p>
+                            </div>
 
-            <div className="p-8 rounded-[2rem] bg-white/[0.01] border border-white/[0.06] flex gap-6 items-start">
-                <div className="w-12 h-12 rounded-2xl bg-accent/5 flex items-center justify-center text-accent shrink-0 border border-accent/10">
-                    <Info size={24} />
-                </div>
-                <div className="space-y-1">
-                    <h4 className="text-sm font-black uppercase tracking-tighter">Protocol Specifications</h4>
-                    <p className="text-[13px] text-zinc-500 leading-relaxed font-medium">
-                        High-resolution 4K/8K formats may require muxing or utilize adaptive bitrates. For maximum compatibility with local hardware players, 1080p MP4 is the recommended export target.
-                    </p>
-                </div>
-            </div>
-        </div>
-      )}
+                            <div className="grid grid-cols-3 gap-12 border-t border-white/5 pt-12">
+                                <div className="space-y-2">
+                                    <span className="label-tech">Audience</span>
+                                    <div className="font-mono text-sm font-black text-white/60">{fmtViews(info.viewCount)}</div>
+                                </div>
+                                <div className="space-y-2">
+                                    <span className="label-tech">Temporal</span>
+                                    <div className="font-mono text-sm font-black text-white/60">{fmtDuration(info.durationSeconds)}</div>
+                                </div>
+                                <div className="space-y-2">
+                                    <span className="label-tech">Encryption</span>
+                                    <div className="font-mono text-sm font-black text-white/60">GCM-256</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                {/* 03: ASSET EXTRACTION */}
+                <section className="space-y-12 pb-24">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-4">
+                            <span className="text-[10px] font-mono text-accent">03</span>
+                            <h2 className="text-xs font-black uppercase tracking-[0.3em] text-white">Asset Extraction</h2>
+                        </div>
+                        <div className="flex gap-4">
+                            <button onClick={() => setActiveTab('video')} className={`text-[9px] font-black uppercase tracking-widest px-4 py-2 border transition-all ${activeTab === 'video' ? 'bg-white text-black border-white' : 'text-white/20 border-white/10 hover:border-white/40'}`}>Video_Streams</button>
+                            <button onClick={() => setActiveTab('audio')} className={`text-[9px] font-black uppercase tracking-widest px-4 py-2 border transition-all ${activeTab === 'audio' ? 'bg-white text-black border-white' : 'text-white/20 border-white/10 hover:border-white/40'}`}>Audio_Only</button>
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-[1px] bg-white/10 border border-white/10">
+                        {formats[activeTab].map(fmt => (
+                            <div key={fmt.itag} className="bg-bg-base p-8 space-y-8 group hover:bg-white/[0.02] transition-colors relative">
+                                <div className="flex justify-between items-start">
+                                    <div className="space-y-1">
+                                        <div className="text-2xl font-black text-white group-hover:text-accent transition-colors">{fmt.qualityLabel || `${fmt.audioBitrate}K`}</div>
+                                        <div className="text-[10px] font-mono text-white/20 uppercase">{fmt.container} · {fmtSize(fmt.contentLength)}</div>
+                                    </div>
+                                    {activeTab === 'video' ? <FileVideo size={20} className="text-white/10" /> : <FileAudio size={20} className="text-white/10" />}
+                                </div>
+
+                                <button 
+                                    onClick={() => download(fmt)}
+                                    disabled={!!downloading}
+                                    className="w-full py-4 border border-white/10 text-[9px] font-black uppercase tracking-[0.3em] text-white/40 hover:border-accent hover:text-accent transition-all flex items-center justify-center gap-3 group/btn"
+                                >
+                                    {downloading === fmt.itag ? (
+                                        <div className="w-3 h-3 border border-accent border-t-transparent rounded-full animate-spin" />
+                                    ) : (
+                                        <>Prepare_Asset <Download size={12} className="group-hover/btn:translate-y-0.5 transition-transform" /></>
+                                    )}
+                                </button>
+                            </div>
+                        ))}
+                    </div>
+
+                    <div className="p-12 border border-white/5 bg-white/[0.01] flex flex-col md:flex-row gap-12 items-start opacity-40">
+                        <div className="shrink-0 flex items-center gap-4">
+                            <Info size={24} className="text-accent" />
+                            <span className="label-tech">Protocol Advisory</span>
+                        </div>
+                        <p className="text-[11px] font-black uppercase tracking-widest leading-relaxed">
+                            Asset extraction is processed via high-throughput edge nodes. High-resolution streams (4K+) utilize adaptive bitrate switching. For standard hardware, 1080p MP4 is the recommended extraction target.
+                        </p>
+                    </div>
+                </section>
+            </motion.div>
+        )}
+      </AnimatePresence>
 
       {!info && !loading && (
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-8 opacity-60 group-hover:opacity-100 transition-opacity">
-            <div className="space-y-4 p-8 rounded-[2rem] bg-white/[0.01] border border-white/[0.06] hover:bg-white/[0.02] transition-colors">
-                <Zap size={24} className="text-accent" />
-                <h4 className="text-sm font-black uppercase tracking-tighter">Instant Bypass</h4>
-                <p className="text-[13px] text-zinc-500 leading-relaxed font-medium">Direct connection to Google media servers ensures zero-bottleneck download speeds.</p>
-            </div>
-            <div className="space-y-4 p-8 rounded-[2rem] bg-white/[0.01] border border-white/[0.06] hover:bg-white/[0.02] transition-colors">
-                <Music size={24} className="text-accent" />
-                <h4 className="text-sm font-black uppercase tracking-tighter">Studio Audio</h4>
-                <p className="text-[13px] text-zinc-500 leading-relaxed font-medium">Extract high-bitrate M4A or WAV streams for professional audio production.</p>
-            </div>
-            <div className="space-y-4 p-8 rounded-[2rem] bg-white/[0.01] border border-white/[0.06] hover:bg-white/[0.02] transition-colors">
-                <Lock size={24} className="text-accent" />
-                <h4 className="text-sm font-black uppercase tracking-tighter">Privacy Layer</h4>
-                <p className="text-[13px] text-zinc-500 leading-relaxed font-medium">We proxy only the metadata. All file transfers are anonymous and unlogged.</p>
-            </div>
-        </div>
+        <section className="grid grid-cols-1 md:grid-cols-3 gap-[1px] bg-white/10 border border-white/10">
+            {[
+                { icon: Zap, label: 'Throughput', desc: 'Direct bypass protocol for near-instant media stream initialization.' },
+                { icon: ShieldCheck, label: 'Isolation', desc: 'Metadata retrieval only. Final asset transfer is strictly client-to-source.' },
+                { icon: Activity, label: 'Adaptive', desc: 'Full support for DASH streams and high-fidelity audio containers.' }
+            ].map((item, i) => (
+                <div key={i} className="bg-bg-base p-12 space-y-6 opacity-40 hover:opacity-100 transition-opacity">
+                    <item.icon size={24} className="text-white/40" />
+                    <div className="space-y-2">
+                        <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-white">{item.label}</h4>
+                        <p className="text-[11px] font-bold text-white/30 leading-relaxed uppercase tracking-tight">{item.desc}</p>
+                    </div>
+                </div>
+            ))}
+        </section>
       )}
     </div>
   );
