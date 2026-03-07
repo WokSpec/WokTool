@@ -2,6 +2,10 @@
 
 import { useState, useRef, useCallback, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
+import Dropzone from '@/components/ui/Dropzone';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import Slider from '@/components/ui/Slider';
 
 type Status = 'idle' | 'loading-model' | 'processing' | 'done' | 'error';
 
@@ -12,7 +16,6 @@ function BackgroundRemoverToolInner() {
   const [error, setError] = useState<string | null>(null);
   const [progress, setProgress] = useState(0);
   const [comparePos, setComparePos] = useState(50);
-  const inputRef = useRef<HTMLInputElement>(null);
   const lastFileRef = useRef<File | null>(null);
 
   const processFile = useCallback(async (file: File) => {
@@ -30,7 +33,6 @@ function BackgroundRemoverToolInner() {
     setStatus('loading-model');
 
     try {
-      // Dynamic import so WASM only loads when tool is used
       const { removeBackground } = await import('@imgly/background-removal');
       setStatus('processing');
       setProgress(30);
@@ -46,31 +48,10 @@ function BackgroundRemoverToolInner() {
       setStatus('done');
     } catch (err) {
       console.error(err);
-      setError(
-        err instanceof Error
-          ? err.message
-          : 'Background removal failed. Try a different image.'
-      );
+      setError(err instanceof Error ? err.message : 'Background removal failed.');
       setStatus('error');
     }
   }, []);
-
-  const onFileChange = useCallback(
-    (e: React.ChangeEvent<HTMLInputElement>) => {
-      const f = e.target.files?.[0];
-      if (f) processFile(f);
-    },
-    [processFile]
-  );
-
-  const onDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      const f = e.dataTransfer.files?.[0];
-      if (f) processFile(f);
-    },
-    [processFile]
-  );
 
   const reset = () => {
     setStatus('idle');
@@ -79,19 +60,8 @@ function BackgroundRemoverToolInner() {
     setError(null);
     setProgress(0);
     setComparePos(50);
-    if (inputRef.current) inputRef.current.value = '';
   };
 
-  const handleRetry = useCallback(() => {
-    if (lastFileRef.current) {
-      processFile(lastFileRef.current);
-    } else {
-      reset();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [processFile]);
-
-  // Pre-load image from WAP processImage action (imageUrl query param)
   const searchParams = useSearchParams();
   const preloadUrl = searchParams.get('imageUrl');
 
@@ -104,114 +74,154 @@ function BackgroundRemoverToolInner() {
         processFile(new File([blob], `image.${ext}`, { type: blob.type }));
       })
       .catch(() => setError('Failed to load image from URL.'));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preloadUrl]);
+  }, [preloadUrl, processFile]);
 
   return (
-    <div className="bgr-tool">
-      {/* Upload Zone */}
+    <div className="space-y-8 animate-in fade-in duration-500">
       {status === 'idle' && (
-        <div
-          className="tool-dropzone"
-          onDragOver={e => e.preventDefault()}
-          onDrop={onDrop}
-          onClick={() => inputRef.current?.click()}
-          role="button"
-          tabIndex={0}
-          onKeyDown={e => e.key === 'Enter' && inputRef.current?.click()}
-        >
-          <p className="tool-dropzone-text">Drop an image here or click to browse</p>
-          <p className="tool-dropzone-sub">PNG · JPG · WebP · AVIF · BMP · TIFF</p>
-          <p className="tool-dropzone-private">Processed entirely in your browser — nothing uploaded</p>
-          <input
-            ref={inputRef}
-            type="file"
-            accept="image/*"
-            className="tool-file-input-hidden"
-            onChange={onFileChange}
-          />
-        </div>
+        <Dropzone 
+            onFileSelect={processFile}
+            label="Drop an image to remove background"
+            description="Supports PNG, JPG, WebP, AVIF. 100% Client-side."
+        />
       )}
 
-      {/* Loading / Processing */}
       {(status === 'loading-model' || status === 'processing') && (
-        <div className="tool-processing">
-          <p className="tool-processing-label">
-            {status === 'loading-model'
-              ? 'Loading AI model (one-time download ~3MB)…'
-              : 'Removing background…'}
-          </p>
-          <div className="tool-progress-bar">
-            <div className="tool-progress-fill" style={{ width: `${progress}%` }} />
-          </div>
-          <p className="tool-processing-sub">{progress}%</p>
-        </div>
-      )}
-
-      {/* Error */}
-      {status === 'error' && (
-        <div style={{ border: '1px solid var(--danger-border)', background: 'var(--danger-bg)', borderRadius: '10px', padding: '1rem' }}>
-          <p style={{ fontSize: '0.875rem', color: 'var(--danger)', marginBottom: '0.625rem' }}>{error}</p>
-          <button
-            onClick={handleRetry}
-            style={{ fontSize: '0.75rem', color: 'var(--danger)', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: '0.25rem', padding: 0 }}
-          >
-            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3.5"/></svg>
-            Try again
-          </button>
-        </div>
-      )}
-
-      {/* Result */}
-      {status === 'done' && resultUrl && originalUrl && (
-        <div className="bgr-result">
-          {/* Comparison slider */}
-          <div style={{ position: 'relative', overflow: 'hidden', borderRadius: '10px', border: '1px solid var(--border)', aspectRatio: '1', maxWidth: '480px', margin: '0 auto' }}>
-            {/* Original (behind) */}
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={originalUrl} alt="Original" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'contain' }} />
-            {/* Result (clipped left side) */}
-            <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', width: `${comparePos}%` }}>
-              {/* checkered bg for transparency */}
-              <div style={{ position: 'absolute', inset: 0, backgroundImage: 'repeating-conic-gradient(#ccc 0% 25%, white 0% 50%)', backgroundSize: '16px 16px', opacity: 0.4 }} />
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={resultUrl} alt="Background removed" style={{ position: 'absolute', inset: 0, width: `${10000 / comparePos}%`, height: '100%', objectFit: 'contain' }} />
-            </div>
-            {/* Slider input */}
-            <input
-              type="range" min={0} max={100} value={comparePos}
-              onChange={e => setComparePos(Number(e.target.value))}
-              style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', opacity: 0, cursor: 'ew-resize', zIndex: 10, margin: 0 }}
-            />
-            {/* Divider line */}
-            <div style={{ position: 'absolute', top: 0, bottom: 0, left: `${comparePos}%`, width: '2px', background: 'white', boxShadow: '0 0 6px var(--overlay-50)', pointerEvents: 'none', transform: 'translateX(-50%)' }}>
-              <div style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', width: '28px', height: '28px', background: 'white', borderRadius: '50%', boxShadow: '0 2px 8px var(--overlay-40)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '12px', fontWeight: 700, color: '#374151' }}>
-                  {/* SVG handle icon replacing raw symbol */}
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round"><path d="M8 7l-4 4 4 4"/><path d="M16 7l4 4-4 4"/></svg>
+        <div className="flex flex-col items-center justify-center py-20 space-y-6">
+            <div className="relative w-24 h-24">
+                <div className="absolute inset-0 border-4 border-accent/20 rounded-full" />
+                <div 
+                    className="absolute inset-0 border-4 border-accent rounded-full border-t-transparent animate-spin" 
+                    style={{ animationDuration: '1s' }}
+                />
+                <div className="absolute inset-0 flex items-center justify-center font-bold text-white">
+                    {progress}%
                 </div>
             </div>
-            {/* Labels */}
-            <span style={{ position: 'absolute', top: '8px', left: '8px', fontSize: '0.7rem', background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: '4px', padding: '2px 6px', pointerEvents: 'none' }}>Original</span>
-            <span style={{ position: 'absolute', top: '8px', right: '8px', fontSize: '0.7rem', background: 'rgba(0,0,0,0.55)', color: '#fff', borderRadius: '4px', padding: '2px 6px', pointerEvents: 'none' }}>Removed</span>
-          </div>
-
-          <div className="bgr-actions" style={{ marginTop: '1.25rem' }}>
-            <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.375rem' }}>
-              <a
-                href={resultUrl}
-                download="background-removed.png"
-                className="btn-primary"
-                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.625rem 1.5rem', fontSize: '0.9375rem' }}
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                Download PNG
-              </a>
-              <span style={{ fontSize: '0.7rem', color: 'var(--text-muted)', opacity: 0.7 }}>Saved as PNG with transparent background</span>
+            <div className="text-center">
+                <h3 className="text-lg font-bold text-white mb-1">
+                    {status === 'loading-model' ? 'Loading AI Model...' : 'Removing Background...'}
+                </h3>
+                <p className="text-sm text-white/40 max-w-xs">
+                    {status === 'loading-model' 
+                        ? 'Fetching neural network (~3MB). This only happens once.' 
+                        : 'Using on-device AI to isolate your subject.'}
+                </p>
             </div>
-            <button className="btn-ghost" onClick={reset}>
-              Process Another
-            </button>
-          </div>
+        </div>
+      )}
+
+      {status === 'error' && (
+        <Card className="border-danger/20 bg-danger/5">
+            <div className="flex flex-col items-center gap-4 py-4">
+                <div className="w-12 h-12 rounded-full bg-danger/20 flex items-center justify-center text-danger">
+                    <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                </div>
+                <div className="text-center">
+                    <h4 className="text-white font-bold">Something went wrong</h4>
+                    <p className="text-sm text-white/50 mt-1">{error}</p>
+                </div>
+                <div className="flex gap-3">
+                    <Button variant="secondary" onClick={() => lastFileRef.current && processFile(lastFileRef.current)}>Try Again</Button>
+                    <Button variant="ghost" onClick={reset}>Choose Another Image</Button>
+                </div>
+            </div>
+        </Card>
+      )}
+
+      {status === 'done' && resultUrl && originalUrl && (
+        <div className="space-y-8 animate-in slide-in-from-bottom-4 duration-500">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Result Area */}
+                <div className="lg:col-span-2 space-y-4">
+                    <div className="relative aspect-square md:aspect-video rounded-3xl overflow-hidden border border-white/10 bg-[#0a0a0a] shadow-2xl group">
+                        {/* Background Checkerboard (Target) */}
+                        <div className="absolute inset-0" 
+                            style={{ 
+                                backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)',
+                                backgroundSize: '20px 20px',
+                                backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
+                            }} 
+                        />
+                        
+                        {/* Original (Behind) */}
+                        <img src={originalUrl} alt="Original" className="absolute inset-0 w-full h-full object-contain" />
+                        
+                        {/* Result (Clipped) */}
+                        <div className="absolute inset-0 overflow-hidden" style={{ width: `${comparePos}%` }}>
+                             <div className="absolute inset-0" 
+                                style={{ 
+                                    backgroundImage: 'linear-gradient(45deg, #1a1a1a 25%, transparent 25%), linear-gradient(-45deg, #1a1a1a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1a1a1a 75%), linear-gradient(-45deg, transparent 75%, #1a1a1a 75%)',
+                                    backgroundSize: '20px 20px',
+                                    backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
+                                }} 
+                            />
+                            <img 
+                                src={resultUrl} 
+                                alt="Processed" 
+                                className="absolute inset-0 h-full object-contain" 
+                                style={{ width: `${(100 / comparePos) * 100}%`, maxWidth: 'none' }}
+                            />
+                        </div>
+
+                        {/* Divider */}
+                        <div className="absolute top-0 bottom-0 pointer-events-none z-20" style={{ left: `${comparePos}%`, width: '2px', background: 'white' }}>
+                            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-10 h-10 rounded-full bg-white shadow-2xl flex items-center justify-center">
+                                <svg className="w-6 h-6 text-black" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}><path strokeLinecap="round" strokeLinejoin="round" d="M8 7l-4 4 4 4m8-8l4 4-4 4" /></svg>
+                            </div>
+                        </div>
+
+                        {/* Invisible range for interaction */}
+                        <input 
+                            type="range" 
+                            min="0" max="100" 
+                            value={comparePos} 
+                            onChange={e => setComparePos(Number(e.target.value))}
+                            className="absolute inset-0 w-full h-full opacity-0 cursor-ew-resize z-30"
+                        />
+
+                        {/* Labels */}
+                        <div className="absolute bottom-4 left-4 z-40 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-white uppercase tracking-widest border border-white/10">Removed</div>
+                        <div className="absolute bottom-4 right-4 z-40 bg-black/60 backdrop-blur-md px-3 py-1 rounded-full text-[10px] font-bold text-white uppercase tracking-widest border border-white/10">Original</div>
+                    </div>
+                </div>
+
+                {/* Sidebar Actions */}
+                <div className="space-y-6">
+                    <Card title="Download Result">
+                        <div className="space-y-4">
+                            <Button 
+                                href={resultUrl} 
+                                download="background-removed.png" 
+                                className="w-full" 
+                                size="lg"
+                                icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>}
+                            >
+                                Download PNG
+                            </Button>
+                            <p className="text-center text-[10px] text-white/30 uppercase font-black tracking-tighter">Transparency preserved</p>
+                        </div>
+                    </Card>
+
+                    <Card title="Tools">
+                        <Button variant="secondary" className="w-full" onClick={reset}>
+                            Process Another
+                        </Button>
+                    </Card>
+
+                    <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5 flex gap-4 items-start">
+                        <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent shrink-0">
+                            <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" /></svg>
+                        </div>
+                        <div>
+                            <h4 className="text-sm font-bold text-white/90 mb-1">Privacy Guarantee</h4>
+                            <p className="text-xs text-white/40 leading-relaxed">
+                                Images are processed strictly on your machine using WASM. We never see your data.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
       )}
     </div>

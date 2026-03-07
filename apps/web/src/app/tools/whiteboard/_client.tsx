@@ -1,20 +1,15 @@
 'use client';
+
 import dynamic from 'next/dynamic';
 
 const TldrawCanvas = dynamic(
-  async () => {
-    // @ts-ignore – tldraw/tldraw.css lacks TS declarations but the file exists
-    await import('tldraw/tldraw.css');
-    const { Tldraw } = await import('tldraw');
-    return function TldrawWrapper() {
-      return <Tldraw persistenceKey="woktool-whiteboard" />;
-    };
-  },
+  () => import('./_tldraw-wrapper'),
   {
     ssr: false,
     loading: () => (
-      <div style={{ width: '100%', height: '75vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#71717a', fontSize: '0.9rem', background: 'var(--bg-surface, #111)' }}>
-        Loading whiteboard…
+      <div className="w-full h-full flex flex-col items-center justify-center gap-4 text-white/20 bg-[#0a0a0a]">
+        <div className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+        <span className="text-xs font-bold uppercase tracking-widest">Initializing Canvas...</span>
       </div>
     ),
   }
@@ -22,8 +17,14 @@ const TldrawCanvas = dynamic(
 
 export default function WhiteboardClient() {
   return (
-    <div style={{ width: '100%', height: '75vh', borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border-subtle, rgba(255,255,255,0.04))' }}>
-      <TldrawCanvas />
+    <div className="relative w-full h-[75vh] min-h-[500px] rounded-3xl overflow-hidden border border-white/10 bg-[#0a0a0a] shadow-2xl animate-in fade-in duration-700">
+        <TldrawCanvas />
+        
+        <div className="absolute top-4 left-4 z-50 pointer-events-none">
+            <div className="px-3 py-1 rounded-full bg-black/40 backdrop-blur-md border border-white/10 text-[10px] font-black text-white/40 uppercase tracking-widest">
+                Infinite Canvas • Auto-saving
+            </div>
+        </div>
     </div>
   );
 }

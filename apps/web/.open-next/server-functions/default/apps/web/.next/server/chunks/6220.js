@@ -1,1 +1,1 @@
-"use strict";exports.id=6220,exports.ids=[6220],exports.modules={36220:s=>{s.exports={}}};
+"use strict";exports.id=6220,exports.ids=[6220],exports.modules={36220:s=>{s.exports={env:{wasm:{proxy:!1,numThreads:1,initTimeout:0}}}}};

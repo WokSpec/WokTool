@@ -1,6 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Input from '@/components/ui/Input';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import ColorSwatch from '@/components/ui/ColorSwatch';
 
 // ── Color conversion helpers ──────────────────────────────────────────────
 
@@ -16,7 +20,7 @@ function hexToRgb(hex: string): [number, number, number] | null {
 }
 
 function rgbToHex(r: number, g: number, b: number): string {
-  return '#' + [r, g, b].map(v => v.toString(16).padStart(2, '0')).join('');
+  return '#' + [r, g, b].map(v => Math.round(v).toString(16).padStart(2, '0')).join('').toLowerCase();
 }
 
 function rgbToHsl(r: number, g: number, b: number): [number, number, number] {
@@ -49,14 +53,12 @@ function rgbToHsv(r: number, g: number, b: number): [number, number, number] {
 }
 
 function parseInput(raw: string): [number, number, number] | null {
-  const s = raw.trim();
-  if (s.startsWith('#') || /^[0-9a-fA-F]{3,6}$/.test(s)) {
+  const s = raw.trim().toLowerCase();
+  if (s.startsWith('#') || /^[0-9a-f]{3,6}$/.test(s)) {
     return hexToRgb(s.startsWith('#') ? s : '#' + s);
   }
-  // rgb(...)
   const rgb = s.match(/^rgb\s*\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)$/i);
   if (rgb) return [parseInt(rgb[1]), parseInt(rgb[2]), parseInt(rgb[3])];
-  // hsl(...)
   const hsl = s.match(/^hsl\s*\(\s*(\d+)\s*,\s*(\d+)%?\s*,\s*(\d+)%?\s*\)$/i);
   if (hsl) {
     const h = parseInt(hsl[1]) / 360, sv = parseInt(hsl[2]) / 100, l = parseInt(hsl[3]) / 100;
@@ -71,7 +73,6 @@ function parseInput(raw: string): [number, number, number] | null {
     };
     return [Math.round(hue2rgb(h + 1/3) * 255), Math.round(hue2rgb(h) * 255), Math.round(hue2rgb(h - 1/3) * 255)];
   }
-  // Named colors via canvas
   if (typeof document !== 'undefined') {
     const ctx = document.createElement('canvas').getContext('2d');
     if (ctx) {
@@ -85,23 +86,8 @@ function parseInput(raw: string): [number, number, number] | null {
   return null;
 }
 
-function CopyButton({ text }: { text: string }) {
-  const [copied, setCopied] = useState(false);
-  const copy = () => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    });
-  };
-  return (
-    <button className="color-conv__copy-btn" onClick={copy}>
-      {copied ? 'Copied!' : 'Copy'}
-    </button>
-  );
-}
-
 export default function ColorConverterTool() {
-  const [input, setInput] = useState('#3b82f6');
+  const [input, setInput] = useState('#818cf8');
 
   const rgb = parseInput(input);
   const hex  = rgb ? rgbToHex(...rgb) : null;
@@ -113,88 +99,97 @@ export default function ColorConverterTool() {
     { label: 'RGB',  value: `rgb(${rgb[0]}, ${rgb[1]}, ${rgb[2]})` },
     { label: 'HSL',  value: `hsl(${hsl[0]}, ${hsl[1]}%, ${hsl[2]}%)` },
     { label: 'HSV',  value: `hsv(${hsv[0]}, ${hsv[1]}%, ${hsv[2]}%)` },
+    { label: 'CSS',  value: `color: ${hex};` },
   ] : null;
 
   return (
-    <div className="color-conv">
-      <div className="color-conv__input-row">
-        <div className="color-conv__input-wrap">
-          <label className="tool-label">Color value</label>
-          <input
-            className="color-conv__input"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            placeholder="#3b82f6 or rgb(59,130,246) or blue"
-            spellCheck={false}
-          />
-          <div className="color-conv__hint">Accepts HEX, RGB, HSL, or named colors</div>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 items-start">
+        {/* Left: Input */}
+        <div className="space-y-6">
+            <Card title="Color Input" description="Enter any color format: HEX, RGB, HSL, or CSS names.">
+                <div className="flex gap-4 items-end">
+                    <div className="flex-1">
+                        <Input 
+                            value={input}
+                            onChange={e => setInput(e.target.value)}
+                            placeholder="#818cf8 or blue"
+                            className="font-mono"
+                        />
+                    </div>
+                    <div className="w-12 h-12 rounded-xl border border-white/10 shadow-inner flex-shrink-0" style={{ background: hex || 'transparent' }} />
+                </div>
+                {!rgb && input.trim() && (
+                    <p className="mt-2 text-xs text-danger font-medium animate-pulse">Invalid color format</p>
+                )}
+            </Card>
+
+            <div className="grid grid-cols-3 gap-3">
+                {['#ff4757', '#2ed573', '#1e90ff', '#ffa502', '#818cf8', '#a29bfe'].map(c => (
+                    <button 
+                        key={c} 
+                        onClick={() => setInput(c)}
+                        className="h-10 rounded-lg border border-white/5 transition-transform hover:scale-105 active:scale-95"
+                        style={{ background: c }}
+                    />
+                ))}
+            </div>
         </div>
-        {hex && (
-          <div className="color-conv__swatch" style={{ background: hex }} title={hex} />
-        )}
+
+        {/* Right: Results */}
+        <div className="space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 px-1">Converted Formats</h3>
+            {formats ? (
+                <div className="grid gap-3">
+                    {formats.map((f) => (
+                        <div key={f.label} className="group relative flex items-center justify-between p-4 rounded-xl bg-surface-raised border border-white/5 hover:border-white/10 transition-all">
+                            <div className="flex items-center gap-4">
+                                <span className="w-10 text-[10px] font-bold text-white/30 uppercase tracking-wider">{f.label}</span>
+                                <code className="text-sm font-bold text-white/80">{f.value}</code>
+                            </div>
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => navigator.clipboard.writeText(f.value)}
+                            >
+                                Copy
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+            ) : (
+                <div className="h-[280px] rounded-2xl border-2 border-dashed border-white/5 bg-white/[0.01] flex flex-col items-center justify-center text-center p-8 opacity-40">
+                    <p className="text-sm">Enter a valid color to see results</p>
+                </div>
+            )}
+        </div>
       </div>
 
-      {!rgb && input.trim() && (
-        <div className="color-conv__error">Could not parse color. Try #hex, rgb(...), hsl(...), or a CSS color name.</div>
-      )}
-
-      {formats && (
-        <div className="color-conv__results">
-          {formats.map(f => (
-            <div key={f.label} className="color-conv__row">
-              <span className="color-conv__label">{f.label}</span>
-              <span className="color-conv__value">{f.value}</span>
-              <CopyButton text={f.value} />
+      {hex && (
+        <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 px-1">Visual Preview</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="col-span-2 h-40 rounded-2xl flex items-center justify-center text-4xl font-bold shadow-2xl" style={{ background: hex, color: (hsl?.[2] ?? 0) > 60 ? '#000' : '#fff' }}>
+                    Aa
+                </div>
+                <div className="space-y-3">
+                    <div className="p-4 rounded-xl border border-white/5 bg-white/[0.02] flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg" style={{ background: hex, opacity: 0.1 }} />
+                        <span className="text-xs font-medium text-white/60">Subtle Background</span>
+                    </div>
+                    <div className="p-4 rounded-xl border border-white/5 bg-white/[0.02] flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full border-4" style={{ borderColor: hex }} />
+                        <span className="text-xs font-medium text-white/60">Border / Stroke</span>
+                    </div>
+                    <div className="p-4 rounded-xl border border-white/5 bg-white/[0.02] flex items-center gap-3">
+                        <span className="text-xl font-bold" style={{ color: hex }}>Text</span>
+                        <span className="text-xs font-medium text-white/60 ml-auto">Foreground Color</span>
+                    </div>
+                </div>
             </div>
-          ))}
         </div>
       )}
-
-      <style>{`
-        .color-conv { display: flex; flex-direction: column; gap: 20px; }
-        .color-conv__input-row { display: flex; gap: 16px; align-items: flex-end; }
-        .color-conv__input-wrap { flex: 1; display: flex; flex-direction: column; gap: 6px; }
-        .color-conv__input {
-          padding: 10px 12px; font-size: 14px; font-family: 'Menlo','Consolas',monospace;
-          background: var(--bg); color: var(--text); border: 1px solid var(--surface-border);
-          border-radius: 6px; outline: none; width: 100%;
-        }
-        .color-conv__input:focus { border-color: var(--accent); }
-        .color-conv__hint { font-size: 11px; color: var(--text-muted); }
-        .color-conv__swatch {
-          width: 64px; height: 64px; border-radius: 8px;
-          border: 1px solid var(--surface-border); flex-shrink: 0;
-        }
-        .color-conv__error {
-          padding: 10px 14px; background: var(--danger-bg);
-          border: 1px solid var(--danger-border); border-radius: 6px;
-          color: var(--danger); font-size: 13px;
-        }
-        .color-conv__results {
-          background: var(--bg-surface); border: 1px solid var(--surface-border);
-          border-radius: 8px; overflow: hidden;
-        }
-        .color-conv__row {
-          display: flex; align-items: center; gap: 12px;
-          padding: 12px 14px; border-bottom: 1px solid var(--surface-border);
-        }
-        .color-conv__row:last-child { border-bottom: none; }
-        .color-conv__label {
-          font-size: 11px; font-weight: 700; width: 36px; color: var(--text-muted);
-          text-transform: uppercase; letter-spacing: 0.05em; flex-shrink: 0;
-        }
-        .color-conv__value {
-          flex: 1; font-size: 14px; font-family: 'Menlo','Consolas',monospace;
-          color: var(--text-secondary);
-        }
-        .color-conv__copy-btn {
-          padding: 4px 12px; font-size: 11px; cursor: pointer;
-          background: var(--surface-hover); color: var(--text-muted);
-          border: 1px solid var(--surface-border); border-radius: 4px;
-          transition: background 0.12s; flex-shrink: 0;
-        }
-        .color-conv__copy-btn:hover { background: var(--surface-hover); }
-      `}</style>
     </div>
   );
 }

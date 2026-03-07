@@ -1,198 +1,100 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import Card from '@/components/ui/Card';
+import Textarea from '@/components/ui/Textarea';
+import Button from '@/components/ui/Button';
+import CodeBlock from '@/components/ui/CodeBlock';
 
-type JsonValue = string | number | boolean | null | JsonObject | JsonArray;
-type JsonObject = { [key: string]: JsonValue };
-type JsonArray = JsonValue[];
-
-function inferType(value: JsonValue, depth = 0): string {
-  if (value === null) return 'null';
-  if (typeof value === 'boolean') return 'boolean';
-  if (typeof value === 'number') return Number.isInteger(value) ? 'number' : 'number';
-  if (typeof value === 'string') return 'string';
-  if (Array.isArray(value)) {
-    if (value.length === 0) return 'unknown[]';
-    const itemTypes = [...new Set(value.map(v => inferType(v, depth)))];
-    const itemType = itemTypes.length === 1 ? itemTypes[0] : itemTypes.join(' | ');
-    return `${itemType}[]`;
-  }
-  if (typeof value === 'object') {
-    return generateInterface(value as JsonObject, depth);
-  }
-  return 'unknown';
-}
-
-let interfaceCounter = 0;
-const seen = new Map<string, string>();
-
-function generateInterface(obj: JsonObject, depth = 0): string {
-  const indent = '  '.repeat(depth + 1);
-  const fields = Object.entries(obj).map(([key, val]) => {
-    const safeKey = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key) ? key : `"${key}"`;
-    const type = inferType(val, depth + 1);
-    const optional = val === null || val === undefined ? '?' : '';
-    return `${indent}${safeKey}${optional}: ${type};`;
-  }).join('\n');
-  return `{\n${fields}\n${'  '.repeat(depth)}}`;
-}
-
-function jsonToTypes(json: string): string {
-  interfaceCounter = 0;
-  seen.clear();
-
-  let parsed: JsonValue;
-  try {
-    parsed = JSON.parse(json);
-  } catch {
-    return '// Invalid JSON — please check your input.';
-  }
-
-  const lines: string[] = [];
-
-  function processValue(value: JsonValue, name: string): string {
-    if (value === null) return 'null';
-    if (typeof value !== 'object' || Array.isArray(value)) {
-      return inferType(value);
+function jsonToTs(obj: any, interfaceName = 'RootInterface'): string {
+  let interfaces = '';
+  
+  function transform(o: any, name: string): string {
+    if (o === null) return 'null';
+    if (Array.isArray(o)) {
+      if (o.length === 0) return 'any[]';
+      const types = Array.from(new Set(o.map(item => typeof item === 'object' && item !== null ? transform(item, name + 'Item') : typeof item))).join(' | ');
+      return `(${types})[]`;
     }
-
-    const obj = value as JsonObject;
-    const interfaceName = name.charAt(0).toUpperCase() + name.slice(1);
-    const fields = Object.entries(obj).map(([key, val]) => {
-      let fieldType: string;
-      if (val !== null && typeof val === 'object' && !Array.isArray(val)) {
-        const childName = key.charAt(0).toUpperCase() + key.slice(1);
-        fieldType = processValue(val, childName);
-      } else if (Array.isArray(val)) {
-        if (val.length > 0 && typeof val[0] === 'object' && val[0] !== null) {
-          const childName = key.charAt(0).toUpperCase() + key.slice(1).replace(/s$/, '');
-          const itemType = processValue(val[0], childName);
-          fieldType = `${itemType}[]`;
-        } else if (val.length === 0) {
-          fieldType = 'unknown[]';
-        } else {
-          const types = [...new Set(val.map(v => typeof v === 'object' ? (v === null ? 'null' : 'object') : typeof v))];
-          fieldType = types.length === 1 ? `${types[0]}[]` : `(${types.join(' | ')})[]`;
+    if (typeof o === 'object') {
+      let res = `interface ${name} {\n`;
+      for (const [key, val] of Object.entries(o)) {
+        const type = val === null ? 'null' : Array.isArray(val) ? transform(val, key.charAt(0).toUpperCase() + key.slice(1)) : typeof val === 'object' ? key.charAt(0).toUpperCase() + key.slice(1) : typeof val;
+        res += `  ${key}: ${type};\n`;
+        if (typeof val === 'object' && val !== null && !Array.isArray(val)) {
+          interfaces += transform(val, key.charAt(0).toUpperCase() + key.slice(1)) + '\n\n';
         }
-      } else {
-        fieldType = inferType(val);
       }
-
-      const safeKey = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(key) ? key : `"${key}"`;
-      const optional = val === null ? '?' : '';
-      return `  ${safeKey}${optional}: ${fieldType};`;
-    }).join('\n');
-
-    lines.push(`export interface ${interfaceName} {\n${fields}\n}`);
-    return interfaceName;
-  }
-
-  if (Array.isArray(parsed)) {
-    if (parsed.length > 0 && typeof parsed[0] === 'object' && parsed[0] !== null) {
-      processValue(parsed[0], 'Item');
-      lines.push(`\nexport type Root = Item[];`);
-    } else {
-      const itemType = parsed.length > 0 ? inferType(parsed[0]) : 'unknown';
-      lines.push(`export type Root = ${itemType}[];`);
+      res += '}';
+      return res;
     }
-  } else if (typeof parsed === 'object' && parsed !== null) {
-    processValue(parsed, 'Root');
-  } else {
-    lines.push(`export type Root = ${inferType(parsed)};`);
+    return typeof o;
   }
 
-  return lines.join('\n\n');
+  const root = transform(obj, interfaceName);
+  return (interfaces + root).trim();
 }
-
-const SAMPLE_JSON = `{
-  "id": 1,
-  "name": "Alice",
-  "email": "alice@example.com",
-  "age": 30,
-  "isActive": true,
-  "score": 9.8,
-  "tags": ["admin", "user"],
-  "address": {
-    "street": "123 Main St",
-    "city": "Anytown",
-    "zip": "12345"
-  },
-  "metadata": null
-}`;
 
 export default function JsonToTypesTool() {
-  const [input, setInput] = useState(SAMPLE_JSON);
+  const [input, setInput] = useState('{\n  "id": 1,\n  "name": "WokTool",\n  "active": true,\n  "tags": ["utility", "free"],\n  "author": {\n    "name": "WokSpec",\n    "github": "https://github.com/WokSpec"\n  }\n}');
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
-  const [copied, setCopied] = useState(false);
 
-  useEffect(() => {
-    if (!input.trim()) { setOutput(''); setError(''); return; }
-    const result = jsonToTypes(input.trim());
-    if (result.startsWith('//')) { setError(result); setOutput(''); }
-    else { setOutput(result); setError(''); }
-  }, [input]);
-
-  const copy = () => {
-    navigator.clipboard.writeText(output).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
+  const convert = () => {
+    setError('');
+    try {
+      const parsed = JSON.parse(input);
+      setOutput(jsonToTs(parsed));
+    } catch (e: any) {
+      setError(`Invalid JSON: ${e.message}`);
+      setOutput('');
+    }
   };
 
   return (
-    <div className="jt-tool">
-      <div className="jt-tool__panes">
-        <div className="jt-tool__pane">
-          <div className="jt-tool__pane-header">JSON Input</div>
-          <textarea
-            className="jt-tool__textarea"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            spellCheck={false}
-            placeholder='Paste your JSON here…'
-          />
-          {error && <div className="jt-tool__error">{error}</div>}
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-6">
+            <div className="space-y-2">
+                <div className="flex justify-between items-center px-1">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-white/40">JSON Sample</h3>
+                    <Button variant="ghost" size="sm" onClick={() => { setInput(''); setOutput(''); }} className="h-7 text-[10px]">Clear</Button>
+                </div>
+                <Textarea 
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    placeholder="Paste JSON here..."
+                    className="min-h-[350px] font-mono text-xs"
+                    spellCheck={false}
+                />
+            </div>
+            <Button onClick={convert} className="w-full" size="lg" disabled={!input.trim()}>
+                Generate TypeScript Interfaces
+            </Button>
+            {error && (
+                <div className="p-4 rounded-xl bg-danger/10 border border-danger/20 text-danger text-xs font-mono">
+                    {error}
+                </div>
+            )}
         </div>
 
-        <div className="jt-tool__pane">
-          <div className="jt-tool__pane-header">
-            TypeScript Types
-            {output && (
-              <button className="btn btn-sm" onClick={copy}>{copied ? '✓ Copied' : 'Copy'}</button>
+        <div className="space-y-6">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 px-1">Generated Types</h3>
+            {output ? (
+                <div className="space-y-4 animate-in slide-in-from-right-4 duration-500">
+                    <CodeBlock code={output} language="typescript" maxHeight="450px" />
+                    <Button variant="primary" className="w-full" size="lg" onClick={() => navigator.clipboard.writeText(output)}>
+                        Copy Definition
+                    </Button>
+                </div>
+            ) : (
+                <div className="h-[400px] rounded-3xl border-2 border-dashed border-white/5 bg-white/[0.01] flex flex-col items-center justify-center text-center p-12 opacity-20">
+                    <div className="w-16 h-16 rounded-2xl bg-white/[0.03] flex items-center justify-center mb-4 text-2xl">🔷</div>
+                    <p className="text-sm">TS interfaces will appear here</p>
+                </div>
             )}
-          </div>
-          <pre className="jt-tool__output">{output || (error ? '' : '// Output will appear here…')}</pre>
         </div>
       </div>
-
-      <style>{`
-        .jt-tool { display: flex; flex-direction: column; gap: 12px; }
-        .jt-tool__panes { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-        @media (max-width: 700px) { .jt-tool__panes { grid-template-columns: 1fr; } }
-        .jt-tool__pane {
-          background: var(--bg-surface); border: 1px solid var(--surface-border);
-          border-radius: 8px; overflow: hidden; display: flex; flex-direction: column;
-        }
-        .jt-tool__pane-header {
-          padding: 8px 12px; background: var(--bg); border-bottom: 1px solid var(--surface-border);
-          font-size: 12px; font-weight: 600; color: var(--text-secondary);
-          display: flex; justify-content: space-between; align-items: center;
-        }
-        .jt-tool__textarea {
-          flex: 1; padding: 14px; font-size: 13px; font-family: 'Menlo','Consolas',monospace;
-          background: var(--bg-surface); color: var(--text); border: none; outline: none;
-          resize: none; min-height: 420px;
-        }
-        .jt-tool__output {
-          padding: 14px; font-size: 13px; font-family: 'Menlo','Consolas',monospace;
-          color: var(--text); white-space: pre-wrap; word-break: break-word;
-          overflow-y: auto; min-height: 420px; margin: 0;
-        }
-        .jt-tool__error { padding: 8px 12px; font-size: 12px; color: #f87171; background: rgba(248,113,113,0.08); border-top: 1px solid var(--surface-border); }
-        .btn.btn-sm { padding: 4px 10px; font-size: 11px; cursor: pointer; background: var(--surface-raised); border: 1px solid var(--surface-border); color: var(--text); border-radius: 4px; }
-        .btn.btn-sm:hover { background: var(--surface-hover); }
-      `}</style>
     </div>
   );
 }

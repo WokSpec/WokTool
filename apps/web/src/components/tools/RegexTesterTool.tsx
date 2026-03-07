@@ -1,54 +1,114 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Textarea from '@/components/ui/Textarea';
+import Button from '@/components/ui/Button';
 
 export default function RegexTesterTool() {
-  const [pattern, setPattern] = useState('');
+  const [pattern, setPattern] = useState('\\b\\w{5,}\\b');
   const [flags, setFlags] = useState('gi');
-  const [input, setInput] = useState('The quick brown fox jumps over the lazy dog');
-  const [result, setResult] = useState<{ matches: string[]; count: number; error?: string } | null>(null);
+  const [input, setInput] = useState('The quick brown fox jumps over the lazy dog. Programming is amazing!');
 
-  function test() {
+  const result = useMemo(() => {
+    if (!pattern) return null;
     try {
       const re = new RegExp(pattern, flags);
       const matches = [...input.matchAll(re)].map(m => m[0]);
-      setResult({ matches, count: matches.length });
+      return { matches, count: matches.length };
     } catch (e: any) {
-      setResult({ matches: [], count: 0, error: e.message });
+      return { error: e.message };
     }
-  }
+  }, [pattern, flags, input]);
 
   return (
-    <div className="tool-section">
-      <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: '200px' }}>
-          <label style={{ display: 'block', fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '0.375rem' }}>Pattern</label>
-          <input value={pattern} onChange={e => setPattern(e.target.value)} placeholder="\\b\\w+\\b" style={{ width: '100%', background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.5rem 0.875rem', color: 'var(--text-primary)', fontFamily: 'monospace', fontSize: '0.9375rem', outline: 'none' }} />
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left: Configuration */}
+        <div className="space-y-6">
+            <Card title="Regex Pattern" description="Define your regular expression and flags.">
+                <div className="space-y-4">
+                    <Input 
+                        label="Pattern"
+                        value={pattern}
+                        onChange={e => setPattern(e.target.value)}
+                        placeholder="\b\w+\b"
+                        className="font-mono text-accent"
+                        leftIcon={<span className="text-white/20">/</span>}
+                        rightIcon={<span className="text-white/20">/</span>}
+                    />
+                    <Input 
+                        label="Flags"
+                        value={flags}
+                        onChange={e => setFlags(e.target.value)}
+                        placeholder="gi"
+                        className="font-mono"
+                        helper="g (global), i (insensitive), m (multiline)"
+                    />
+                </div>
+            </Card>
+
+            {result && !('error' in result) && (
+                <div className="p-6 rounded-3xl bg-accent/5 border border-accent/10">
+                    <div className="flex justify-between items-center mb-2">
+                        <span className="text-[10px] font-black uppercase text-white/20 tracking-widest">Match Statistics</span>
+                        <span className="text-xs font-bold text-accent">{result.count} Found</span>
+                    </div>
+                    <div className="h-2 w-full bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full bg-accent transition-all duration-500" style={{ width: result.count > 0 ? '100%' : '0%' }} />
+                    </div>
+                </div>
+            )}
         </div>
-        <div>
-          <label style={{ display: 'block', fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '0.375rem' }}>Flags</label>
-          <input value={flags} onChange={e => setFlags(e.target.value)} placeholder="gi" style={{ width: '80px', background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.5rem 0.875rem', color: 'var(--text-primary)', fontFamily: 'monospace', fontSize: '0.9375rem', outline: 'none' }} />
+
+        {/* Right: Input & Matches */}
+        <div className="lg:col-span-2 space-y-6">
+            <div className="space-y-2">
+                <div className="flex justify-between items-center px-1">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-white/40">Test String</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setInput('')} className="h-7 text-[10px]">Clear</Button>
+                </div>
+                <Textarea 
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    placeholder="Enter text to test your regex against..."
+                    className="min-h-[200px] font-mono text-sm leading-relaxed"
+                />
+            </div>
+
+            <div className="space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 px-1">Results</h3>
+                {result ? (
+                    'error' in result ? (
+                        <div className="p-4 rounded-xl bg-danger/10 border border-danger/20 text-danger text-xs font-mono">
+                            {result.error}
+                        </div>
+                    ) : (
+                        <Card className="bg-[#0d0d0d] border-white/10">
+                            {result.matches.length > 0 ? (
+                                <div className="flex flex-wrap gap-2">
+                                    {result.matches.map((m, i) => (
+                                        <code key={i} className="px-2 py-1 rounded bg-accent/10 border border-accent/20 text-accent text-xs font-bold transition-all hover:scale-105">
+                                            {m}
+                                        </code>
+                                    ))}
+                                </div>
+                            ) : (
+                                <div className="py-8 text-center text-white/20 text-sm italic">
+                                    No matches found for the current pattern.
+                                </div>
+                            )}
+                        </Card>
+                    )
+                ) : (
+                    <div className="h-32 rounded-3xl border-2 border-dashed border-white/5 flex items-center justify-center text-white/20 text-sm">
+                        Enter a pattern to see matches
+                    </div>
+                )}
+            </div>
         </div>
       </div>
-      <label style={{ display: 'block', fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '0.375rem' }}>Test string</label>
-      <textarea value={input} onChange={e => setInput(e.target.value)} rows={4} style={{ width: '100%', background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.75rem', color: 'var(--text-primary)', fontSize: '0.9375rem', outline: 'none', resize: 'vertical', fontFamily: 'monospace' }} />
-      <button onClick={test} className="btn btn-primary" style={{ marginTop: '0.875rem', padding: '0.5rem 1.25rem' }}>Test Pattern</button>
-      {result && (
-        <div style={{ marginTop: '1rem', padding: '1rem', border: '1px solid var(--border)', borderRadius: '8px', background: 'var(--surface-card)' }}>
-          {result.error ? (
-            <p style={{ color: 'var(--danger)', fontFamily: 'monospace', fontSize: '0.875rem' }}>Error: {result.error}</p>
-          ) : (
-            <>
-              <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', marginBottom: '0.75rem' }}>{result.count} match{result.count !== 1 ? 'es' : ''} found</p>
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.375rem' }}>
-                {result.matches.map((m, i) => (
-                  <code key={i} style={{ padding: '0.2rem 0.5rem', background: 'var(--accent-subtle)', border: '1px solid var(--accent-glow)', borderRadius: '4px', fontSize: '0.8125rem', color: 'var(--purple)' }}>{m}</code>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      )}
     </div>
   );
 }

@@ -1,6 +1,10 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Textarea from '@/components/ui/Textarea';
+import Card from '@/components/ui/Card';
+import CodeBlock from '@/components/ui/CodeBlock';
+import Button from '@/components/ui/Button';
 
 function base64urlDecode(str: string): string {
   try {
@@ -18,14 +22,6 @@ function base64urlDecode(str: string): string {
   }
 }
 
-function prettyJson(str: string): string {
-  try {
-    return JSON.stringify(JSON.parse(str), null, 2);
-  } catch {
-    return str;
-  }
-}
-
 function decodeJwt(token: string) {
   const parts = token.trim().split('.');
   if (parts.length !== 3) return null;
@@ -33,149 +29,139 @@ function decodeJwt(token: string) {
   const headerStr  = base64urlDecode(headerB64);
   const payloadStr = base64urlDecode(payloadB64);
   if (!headerStr || !payloadStr) return null;
-  let header:  Record<string, unknown> | null = null;
-  let payload: Record<string, unknown> | null = null;
-  try { header  = JSON.parse(headerStr); } catch { /* ignore */ }
-  try { payload = JSON.parse(payloadStr); } catch { /* ignore */ }
+  
+  let header: any = null;
+  let payload: any = null;
+  try { header  = JSON.parse(headerStr); } catch {}
+  try { payload = JSON.parse(payloadStr); } catch {}
+  
   return { header, payload, signature: sig, headerStr, payloadStr };
-}
-
-function expInfo(payload: Record<string, unknown> | null) {
-  if (!payload) return null;
-  const exp = payload['exp'];
-  const iat = payload['iat'];
-  if (typeof exp !== 'number') return null;
-  const expDate = new Date(exp * 1000);
-  const iatDate = typeof iat === 'number' ? new Date(iat * 1000) : null;
-  const expired = expDate < new Date();
-  return { expDate, iatDate, expired };
 }
 
 export default function JwtDebuggerTool() {
   const [token, setToken] = useState('');
-  const [copied, setCopied] = useState<string | null>(null);
-
   const decoded = useMemo(() => (token.trim() ? decodeJwt(token) : null), [token]);
-  const exp = useMemo(() => expInfo(decoded?.payload ?? null), [decoded]);
 
-  const copy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text).then(() => {
-      setCopied(key);
-      setTimeout(() => setCopied(null), 1500);
-    });
-  };
+  const expInfo = useMemo(() => {
+    if (!decoded?.payload?.exp) return null;
+    const exp = decoded.payload.exp;
+    const date = new Date(exp * 1000);
+    const expired = date < new Date();
+    return { date, expired };
+  }, [decoded]);
 
   return (
-    <div className="jwt-tool">
-      <div className="jwt-tool__input-wrap">
-        <label className="tool-label">Paste JWT token</label>
-        <textarea
-          className="jwt-tool__textarea"
-          rows={4}
-          value={token}
-          onChange={e => setToken(e.target.value)}
-          placeholder="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIxMjM0..."
-          spellCheck={false}
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="space-y-2">
+        <label className="text-xs font-bold uppercase tracking-widest text-white/40 px-1">Encoded Token</label>
+        <Textarea 
+            value={token}
+            onChange={e => setToken(e.target.value)}
+            placeholder="Paste your JWT here (header.payload.signature)"
+            className="min-h-[120px] font-mono text-sm leading-relaxed"
+            spellCheck={false}
         />
       </div>
 
       {token.trim() && !decoded && (
-        <div className="jwt-tool__error">Invalid JWT format — expected three dot-separated base64url segments.</div>
-      )}
-
-      {decoded && (
-        <div className="jwt-tool__sections">
-          {/* Header */}
-          <div className="jwt-tool__section">
-            <div className="jwt-tool__section-header">
-              <span className="jwt-tool__section-label jwt-tool__section-label--header">Header</span>
-              <button className="jwt-tool__copy-btn" onClick={() => copy(prettyJson(decoded.headerStr), 'header')}>
-                {copied === 'header' ? 'Copied!' : 'Copy'}
-              </button>
-            </div>
-            <pre className="jwt-tool__code">{prettyJson(decoded.headerStr)}</pre>
-          </div>
-
-          {/* Payload */}
-          <div className="jwt-tool__section">
-            <div className="jwt-tool__section-header">
-              <span className="jwt-tool__section-label jwt-tool__section-label--payload">Payload</span>
-              {exp && (
-                <span className={`jwt-tool__exp ${exp.expired ? 'jwt-tool__exp--expired' : 'jwt-tool__exp--valid'}`}>
-                  {exp.expired ? 'Expired' : 'Valid'} · exp {exp.expDate.toLocaleString()}
-                  {exp.iatDate ? ` · iat ${exp.iatDate.toLocaleString()}` : ''}
-                </span>
-              )}
-              <button className="jwt-tool__copy-btn" onClick={() => copy(prettyJson(decoded.payloadStr), 'payload')}>
-                {copied === 'payload' ? 'Copied!' : 'Copy'}
-              </button>
-            </div>
-            <pre className="jwt-tool__code">{prettyJson(decoded.payloadStr)}</pre>
-          </div>
-
-          {/* Signature */}
-          <div className="jwt-tool__section">
-            <div className="jwt-tool__section-header">
-              <span className="jwt-tool__section-label jwt-tool__section-label--sig">Signature</span>
-              <span className="jwt-tool__sig-note">Signature cannot be verified without the secret key — decode only.</span>
-            </div>
-            <pre className="jwt-tool__code jwt-tool__code--sig">{decoded.signature}</pre>
-          </div>
+        <div className="p-4 rounded-xl bg-danger/10 border border-danger/20 text-danger text-sm font-medium">
+            Invalid JWT format. Expected 3 base64url-encoded parts separated by dots.
         </div>
       )}
 
-      <style>{`
-        .jwt-tool { display: flex; flex-direction: column; gap: 20px; }
-        .jwt-tool__input-wrap { display: flex; flex-direction: column; gap: 6px; }
-        .jwt-tool__textarea {
-          padding: 10px 12px; font-size: 12px; font-family: 'Menlo','Consolas',monospace;
-          line-height: 1.5; background: var(--bg); color: var(--text);
-          border: 1px solid var(--surface-border); border-radius: 6px;
-          outline: none; resize: vertical; width: 100%; word-break: break-all;
-        }
-        .jwt-tool__textarea:focus { border-color: #818cf8; }
-        .jwt-tool__error {
-          padding: 10px 14px; background: var(--danger-bg);
-          border: 1px solid var(--danger-border); border-radius: 6px;
-          color: var(--danger); font-size: 13px;
-        }
-        .jwt-tool__sections { display: flex; flex-direction: column; gap: 14px; }
-        .jwt-tool__section {
-          background: var(--bg-surface); border: 1px solid var(--surface-border);
-          border-radius: 8px; overflow: hidden;
-        }
-        .jwt-tool__section-header {
-          display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
-          padding: 8px 14px; border-bottom: 1px solid var(--surface-border);
-          background: var(--surface-card);
-        }
-        .jwt-tool__section-label {
-          font-size: 11px; font-weight: 700; padding: 2px 8px; border-radius: 4px;
-          text-transform: uppercase; letter-spacing: 0.05em;
-        }
-        .jwt-tool__section-label--header  { background: rgba(96,165,250,0.12); color: #60a5fa; }
-        .jwt-tool__section-label--payload { background: var(--success-bg); color: var(--success); }
-        .jwt-tool__section-label--sig     { background: var(--danger-bg); color: var(--danger); }
-        .jwt-tool__exp {
-          font-size: 11px; padding: 2px 7px; border-radius: 4px; margin-left: auto;
-        }
-        .jwt-tool__exp--valid   { background: var(--success-bg); color: var(--success); }
-        .jwt-tool__exp--expired { background: var(--danger-bg);  color: var(--danger); }
-        .jwt-tool__copy-btn {
-          margin-left: auto; padding: 3px 10px; font-size: 11px; cursor: pointer;
-          background: var(--surface-hover); color: var(--text-muted);
-          border: 1px solid var(--surface-border); border-radius: 4px;
-          transition: background 0.12s;
-        }
-        .jwt-tool__copy-btn:hover { background: var(--surface-hover); }
-        .jwt-tool__sig-note { font-size: 11px; color: var(--text-muted); }
-        .jwt-tool__code {
-          padding: 14px; font-size: 12px; font-family: 'Menlo','Consolas',monospace;
-          line-height: 1.6; color: var(--text-secondary); margin: 0;
-          overflow: auto; white-space: pre-wrap; word-break: break-all;
-        }
-        .jwt-tool__code--sig { color: var(--danger); }
-      `}</style>
+      {decoded && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in slide-in-from-bottom-4 duration-500">
+            {/* Decoded Sections */}
+            <div className="space-y-6">
+                <Card className="p-0 overflow-hidden border-white/10">
+                    <div className="px-4 py-2 bg-blue-500/10 border-b border-white/5 flex justify-between items-center">
+                        <span className="text-[10px] font-black uppercase text-blue-400 tracking-tighter">Header: Algorithm & Token Type</span>
+                        <span className="text-[10px] font-mono text-white/20">JSON</span>
+                    </div>
+                    <div className="p-4 bg-[#0d0d0d]">
+                        <CodeBlock code={JSON.stringify(decoded.header, null, 2)} language="json" maxHeight="200px" />
+                    </div>
+                </Card>
+
+                <Card className="p-0 overflow-hidden border-white/10">
+                    <div className="px-4 py-2 bg-success/10 border-b border-white/5 flex justify-between items-center">
+                        <span className="text-[10px] font-black uppercase text-success tracking-tighter">Payload: Data & Claims</span>
+                        {expInfo && (
+                            <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                                expInfo.expired ? 'bg-danger/20 text-danger' : 'bg-success/20 text-success'
+                            }`}>
+                                {expInfo.expired ? 'Expired' : 'Valid'}
+                            </span>
+                        )}
+                    </div>
+                    <div className="p-4 bg-[#0d0d0d]">
+                        <CodeBlock code={JSON.stringify(decoded.payload, null, 2)} language="json" maxHeight="400px" />
+                    </div>
+                </Card>
+
+                <Card className="p-0 overflow-hidden border-white/10">
+                    <div className="px-4 py-2 bg-danger/10 border-b border-white/5">
+                        <span className="text-[10px] font-black uppercase text-danger tracking-tighter">Signature</span>
+                    </div>
+                    <div className="p-4 bg-[#0d0d0d]">
+                        <code className="text-xs text-danger/80 break-all font-mono">
+                            {decoded.signature}
+                        </code>
+                        <p className="mt-3 text-[10px] text-white/20 italic">Note: Signature verification requires the server-side secret key.</p>
+                    </div>
+                </Card>
+            </div>
+
+            {/* Info Sidebar */}
+            <div className="space-y-6">
+                <Card title="Token Insights">
+                    <div className="space-y-4">
+                        {decoded.payload?.sub && (
+                            <div className="flex justify-between items-center pb-3 border-b border-white/5">
+                                <span className="text-xs text-white/40 font-medium">Subject</span>
+                                <span className="text-xs text-white font-bold">{decoded.payload.sub}</span>
+                            </div>
+                        )}
+                        {decoded.payload?.iss && (
+                            <div className="flex justify-between items-center pb-3 border-b border-white/5">
+                                <span className="text-xs text-white/40 font-medium">Issuer</span>
+                                <span className="text-xs text-white font-bold">{decoded.payload.iss}</span>
+                            </div>
+                        )}
+                        {expInfo && (
+                            <div className="flex justify-between items-center pb-3 border-b border-white/5">
+                                <span className="text-xs text-white/40 font-medium">Expiration</span>
+                                <span className={`text-xs font-bold ${expInfo.expired ? 'text-danger' : 'text-white'}`}>
+                                    {expInfo.date.toLocaleString()}
+                                </span>
+                            </div>
+                        )}
+                        <div className="flex justify-between items-center">
+                            <span className="text-xs text-white/40 font-medium">Algorithm</span>
+                            <span className="text-xs text-accent font-bold uppercase">{decoded.header?.alg || 'None'}</span>
+                        </div>
+                    </div>
+                </Card>
+
+                <div className="p-6 rounded-2xl bg-accent/5 border border-accent/10">
+                    <h4 className="text-sm font-bold text-white mb-2 flex items-center gap-2">
+                        <svg className="w-4 h-4 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        What is a JWT?
+                    </h4>
+                    <p className="text-xs text-white/50 leading-relaxed">
+                        JSON Web Tokens are an open, industry standard method for representing claims securely between two parties. JWT.io-style debuggers like this one allow you to inspect the contents of a token without needing a secret key.
+                    </p>
+                </div>
+            </div>
+        </div>
+      )}
+
+      {!token.trim() && (
+        <div className="h-[300px] rounded-3xl border-2 border-dashed border-white/5 bg-white/[0.01] flex flex-col items-center justify-center text-center p-8 opacity-20">
+            <div className="w-16 h-16 rounded-2xl bg-white/[0.03] flex items-center justify-center mb-4 text-2xl">🔐</div>
+            <p className="text-sm max-w-xs">Paste a JWT token above to decode and inspect its header, payload, and claims.</p>
+        </div>
+      )}
     </div>
   );
 }

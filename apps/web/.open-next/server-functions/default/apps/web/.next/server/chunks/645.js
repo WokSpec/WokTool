@@ -1,0 +1,1 @@
+"use strict";exports.id=645,exports.ids=[645],exports.modules={645:(e,o,s)=>{s.r(o),s.d(o,{default:()=>t});let t=(0,s(53189).createProxy)(String.raw`/home/user9007/main/projects/wokspec/WokTool/apps/web/src/app/tools/ip-lookup/_client.tsx#default`)}};

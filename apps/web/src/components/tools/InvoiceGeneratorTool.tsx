@@ -1,240 +1,207 @@
 'use client';
 
 import { useState, useCallback } from 'react';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
+import Button from '@/components/ui/Button';
 
 interface LineItem {
-  id: number;
+  id: string;
   description: string;
   quantity: number;
   unitPrice: number;
 }
 
-let nextId = 1;
-
 function genInvoiceNumber() {
   const now = new Date();
-  return `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}${String(now.getMinutes()).padStart(2, '0')}`;
-}
-
-function today() {
-  return new Date().toISOString().split('T')[0];
-}
-function dueDate() {
-  const d = new Date();
-  d.setDate(d.getDate() + 30);
-  return d.toISOString().split('T')[0];
+  return `INV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}${String(now.getHours()).padStart(2, '0')}`;
 }
 
 export default function InvoiceGeneratorTool() {
-  const [company, setCompany] = useState('');
-  const [companyAddress, setCompanyAddress] = useState('');
+  const [company, setCompany] = useState('Acme Solutions');
+  const [companyAddr, setCompanyAddr] = useState('123 Innovation Way\nSan Francisco, CA 94105');
   const [client, setClient] = useState('');
-  const [clientAddress, setClientAddress] = useState('');
-  const [invoiceNum, setInvoiceNum] = useState(genInvoiceNumber);
-  const [date, setDate] = useState(today);
-  const [due, setDue] = useState(dueDate);
-  const [items, setItems] = useState<LineItem[]>([{ id: nextId++, description: '', quantity: 1, unitPrice: 0 }]);
+  const [clientAddr, setClientAddr] = useState('');
+  const [invNum, setInvNum] = useState(genInvoiceNumber());
+  const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
+  const [items, setItems] = useState<LineItem[]>([{ id: '1', description: 'Web Development Services', quantity: 1, unitPrice: 1200 }]);
   const [taxRate, setTaxRate] = useState(0);
 
-  const updateItem = (id: number, field: keyof Omit<LineItem, 'id'>, value: string | number) => {
-    setItems(prev => prev.map(item => item.id === id ? { ...item, [field]: value } : item));
+  const updateItem = (id: string, field: keyof LineItem, val: any) => {
+    setItems(prev => prev.map(item => item.id === id ? { ...item, [field]: val } : item));
   };
-  const addItem = () => setItems(prev => [...prev, { id: nextId++, description: '', quantity: 1, unitPrice: 0 }]);
-  const removeItem = (id: number) => setItems(prev => prev.filter(i => i.id !== id));
 
-  const subtotal = items.reduce((s, i) => s + i.quantity * i.unitPrice, 0);
-  const tax = subtotal * taxRate / 100;
+  const subtotal = items.reduce((s, i) => s + (i.quantity * i.unitPrice), 0);
+  const tax = subtotal * (taxRate / 100);
   const total = subtotal + tax;
 
-  const fmt = (n: number) => n.toFixed(2);
-
-  const handlePrint = useCallback(() => { window.print(); }, []);
+  const handlePrint = () => window.print();
 
   return (
-    <div className="inv-tool">
-      {/* ── Form (hidden on print) ── */}
-      <div className="inv-tool__form no-print">
-        <div className="inv-tool__row">
-          <label className="inv-tool__field">
-            <span>Company Name</span>
-            <input value={company} onChange={e => setCompany(e.target.value)} placeholder="Acme Corp" />
-          </label>
-          <label className="inv-tool__field">
-            <span>Company Address</span>
-            <input value={companyAddress} onChange={e => setCompanyAddress(e.target.value)} placeholder="123 Main St, City, State ZIP" />
-          </label>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 no-print">
+        {/* Left: Configuration */}
+        <div className="space-y-6">
+            <Card title="Business Details">
+                <div className="space-y-4">
+                    <Input label="Your Company" value={company} onChange={e => setCompany(e.target.value)} />
+                    <Input label="Business Address" value={companyAddr} onChange={e => setCompanyAddr(e.target.value)} />
+                </div>
+            </Card>
+
+            <Card title="Client Details">
+                <div className="space-y-4">
+                    <Input label="Client Name" value={client} onChange={e => setClient(e.target.value)} placeholder="Recipient name..." />
+                    <Input label="Client Address" value={clientAddr} onChange={e => setClientAddr(e.target.value)} placeholder="Shipping/Billing address..." />
+                </div>
+            </Card>
+
+            <Card title="Invoice Meta">
+                <div className="grid grid-cols-2 gap-4">
+                    <Input label="Invoice #" value={invNum} onChange={e => setInvNum(e.target.value)} />
+                    <Input label="Date" type="date" value={date} onChange={e => setDate(e.target.value)} />
+                </div>
+            </Card>
         </div>
-        <div className="inv-tool__row">
-          <label className="inv-tool__field">
-            <span>Client Name</span>
-            <input value={client} onChange={e => setClient(e.target.value)} placeholder="John Doe" />
-          </label>
-          <label className="inv-tool__field">
-            <span>Client Address</span>
-            <input value={clientAddress} onChange={e => setClientAddress(e.target.value)} placeholder="456 Oak Ave, City, State ZIP" />
-          </label>
-        </div>
-        <div className="inv-tool__row">
-          <label className="inv-tool__field">
-            <span>Invoice Number</span>
-            <input value={invoiceNum} onChange={e => setInvoiceNum(e.target.value)} />
-          </label>
-          <label className="inv-tool__field">
-            <span>Date</span>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)} />
-          </label>
-          <label className="inv-tool__field">
-            <span>Due Date</span>
-            <input type="date" value={due} onChange={e => setDue(e.target.value)} />
-          </label>
+
+        {/* Right: Line Items */}
+        <div className="space-y-6">
+            <Card title="Line Items">
+                <div className="space-y-4">
+                    {items.map((item) => (
+                        <div key={item.id} className="p-4 rounded-xl bg-white/[0.02] border border-white/5 space-y-3 group relative">
+                            <Input 
+                                placeholder="Item description" 
+                                value={item.description} 
+                                onChange={e => updateItem(item.id, 'description', e.target.value)} 
+                            />
+                            <div className="grid grid-cols-2 gap-3">
+                                <Input 
+                                    label="Qty" 
+                                    type="number" 
+                                    value={item.quantity} 
+                                    onChange={e => updateItem(item.id, 'quantity', Number(e.target.value))} 
+                                />
+                                <Input 
+                                    label="Price" 
+                                    type="number" 
+                                    value={item.unitPrice} 
+                                    onChange={e => updateItem(item.id, 'unitPrice', Number(e.target.value))} 
+                                />
+                            </div>
+                            {items.length > 1 && (
+                                <button 
+                                    onClick={() => setItems(prev => prev.filter(i => i.id !== item.id))}
+                                    className="absolute -top-2 -right-2 w-6 h-6 rounded-full bg-danger text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity text-xs"
+                                >
+                                    ✕
+                                </button>
+                            )}
+                        </div>
+                    ))}
+                    <Button variant="secondary" size="sm" className="w-full" onClick={() => setItems([...items, { id: crypto.randomUUID(), description: '', quantity: 1, unitPrice: 0 }])}>
+                        + Add Item
+                    </Button>
+                </div>
+            </Card>
+
+            <Card title="Totals & Tax">
+                <div className="space-y-4">
+                    <Select 
+                        label="Tax Rate" 
+                        value={taxRate} 
+                        onChange={e => setTaxRate(Number(e.target.value))}
+                        options={[0, 5, 8, 10, 12, 15, 20].map(r => ({ value: r, label: `${r}%` }))}
+                    />
+                    <div className="pt-4 border-t border-white/5 space-y-2">
+                        <div className="flex justify-between text-sm text-white/40">
+                            <span>Subtotal</span>
+                            <span className="font-mono">${subtotal.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-sm text-white/40">
+                            <span>Tax ({taxRate}%)</span>
+                            <span className="font-mono">${tax.toFixed(2)}</span>
+                        </div>
+                        <div className="flex justify-between text-lg font-black text-white pt-2">
+                            <span>Total Due</span>
+                            <span className="text-accent font-mono">${total.toFixed(2)}</span>
+                        </div>
+                    </div>
+                </div>
+            </Card>
+
+            <Button variant="primary" size="lg" className="w-full" onClick={handlePrint} icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>}>
+                Print / Save as PDF
+            </Button>
         </div>
       </div>
 
-      {/* ── Printable Invoice ── */}
-      <div className="inv-preview" id="inv-preview">
-        <div className="inv-preview__header">
-          <div>
-            <div className="inv-preview__company">{company || 'Your Company'}</div>
-            {companyAddress && <div className="inv-preview__address">{companyAddress}</div>}
-            <div className="inv-preview__bill-to">Bill To: <strong>{client || 'Client Name'}</strong></div>
-            {clientAddress && <div className="inv-preview__address">{clientAddress}</div>}
-          </div>
-          <div className="inv-preview__meta">
-            <div><span>Invoice #:</span> <strong>{invoiceNum}</strong></div>
-            <div><span>Date:</span> {date}</div>
-            <div><span>Due:</span> {due}</div>
-          </div>
+      {/* Printable Area */}
+      <div className="bg-white text-black p-12 rounded-3xl shadow-2xl overflow-hidden print:p-0 print:shadow-none print:rounded-none">
+        <div className="flex justify-between items-start border-b-2 border-black/5 pb-8 mb-8">
+            <div>
+                <h1 className="text-3xl font-black uppercase tracking-tighter mb-2">{company || 'YOUR COMPANY'}</h1>
+                <pre className="text-xs font-medium opacity-60 whitespace-pre-wrap leading-relaxed">{companyAddr}</pre>
+            </div>
+            <div className="text-right">
+                <div className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Invoice Number</div>
+                <div className="text-xl font-bold font-mono">{invNum}</div>
+                <div className="mt-4">
+                    <div className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-1">Issue Date</div>
+                    <div className="text-sm font-bold">{new Date(date).toLocaleDateString()}</div>
+                </div>
+            </div>
         </div>
 
-        {/* Line items */}
-        <table className="inv-table">
-          <thead>
-            <tr>
-              <th>Description</th>
-              <th>Qty</th>
-              <th>Unit Price</th>
-              <th>Subtotal</th>
-              <th className="no-print"></th>
-            </tr>
-          </thead>
-          <tbody>
-            {items.map(item => (
-              <tr key={item.id}>
-                <td>
-                  <input
-                    className="inv-table__input"
-                    value={item.description}
-                    onChange={e => updateItem(item.id, 'description', e.target.value)}
-                    placeholder="Item description"
-                  />
-                </td>
-                <td>
-                  <input
-                    className="inv-table__input inv-table__input--num"
-                    type="number" min={0} step={1}
-                    value={item.quantity}
-                    onChange={e => updateItem(item.id, 'quantity', Number(e.target.value))}
-                  />
-                </td>
-                <td>
-                  <input
-                    className="inv-table__input inv-table__input--num"
-                    type="number" min={0} step={0.01}
-                    value={item.unitPrice}
-                    onChange={e => updateItem(item.id, 'unitPrice', Number(e.target.value))}
-                  />
-                </td>
-                <td className="inv-table__subtotal">${fmt(item.quantity * item.unitPrice)}</td>
-                <td className="no-print">
-                  {items.length > 1 && (
-                    <button className="inv-table__del" onClick={() => removeItem(item.id)} title="Remove">Remove</button>
-                  )}
-                </td>
-              </tr>
-            ))}
-          </tbody>
+        <div className="mb-12">
+            <div className="text-[10px] font-black uppercase tracking-widest opacity-40 mb-3">Bill To</div>
+            <div className="text-lg font-bold">{client || 'CLIENT NAME'}</div>
+            <pre className="text-xs font-medium opacity-60 whitespace-pre-wrap leading-relaxed mt-1">{clientAddr}</pre>
+        </div>
+
+        <table className="w-full text-left mb-12">
+            <thead className="border-b border-black/10">
+                <tr>
+                    <th className="py-3 text-[10px] font-black uppercase tracking-widest opacity-40">Description</th>
+                    <th className="py-3 text-[10px] font-black uppercase tracking-widest opacity-40 text-center">Qty</th>
+                    <th className="py-3 text-[10px] font-black uppercase tracking-widest opacity-40 text-right">Price</th>
+                    <th className="py-3 text-[10px] font-black uppercase tracking-widest opacity-40 text-right">Total</th>
+                </tr>
+            </thead>
+            <tbody className="divide-y divide-black/5">
+                {items.map(item => (
+                    <tr key={item.id}>
+                        <td className="py-4 text-sm font-bold">{item.description || 'Item Description'}</td>
+                        <td className="py-4 text-sm font-mono text-center">{item.quantity}</td>
+                        <td className="py-4 text-sm font-mono text-right">${item.unitPrice.toFixed(2)}</td>
+                        <td className="py-4 text-sm font-mono text-right font-bold">${(item.quantity * item.unitPrice).toFixed(2)}</td>
+                    </tr>
+                ))}
+            </tbody>
         </table>
 
-        <div className="no-print inv-tool__add-row">
-          <button className="btn btn-sm" onClick={addItem}>+ Add Line Item</button>
+        <div className="flex justify-end">
+            <div className="w-64 space-y-3">
+                <div className="flex justify-between text-xs font-medium opacity-60">
+                    <span>Subtotal</span>
+                    <span className="font-mono">${subtotal.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xs font-medium opacity-60">
+                    <span>Tax ({taxRate}%)</span>
+                    <span className="font-mono">${tax.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xl font-black pt-3 border-t border-black/10">
+                    <span>Total Due</span>
+                    <span className="font-mono">${total.toFixed(2)}</span>
+                </div>
+            </div>
         </div>
 
-        {/* Totals */}
-        <div className="inv-totals">
-          <div className="inv-totals__row">
-            <span>Subtotal</span>
-            <span>${fmt(subtotal)}</span>
-          </div>
-          <div className="inv-totals__row no-print">
-            <span>
-              Tax Rate&nbsp;
-              <select value={taxRate} onChange={e => setTaxRate(Number(e.target.value))} className="inv-tax-sel">
-                {[0,5,8,10,13,15,20,21,25].map(r => (
-                  <option key={r} value={r}>{r}%</option>
-                ))}
-              </select>
-            </span>
-            <span>${fmt(tax)}</span>
-          </div>
-          <div className="inv-totals__row print-only">
-            <span>Tax ({taxRate}%)</span>
-            <span>${fmt(tax)}</span>
-          </div>
-          <div className="inv-totals__row inv-totals__total">
-            <span>Total</span>
-            <span>${fmt(total)}</span>
-          </div>
+        <div className="mt-20 pt-8 border-t border-black/5 text-[10px] font-medium opacity-40 text-center uppercase tracking-widest">
+            Thank you for your business.
         </div>
       </div>
-
-      <div className="no-print inv-tool__actions">
-        <button className="btn btn-primary" onClick={handlePrint}>Generate PDF / Print</button>
-      </div>
-
-      <style>{`
-        .inv-tool { display: flex; flex-direction: column; gap: 20px; }
-        .inv-tool__form {
-          background: var(--bg-surface); border: 1px solid var(--surface-border);
-          border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 12px;
-        }
-        .inv-tool__row { display: flex; gap: 12px; flex-wrap: wrap; }
-        .inv-tool__field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; font-size: 12px; color: var(--text-secondary); }
-        .inv-tool__field input {
-          background: var(--bg); border: 1px solid var(--surface-border); border-radius: 4px;
-          color: var(--text); padding: 6px 8px; font-size: 13px;
-        }
-        .inv-preview {
-          background: #fff; color: #111; border: 1px solid #ddd;
-          border-radius: 8px; padding: 32px; font-size: 13px;
-        }
-        .inv-preview__header { display: flex; justify-content: space-between; margin-bottom: 24px; flex-wrap: wrap; gap: 12px; }
-        .inv-preview__company { font-size: 20px; font-weight: 700; margin-bottom: 4px; }
-        .inv-preview__address { font-size: 12px; color: #666; margin-bottom: 2px; }
-        .inv-preview__bill-to { font-size: 13px; color: #555; }
-        .inv-preview__meta { text-align: right; display: flex; flex-direction: column; gap: 4px; font-size: 12px; color: #444; }
-        .inv-table { width: 100%; border-collapse: collapse; margin-bottom: 16px; }
-        .inv-table th { background: #f3f4f6; padding: 8px 10px; text-align: left; font-size: 12px; font-weight: 600; border-bottom: 2px solid #e5e7eb; }
-        .inv-table td { padding: 6px 10px; border-bottom: 1px solid #e5e7eb; }
-        .inv-table__input { border: 1px solid #d1d5db; border-radius: 4px; padding: 4px 6px; font-size: 13px; width: 100%; color: #111; background: #fff; }
-        .inv-table__input--num { max-width: 80px; }
-        .inv-table__subtotal { font-weight: 500; white-space: nowrap; }
-        .inv-table__del { background: none; border: none; color: #f87171; cursor: pointer; font-size: 14px; padding: 2px 6px; }
-        .inv-tool__add-row { margin: 4px 0; }
-        .btn.btn-sm { padding: 5px 12px; font-size: 12px; cursor: pointer; background: var(--surface-raised); border: 1px solid var(--surface-border); color: var(--text); border-radius: 4px; }
-        .inv-totals { display: flex; flex-direction: column; gap: 6px; align-items: flex-end; }
-        .inv-totals__row { display: flex; gap: 24px; justify-content: flex-end; min-width: 280px; font-size: 13px; }
-        .inv-totals__row span:first-child { color: #555; flex: 1; }
-        .inv-totals__total { font-size: 16px; font-weight: 700; border-top: 2px solid #111; padding-top: 6px; }
-        .inv-tax-sel { margin-left: 6px; font-size: 12px; border-radius: 3px; border: 1px solid #ccc; }
-        .inv-tool__actions { display: flex; justify-content: flex-end; }
-        @media print {
-          .no-print { display: none !important; }
-          .inv-preview { border: none; padding: 16px; border-radius: 0; }
-          .inv-table__input { border: none; padding: 0; background: transparent; }
-        }
-        .print-only { display: none; }
-        @media print { .print-only { display: flex !important; } }
-      `}</style>
     </div>
   );
 }

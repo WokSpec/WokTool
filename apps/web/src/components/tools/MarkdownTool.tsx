@@ -2,65 +2,57 @@
 
 import { useState, useCallback, useRef } from 'react';
 import { marked } from 'marked';
+import Textarea from '@/components/ui/Textarea';
+import Button from '@/components/ui/Button';
+import Tabs from '@/components/ui/Tabs';
+import Card from '@/components/ui/Card';
 
 marked.setOptions({ gfm: true, breaks: true });
-
-type MobileTab = 'edit' | 'preview';
 
 const TOOLBAR = [
   { label: 'B',    title: 'Bold',        wrap: ['**', '**'],     placeholder: 'bold text' },
   { label: 'I',    title: 'Italic',      wrap: ['*', '*'],       placeholder: 'italic text' },
-  { label: '`',    title: 'Inline Code', wrap: ['`', '`'],       placeholder: 'code' },
+  { label: '`',    title: 'Code',        wrap: ['`', '`'],       placeholder: 'code' },
   { label: 'H1',   title: 'Heading 1',   prefix: '# ',           placeholder: 'Heading' },
   { label: 'H2',   title: 'Heading 2',   prefix: '## ',          placeholder: 'Heading' },
-  { label: 'H3',   title: 'Heading 3',   prefix: '### ',         placeholder: 'Heading' },
   { label: 'Link',  title: 'Link',        wrap: ['[', '](url)'],  placeholder: 'link text' },
-  { label: 'Img',   title: 'Image',       wrap: ['![', '](url)'], placeholder: 'alt text' },
-  { label: '```',  title: 'Code Block',  block: true,            placeholder: 'code' },
-  { label: 'Quote',    title: 'Quote',       prefix: '> ',           placeholder: undefined },
-  { label: 'List',     title: 'List',        prefix: '- ',           placeholder: undefined },
+  { label: 'List',     title: 'List',        prefix: '- ',           placeholder: 'Item' },
+  { label: 'Quote',    title: 'Quote',       prefix: '> ',           placeholder: 'Quote' },
   { label: 'Table',    title: 'Table',       table: true },
 ] as const;
 
-const EXAMPLE = `# Hello, Markdown!
+const EXAMPLE = `# Markdown Professional Editor
 
-**Bold**, *italic*, and \`inline code\`.
+Experience real-time GFM preview with industrial-grade styling.
 
-## Code Block
+## ✨ Features
+- **Live Preview**: See your changes as you type.
+- **GFM Support**: Tables, task lists, and more.
+- **Quick Toolbar**: One-click formatting.
 
-\`\`\`js
-const greet = name => \`Hello, \${name}!\`;
+## 🛠️ Tech Stack
+\`\`\`ts
+import { marked } from 'marked';
+const html = marked.parse(markdown);
 \`\`\`
 
-## Table
+| Feature | Status |
+| :--- | :--- |
+| Speed | Fast |
+| Privacy | 100% Client-side |
+| Styling | Tailwind CSS |
 
-| Column A | Column B | Column C |
-|----------|----------|----------|
-| row 1    | data     | data     |
-| row 2    | data     | data     |
-
-## Quote
-
-> The only way to do great work is to love what you do.
-
-- Item one
-- Item two
-- Item three
+> "The best way to predict the future is to create it."
 `;
-
-function wordCount(text: string) {
-  return text.trim() ? text.trim().split(/\s+/).length : 0;
-}
 
 export default function MarkdownTool() {
   const [md, setMd] = useState(EXAMPLE);
-  const [mobileTab, setMobileTab] = useState<MobileTab>('edit');
-  const [copied, setCopied] = useState<'html' | 'md' | null>(null);
+  const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
   const taRef = useRef<HTMLTextAreaElement>(null);
 
   const html = marked(md) as string;
 
-  const insertAtCursor = useCallback((action: typeof TOOLBAR[number]) => {
+  const insertAtCursor = useCallback((action: any) => {
     const ta = taRef.current;
     if (!ta) return;
     const start = ta.selectionStart;
@@ -70,118 +62,93 @@ export default function MarkdownTool() {
     let newText = '';
     let cursorPos = start;
 
-    if ('table' in action && action.table) {
-      const tbl = '\n| Header 1 | Header 2 | Header 3 |\n|----------|----------|----------|\n| Cell     | Cell     | Cell     |\n';
+    if (action.table) {
+      const tbl = '\n| Header 1 | Header 2 |\n| :--- | :--- |\n| Cell 1 | Cell 2 |\n';
       newText = md.slice(0, start) + tbl + md.slice(end);
       cursorPos = start + tbl.length;
-    } else if ('block' in action && action.block) {
-      const inner = selected || 'code here';
-      const block = `\`\`\`\n${inner}\n\`\`\``;
-      newText = md.slice(0, start) + block + md.slice(end);
-      cursorPos = start + block.length;
-    } else if ('prefix' in action && action.prefix) {
-      const line = md.slice(0, start).lastIndexOf('\n') + 1;
-      newText = md.slice(0, line) + action.prefix + md.slice(line);
+    } else if (action.prefix) {
+      const lineStart = md.slice(0, start).lastIndexOf('\n') + 1;
+      newText = md.slice(0, lineStart) + action.prefix + md.slice(lineStart);
       cursorPos = start + action.prefix.length;
-    } else if ('wrap' in action && action.wrap) {
+    } else if (action.wrap) {
       const [before, after] = action.wrap;
       const inner = selected || action.placeholder || 'text';
       newText = md.slice(0, start) + before + inner + after + md.slice(end);
       cursorPos = start + before.length + inner.length + after.length;
-    } else {
-      return;
     }
 
     setMd(newText);
-    requestAnimationFrame(() => {
+    setTimeout(() => {
       ta.focus();
       ta.setSelectionRange(cursorPos, cursorPos);
-    });
+    }, 0);
   }, [md]);
 
-  const copyHtml = useCallback(async () => {
-    await navigator.clipboard.writeText(html);
-    setCopied('html');
-    setTimeout(() => setCopied(null), 2000);
-  }, [html]);
-
-  const copyMd = useCallback(async () => {
-    await navigator.clipboard.writeText(md);
-    setCopied('md');
-    setTimeout(() => setCopied(null), 2000);
-  }, [md]);
-
-  const words = wordCount(md);
-  const chars = md.length;
+  const words = md.trim() ? md.trim().split(/\s+/).length : 0;
 
   return (
-    <div className="md-tool">
+    <div className="space-y-6 animate-in fade-in duration-500">
       {/* Toolbar */}
-      <div className="md-toolbar">
-        {TOOLBAR.map((btn, i) => (
-          <button
-            key={i}
-            className="md-tb-btn"
-            title={btn.title}
-            onClick={() => insertAtCursor(btn)}
-          >
-            {btn.label}
-          </button>
-        ))}
-        <div className="md-toolbar-spacer" />
-        <button className="btn-ghost-xs" onClick={() => setMd('')}>Clear</button>
-        <button className="btn-ghost-xs" onClick={() => setMd(EXAMPLE)}>Example</button>
-      </div>
-
-      {/* Mobile tabs */}
-      <div className="md-mobile-tabs">
-        <button
-          className={`md-mobile-tab${mobileTab === 'edit' ? ' active' : ''}`}
-          onClick={() => setMobileTab('edit')}
-        >
-          Edit
-        </button>
-        <button
-          className={`md-mobile-tab${mobileTab === 'preview' ? ' active' : ''}`}
-          onClick={() => setMobileTab('preview')}
-        >
-          Preview
-        </button>
-      </div>
-
-      {/* Split pane */}
-      <div className="md-panes">
-        <div className={`md-pane${mobileTab !== 'edit' ? ' md-pane-hidden-mobile' : ''}`}>
-          <div className="md-pane-label">Markdown</div>
-          <textarea
-            ref={taRef}
-            className="md-textarea"
-            value={md}
-            onChange={e => setMd(e.target.value)}
-            placeholder="Start typing Markdown…"
-            spellCheck={false}
-          />
+      <div className="flex flex-wrap items-center justify-between gap-4 p-2 bg-surface-raised border border-white/5 rounded-2xl">
+        <div className="flex flex-wrap gap-1">
+            {TOOLBAR.map((btn, i) => (
+                <button
+                    key={i}
+                    title={btn.title}
+                    onClick={() => insertAtCursor(btn)}
+                    className="w-9 h-9 flex items-center justify-center rounded-lg text-xs font-bold text-white/40 hover:text-white hover:bg-white/5 transition-all"
+                >
+                    {btn.label}
+                </button>
+            ))}
         </div>
-        <div className={`md-pane${mobileTab !== 'preview' ? ' md-pane-hidden-mobile' : ''}`}>
-          <div className="md-pane-label">Preview</div>
-          <div
-            className="md-preview"
-            dangerouslySetInnerHTML={{ __html: html }}
-          />
+        <div className="flex items-center gap-2 px-2">
+            <Button variant="ghost" size="sm" onClick={() => setMd('')} className="h-8 text-[10px]">Clear</Button>
+            <Button variant="ghost" size="sm" onClick={() => setMd(EXAMPLE)} className="h-8 text-[10px]">Example</Button>
         </div>
       </div>
 
-      {/* Status bar */}
-      <div className="md-statusbar">
-        <span>{words} word{words !== 1 ? 's' : ''}</span>
-        <span>{chars} char{chars !== 1 ? 's' : ''}</span>
-        <div className="md-statusbar-spacer" />
-        <button className="btn-ghost-xs" onClick={copyMd}>
-          {copied === 'md' ? 'Copied!' : 'Copy Markdown'}
-        </button>
-        <button className="btn-ghost-xs" onClick={copyHtml}>
-          {copied === 'html' ? 'Copied!' : 'Copy HTML'}
-        </button>
+      {/* Mobile Selector */}
+      <div className="lg:hidden">
+        <Tabs 
+            activeTab={activeTab}
+            onChange={id => setActiveTab(id as any)}
+            tabs={[{id:'edit', label: 'Edit'}, {id:'preview', label: 'Preview'}]}
+        />
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-[600px]">
+        {/* Editor */}
+        <div className={`${activeTab === 'preview' ? 'hidden lg:block' : 'block'} flex flex-col space-y-4`}>
+            <div className="flex items-center justify-between px-1">
+                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Markdown Source</span>
+                <span className="text-[10px] font-bold text-accent uppercase">{words} Words</span>
+            </div>
+            <textarea
+                ref={taRef}
+                value={md}
+                onChange={e => setMd(e.target.value)}
+                placeholder="Start writing..."
+                className="flex-1 w-full p-6 rounded-3xl bg-[#0d0d0d] border border-white/10 text-white font-mono text-sm leading-relaxed focus:outline-none focus:ring-2 focus:ring-accent/50 resize-none custom-scrollbar"
+                spellCheck={false}
+            />
+        </div>
+
+        {/* Preview */}
+        <div className={`${activeTab === 'edit' ? 'hidden lg:block' : 'block'} flex flex-col space-y-4`}>
+            <div className="flex items-center justify-between px-1">
+                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">Live Rendering</span>
+                <button 
+                    onClick={() => navigator.clipboard.writeText(html)}
+                    className="text-[10px] font-bold text-white/40 hover:text-white uppercase transition-colors"
+                >
+                    Copy HTML
+                </button>
+            </div>
+            <div className="flex-1 rounded-3xl bg-white/[0.02] border border-white/5 p-8 overflow-auto custom-scrollbar prose prose-invert prose-sm max-w-none">
+                <div dangerouslySetInnerHTML={{ __html: html }} />
+            </div>
+        </div>
       </div>
     </div>
   );

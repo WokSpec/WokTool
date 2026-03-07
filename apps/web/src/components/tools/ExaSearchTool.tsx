@@ -1,8 +1,13 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
+import Button from '@/components/ui/Button';
+import Tabs from '@/components/ui/Tabs';
 
-function getStartDate(filter: 'any' | 'week' | 'month' | 'year') {
+function getStartDate(filter: string) {
   if (filter === 'any') return undefined;
   const d = new Date();
   if (filter === 'week') d.setDate(d.getDate() - 7);
@@ -18,8 +23,8 @@ function getHostname(url: string) {
 export default function ExaSearchTool() {
   const [query, setQuery] = useState('');
   const [searchType, setSearchType] = useState<'neural' | 'keyword' | 'auto'>('neural');
-  const [dateFilter, setDateFilter] = useState<'any' | 'week' | 'month' | 'year'>('any');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'news' | 'research' | 'tweet'>('all');
+  const [dateFilter, setDateFilter] = useState('any');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<any[]>([]);
   const [error, setError] = useState('');
@@ -47,114 +52,100 @@ export default function ExaSearchTool() {
     }
   }
 
-  function exportResults() {
-    if (!results.length) return;
-    const md = results.map(r => `## ${r.title || r.url}\n${r.url}\n\n${r.text || ''}\n`).join('\n---\n\n');
-    const blob = new Blob([md], { type: 'text/markdown' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a'); a.href = url; a.download = 'search-results.md'; a.click();
-    URL.revokeObjectURL(url);
-  }
-
   return (
-    <div className="tool-page-root">
-      <div className="tool-page-header">
-        <h2 className="tool-page-title">Exa Semantic Search</h2>
-        <p className="tool-page-desc">Neural web search that understands meaning, not just keywords. Find recent research, articles, and content with natural language queries.</p>
-      </div>
-      <div className="tool-section">
-        <div style={{ display: 'flex', gap: '0.75rem', marginBottom: '0.875rem', flexWrap: 'wrap' }}>
-          <input
-            value={query}
-            onChange={e => setQuery(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && search()}
-            placeholder="e.g. latest advancements in diffusion models 2024"
-            style={{ flex: 1, minWidth: '200px', background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.625rem 0.875rem', color: 'var(--text-primary)', fontSize: '0.9375rem', outline: 'none' }}
-          />
-          <div style={{ display: 'flex', gap: '0.375rem' }}>
-            {(['neural', 'keyword', 'auto'] as const).map(t => (
-              <button
-                key={t}
-                onClick={() => setSearchType(t)}
-                style={{
-                  padding: '0.5rem 0.875rem', fontSize: '0.8125rem', borderRadius: '8px', border: '1px solid var(--border)',
-                  background: searchType === t ? 'rgba(167,139,250,0.15)' : 'transparent',
-                  color: searchType === t ? '#a78bfa' : 'var(--text-secondary)',
-                  cursor: 'pointer', textTransform: 'capitalize', fontWeight: searchType === t ? 600 : 400,
-                }}
-              >
-                {t}
-              </button>
-            ))}
-          </div>
-          <button onClick={search} disabled={loading || !query.trim()} className="btn btn-primary" style={{ padding: '0.625rem 1.25rem' }}>
-            {loading ? 'Searching...' : 'Search'}
-          </button>
-        </div>
-
-        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '0.75rem', flexWrap: 'wrap' }}>
-          <select value={dateFilter} onChange={e => setDateFilter(e.target.value as any)}
-            style={{ fontSize: '0.8125rem', background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '6px', padding: '0.375rem 0.625rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-            <option value="any">Any time</option>
-            <option value="week">Past week</option>
-            <option value="month">Past month</option>
-            <option value="year">Past year</option>
-          </select>
-          <select value={typeFilter} onChange={e => setTypeFilter(e.target.value as any)}
-            style={{ fontSize: '0.8125rem', background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '6px', padding: '0.375rem 0.625rem', color: 'var(--text-secondary)', cursor: 'pointer' }}>
-            <option value="all">All types</option>
-            <option value="news">News</option>
-            <option value="research">Research</option>
-            <option value="tweet">Social</option>
-          </select>
-        </div>
-
-        {error && <p style={{ color: '#f87171', fontSize: '0.875rem' }}>{error}</p>}
-        {results.length > 0 && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '0.5rem' }}>
-              <button onClick={exportResults} className="btn btn-secondary" style={{ fontSize: '0.8rem', padding: '0.375rem 0.75rem' }}>Export MD</button>
-            </div>
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-              {results.map((r, i) => (
-                <div key={i} style={{ padding: '1rem', border: '1px solid var(--border)', borderRadius: '10px', background: 'var(--surface-card)' }}>
-                  <a href={r.url} target="_blank" rel="noopener noreferrer" style={{ fontWeight: 600, fontSize: '0.9375rem', color: 'var(--purple)', textDecoration: 'none', display: 'block', marginBottom: '0.375rem' }}>{r.title || r.url}</a>
-
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.375rem', fontSize: '0.8125rem', color: 'var(--text-faint)', marginBottom: '0.375rem' }}>
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img
-                      src={`https://www.google.com/s2/favicons?domain=${getHostname(r.url)}&sz=16`}
-                      alt="" width={12} height={12}
-                      style={{ opacity: 0.5 }}
-                      onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <Card title="Semantic Intelligence" description="Neural search that understands context and meaning. Find high-quality research, news, and specialized content.">
+        <div className="space-y-6">
+            <div className="flex flex-col md:flex-row gap-3">
+                <div className="flex-1">
+                    <Input 
+                        placeholder="e.g. latest advancements in solar panel efficiency 2024"
+                        value={query}
+                        onChange={e => setQuery(e.target.value)}
+                        onKeyDown={e => e.key === 'Enter' && search()}
+                        leftIcon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
                     />
-                    <span>{getHostname(r.url)}</span>
-                    {r.publishedDate && <span>· {new Date(r.publishedDate).toLocaleDateString()}</span>}
-                    {r.author && <span>· {r.author}</span>}
-                  </div>
-
-                  {r.text && <p style={{ fontSize: '0.875rem', color: 'var(--text-secondary)', lineHeight: 1.6, margin: '0 0 0.5rem' }}>{r.text.slice(0, 300)}{r.text.length > 300 ? '...' : ''}</p>}
-                  <div style={{ display: 'flex', gap: '0.75rem' }}>
-                    <button
-                      onClick={() => navigator.clipboard.writeText(`${r.title || ''}\n${r.url}`)}
-                      style={{ fontSize: '0.75rem', color: 'var(--text-faint)', background: 'none', border: 'none', cursor: 'pointer', padding: 0 }}
-                      onMouseEnter={e => (e.currentTarget.style.color = 'var(--text-secondary)')}
-                      onMouseLeave={e => (e.currentTarget.style.color = 'var(--text-faint)')}
-                    >
-                      Copy link
-                    </button>
-                    <a href={r.url} target="_blank" rel="noopener noreferrer"
-                      style={{ fontSize: '0.75rem', color: 'var(--text-faint)', textDecoration: 'none' }}
-                      onMouseEnter={e => ((e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-secondary)')}
-                      onMouseLeave={e => ((e.currentTarget as HTMLAnchorElement).style.color = 'var(--text-faint)')}
-                    >
-                      Open
-                    </a>
-                  </div>
                 </div>
-              ))}
+                <Button onClick={search} loading={loading} disabled={!query.trim()}>Search Exa</Button>
             </div>
-          </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2">
+                    <label className="text-[10px] font-black uppercase text-white/20 px-1">Engine</label>
+                    <Tabs 
+                        activeTab={searchType}
+                        onChange={id => setSearchType(id as any)}
+                        tabs={[
+                            { id: 'neural', label: 'Neural' },
+                            { id: 'keyword', label: 'Keyword' },
+                            { id: 'auto', label: 'Auto' },
+                        ]}
+                    />
+                </div>
+                <Select 
+                    label="Recency"
+                    value={dateFilter}
+                    onChange={e => setDateFilter(e.target.value)}
+                    options={[
+                        { value: 'any', label: 'Any time' },
+                        { value: 'week', label: 'Past week' },
+                        { value: 'month', label: 'Past month' },
+                        { value: 'year', label: 'Past year' },
+                    ]}
+                />
+                <Select 
+                    label="Category"
+                    value={typeFilter}
+                    onChange={e => setTypeFilter(e.target.value)}
+                    options={[
+                        { value: 'all', label: 'All types' },
+                        { value: 'news', label: 'News' },
+                        { value: 'research', label: 'Research' },
+                        { value: 'tweet', label: 'Social' },
+                    ]}
+                />
+            </div>
+        </div>
+      </Card>
+
+      {error && (
+        <div className="p-4 rounded-xl bg-danger/10 border border-danger/20 text-danger text-xs font-medium">
+            {error}
+        </div>
+      )}
+
+      <div className="space-y-4">
+        {results.map((r, i) => (
+            <Card key={i} className="group hover:border-accent/30 transition-all">
+                <div className="space-y-3">
+                    <div className="flex items-center gap-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                            src={`https://www.google.com/s2/favicons?domain=${getHostname(r.url)}&sz=32`}
+                            alt="" className="w-4 h-4 rounded opacity-60 group-hover:opacity-100 transition-opacity"
+                            onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
+                        />
+                        <a href={r.url} target="_blank" rel="noopener noreferrer" className="text-lg font-bold text-white hover:text-accent transition-colors leading-tight line-clamp-1">{r.title || r.url}</a>
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[10px] font-black uppercase text-white/20 tracking-widest">
+                        <span className="text-accent/60">{getHostname(r.url)}</span>
+                        {r.publishedDate && <span>· {new Date(r.publishedDate).toLocaleDateString()}</span>}
+                        {r.author && <span>· {r.author}</span>}
+                    </div>
+                    {r.text && <p className="text-sm text-white/40 leading-relaxed line-clamp-3">{r.text}</p>}
+                    <div className="pt-2 flex gap-3">
+                        <Button href={r.url} target="_blank" variant="secondary" size="sm">Visit Site</Button>
+                        <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(r.url)}>Copy Link</Button>
+                    </div>
+                </div>
+            </Card>
+        ))}
+
+        {results.length === 0 && !loading && !error && (
+            <div className="py-20 flex flex-col items-center justify-center text-center opacity-20">
+                <div className="w-20 h-20 rounded-3xl border-2 border-dashed border-white/40 flex items-center justify-center text-3xl mb-4">🔭</div>
+                <p className="text-sm font-medium">Your semantic search results will appear here</p>
+            </div>
         )}
       </div>
     </div>

@@ -1,156 +1,120 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
+import Button from '@/components/ui/Button';
+import CodeBlock from '@/components/ui/CodeBlock';
 
-const TECH_LIST = [
-  // Languages
-  { id: 'typescript', label: 'TypeScript', color: '3178C6', logo: 'typescript' },
-  { id: 'javascript', label: 'JavaScript', color: 'F7DF1E', logo: 'javascript', logoColor: 'black' },
-  { id: 'python',     label: 'Python',     color: '3776AB', logo: 'python' },
-  { id: 'rust',       label: 'Rust',       color: '000000', logo: 'rust' },
-  { id: 'go',         label: 'Go',         color: '00ADD8', logo: 'go' },
-  { id: 'java',       label: 'Java',       color: 'ED8B00', logo: 'openjdk' },
-  { id: 'csharp',     label: 'C#',         color: '512BD4', logo: 'csharp' },
-  { id: 'cpp',        label: 'C++',        color: '00599C', logo: 'cplusplus' },
-  // Frameworks
-  { id: 'react',      label: 'React',      color: '61DAFB', logo: 'react',      logoColor: 'black' },
-  { id: 'nextjs',     label: 'Next.js',    color: '000000', logo: 'nextdotjs' },
-  { id: 'vue',        label: 'Vue.js',     color: '4FC08D', logo: 'vuedotjs',   logoColor: 'white' },
-  { id: 'svelte',     label: 'Svelte',     color: 'FF3E00', logo: 'svelte' },
-  { id: 'angular',    label: 'Angular',    color: 'DD0031', logo: 'angular' },
-  { id: 'nuxt',       label: 'Nuxt',       color: '00DC82', logo: 'nuxtdotjs',  logoColor: 'white' },
-  { id: 'astro',      label: 'Astro',      color: 'BC52EE', logo: 'astro' },
-  { id: 'remix',      label: 'Remix',      color: '000000', logo: 'remix' },
-  { id: 'express',    label: 'Express',    color: '000000', logo: 'express' },
-  { id: 'fastapi',    label: 'FastAPI',    color: '009688', logo: 'fastapi' },
-  { id: 'django',     label: 'Django',     color: '092E20', logo: 'django' },
-  { id: 'nestjs',     label: 'NestJS',     color: 'E0234E', logo: 'nestjs' },
-  // Databases
-  { id: 'postgresql', label: 'PostgreSQL', color: '4169E1', logo: 'postgresql' },
-  { id: 'mysql',      label: 'MySQL',      color: '4479A1', logo: 'mysql' },
-  { id: 'mongodb',    label: 'MongoDB',    color: '47A248', logo: 'mongodb' },
-  { id: 'redis',      label: 'Redis',      color: 'DC382D', logo: 'redis' },
-  { id: 'sqlite',     label: 'SQLite',     color: '003B57', logo: 'sqlite' },
-  { id: 'supabase',   label: 'Supabase',   color: '3ECF8E', logo: 'supabase',   logoColor: 'white' },
-  { id: 'planetscale',label: 'PlanetScale',color: '000000', logo: 'planetscale' },
-  // Tools
-  { id: 'docker',     label: 'Docker',     color: '2496ED', logo: 'docker' },
-  { id: 'kubernetes', label: 'Kubernetes', color: '326CE5', logo: 'kubernetes' },
-  { id: 'prisma',     label: 'Prisma',     color: '2D3748', logo: 'prisma' },
-  { id: 'tailwind',   label: 'Tailwind CSS', color: '38BDF8', logo: 'tailwindcss', logoColor: 'white' },
-  { id: 'graphql',    label: 'GraphQL',    color: 'E10098', logo: 'graphql' },
-  { id: 'trpc',       label: 'tRPC',       color: '2596BE', logo: 'trpc' },
-  { id: 'vercel',     label: 'Vercel',     color: '000000', logo: 'vercel' },
-  { id: 'aws',        label: 'AWS',        color: 'FF9900', logo: 'amazonaws',  logoColor: 'white' },
-  { id: 'gcp',        label: 'GCP',        color: '4285F4', logo: 'googlecloud' },
-  { id: 'stripe',     label: 'Stripe',     color: '008CDD', logo: 'stripe' },
-  { id: 'github',     label: 'GitHub',     color: '181717', logo: 'github' },
-  { id: 'linux',      label: 'Linux',      color: 'FCC624', logo: 'linux',      logoColor: 'black' },
+interface Badge {
+  name: string;
+  color: string;
+  logo: string;
+  category: string;
+}
+
+const BADGES: Badge[] = [
+  { name: 'React', color: '20232a', logo: 'react', category: 'Frontend' },
+  { name: 'Next.js', color: 'black', logo: 'next.js', category: 'Frontend' },
+  { name: 'TypeScript', color: '3178c6', logo: 'typescript', category: 'Language' },
+  { name: 'Tailwind CSS', color: '38b2ac', logo: 'tailwind-css', category: 'Frontend' },
+  { name: 'Node.js', color: '339933', logo: 'node.js', category: 'Backend' },
+  { name: 'Python', color: '3776ab', logo: 'python', category: 'Language' },
+  { name: 'Rust', color: '000000', logo: 'rust', category: 'Language' },
+  { name: 'Go', color: '00add8', logo: 'go', category: 'Language' },
+  { name: 'PostgreSQL', color: '4169e1', logo: 'postgresql', category: 'Database' },
+  { name: 'Redis', color: 'dc382d', logo: 'redis', category: 'Database' },
+  { name: 'Docker', color: '2496ed', logo: 'docker', category: 'DevOps' },
+  { name: 'AWS', color: '232f3e', logo: 'amazon-aws', category: 'DevOps' },
+  { name: 'Vercel', color: '000000', logo: 'vercel', category: 'DevOps' },
+  { name: 'Cloudflare', color: 'f38020', logo: 'cloudflare', category: 'DevOps' },
 ];
 
-function badgeUrl(tech: typeof TECH_LIST[0]) {
-  const logoColor = tech.logoColor ?? 'white';
-  return `https://img.shields.io/badge/${encodeURIComponent(tech.label)}-${tech.color}?style=flat-square&logo=${tech.logo}&logoColor=${logoColor}`;
-}
-
-function markdownBadge(tech: typeof TECH_LIST[0]) {
-  return `![${tech.label}](${badgeUrl(tech)})`;
-}
+const STYLES = [
+    { value: 'for-the-badge', label: 'For the Badge' },
+    { value: 'flat', label: 'Flat' },
+    { value: 'flat-square', label: 'Flat Square' },
+    { value: 'plastic', label: 'Plastic' },
+];
 
 export default function TechBadgesTool() {
   const [selected, setSelected] = useState<string[]>([]);
-  const [search, setSearch] = useState('');
-  const [copied, setCopied] = useState(false);
+  const [style, setStyle] = useState('for-the-badge');
+  const [query, setQuery] = useState('');
 
-  const filtered = useMemo(() =>
-    search ? TECH_LIST.filter(t => t.label.toLowerCase().includes(search.toLowerCase())) : TECH_LIST,
-    [search]
-  );
-
-  const toggle = (id: string) => {
-    setSelected(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+  const toggle = (name: string) => {
+    setSelected(prev => prev.includes(name) ? prev.filter(n => n !== name) : [...prev, name]);
   };
 
-  const selectedTechs = TECH_LIST.filter(t => selected.includes(t.id));
-  const markdown = selectedTechs.map(markdownBadge).join(' ');
+  const markdown = useMemo(() => {
+    return selected.map(name => {
+      const b = BADGES.find(x => x.name === name)!;
+      return `![${b.name}](https://img.shields.io/badge/${encodeURIComponent(b.name)}-${b.color}?style=${style}&logo=${b.logo}&logoColor=white)`;
+    }).join('\n');
+  }, [selected, style]);
 
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(markdown);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {}
-  };
+  const filtered = BADGES.filter(b => b.name.toLowerCase().includes(query.toLowerCase()));
 
   return (
-    <div className="badge-tool">
-      {/* Search */}
-      <input
-        className="tool-input"
-        placeholder="Search techs..."
-        value={search}
-        onChange={e => setSearch(e.target.value)}
-      />
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="space-y-6">
+            <Card title="Configuration">
+                <div className="space-y-6">
+                    <Select 
+                        label="Badge Style"
+                        value={style}
+                        onChange={e => setStyle(e.target.value)}
+                        options={STYLES}
+                    />
+                    <Input 
+                        placeholder="Filter tech..."
+                        value={query}
+                        onChange={e => setQuery(e.target.value)}
+                        leftIcon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
+                    />
+                </div>
+            </Card>
 
-      {/* Badge grid */}
-      <div className="badge-tool__grid">
-        {filtered.map(tech => (
-          <button
-            key={tech.id}
-            onClick={() => toggle(tech.id)}
-            className={`badge-tool__item ${selected.includes(tech.id) ? 'badge-tool__item--selected' : ''}`}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src={badgeUrl(tech)} alt={tech.label} className="badge-tool__img" />
-          </button>
-        ))}
-      </div>
-
-      {/* Output */}
-      {selected.length > 0 && (
-        <div className="badge-tool__output">
-          <div className="badge-tool__output-header">
-            <span className="badge-tool__output-label">Preview — {selected.length} badge{selected.length !== 1 ? 's' : ''}</span>
-            <button className="btn-ghost" onClick={copy} style={{ fontSize: 12 }}>{copied ? 'Copied!' : 'Copy Markdown'}</button>
-            <button className="btn-ghost" onClick={() => setSelected([])} style={{ fontSize: 12 }}>Clear</button>
-          </div>
-          <div className="badge-tool__preview">
-            {selectedTechs.map(t => (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img key={t.id} src={badgeUrl(t)} alt={t.label} className="badge-tool__preview-img" />
-            ))}
-          </div>
-          <pre className="badge-tool__markdown">{markdown}</pre>
+            {selected.length > 0 && (
+                <div className="space-y-4 animate-in slide-in-from-left-4">
+                    <div className="flex justify-between items-center px-1">
+                        <h3 className="text-xs font-bold uppercase tracking-widest text-white/40">Markdown Result</h3>
+                        <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(markdown)} className="h-7 text-[10px]">Copy All</Button>
+                    </div>
+                    <CodeBlock code={markdown} language="markdown" maxHeight="250px" />
+                </div>
+            )}
         </div>
-      )}
 
-      <style>{`
-        .badge-tool { display: flex; flex-direction: column; gap: 16px; }
-        .badge-tool__grid {
-          display: flex; flex-wrap: wrap; gap: 6px;
-          padding: 14px; background: var(--bg-surface);
-          border: 1px solid var(--surface-border); border-radius: 8px;
-          max-height: 280px; overflow-y: auto;
-        }
-        .badge-tool__item {
-          background: transparent; border: 2px solid transparent;
-          border-radius: 5px; padding: 3px; cursor: pointer;
-          transition: border-color 0.12s, background 0.12s;
-        }
-        .badge-tool__item:hover { background: var(--surface-hover); }
-        .badge-tool__item--selected { border-color: var(--accent); background: var(--accent-subtle); }
-        .badge-tool__img { display: block; height: 20px; }
-        .badge-tool__output { display: flex; flex-direction: column; gap: 10px; }
-        .badge-tool__output-header { display: flex; align-items: center; gap: 10px; }
-        .badge-tool__output-label { font-size: 12px; color: var(--text-muted); font-weight: 500; }
-        .badge-tool__preview { display: flex; flex-wrap: wrap; gap: 5px; padding: 10px; background: var(--bg-surface); border: 1px solid var(--surface-border); border-radius: 6px; }
-        .badge-tool__preview-img { height: 20px; }
-        .badge-tool__markdown {
-          padding: 12px; font-size: 11px; font-family: 'Menlo','Consolas',monospace;
-          background: var(--bg); border: 1px solid var(--surface-border); border-radius: 6px;
-          color: var(--text-secondary); white-space: pre-wrap; word-break: break-all; margin: 0;
-        }
-      `}</style>
+        <div className="lg:col-span-2 space-y-6">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 px-1">Select Technologies ({selected.length} active)</h3>
+            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                {filtered.map(b => (
+                    <button
+                        key={b.name}
+                        onClick={() => toggle(b.name)}
+                        className={`group flex flex-col items-center justify-center p-4 rounded-2xl border transition-all ${selected.includes(b.name) ? 'bg-accent/10 border-accent/40 shadow-inner ring-1 ring-accent/20' : 'bg-surface-raised border-white/5 hover:border-white/10 hover:bg-white/[0.02]'}`}
+                    >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img 
+                            src={`https://img.shields.io/badge/${encodeURIComponent(b.name)}-${b.color}?style=${style}&logo=${b.logo}&logoColor=white`} 
+                            alt={b.name}
+                            className="max-w-full h-auto mb-3 pointer-events-none"
+                        />
+                        <span className={`text-[10px] font-black uppercase tracking-tighter ${selected.includes(b.name) ? 'text-accent' : 'text-white/20'}`}>{b.name}</span>
+                    </button>
+                ))}
+            </div>
+
+            {filtered.length === 0 && (
+                <div className="h-48 rounded-3xl border-2 border-dashed border-white/5 bg-white/[0.01] flex items-center justify-center text-white/20 text-sm">
+                    No matching technologies found
+                </div>
+            )}
+        </div>
+      </div>
     </div>
   );
 }

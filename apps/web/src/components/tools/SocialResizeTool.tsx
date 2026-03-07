@@ -1,6 +1,11 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useMemo } from 'react';
+import Dropzone from '@/components/ui/Dropzone';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import Tabs from '@/components/ui/Tabs';
+import Switch from '@/components/ui/Switch';
 
 interface Preset {
   id: string;
@@ -13,66 +18,61 @@ interface Preset {
 
 const DEFAULT_PRESETS: Preset[] = [
   { id: 'ig-post',    platform: 'Instagram', label: 'Post (Square)',    w: 1080, h: 1080, selected: true },
-  { id: 'ig-port',    platform: 'Instagram', label: 'Post (Portrait)', w: 1080, h: 1350, selected: true },
   { id: 'ig-story',   platform: 'Instagram', label: 'Story / Reel',    w: 1080, h: 1920, selected: true },
-  { id: 'tw-post',    platform: 'Twitter/X', label: 'Post',            w: 1200, h: 675,  selected: true },
-  { id: 'tw-header',  platform: 'Twitter/X', label: 'Header',          w: 1500, h: 500,  selected: false },
+  { id: 'tw-post',    platform: 'Twitter/X', label: 'Post',            w: 1600, h: 900,  selected: true },
   { id: 'fb-post',    platform: 'Facebook',  label: 'Post',            w: 1200, h: 630,  selected: true },
-  { id: 'fb-cover',   platform: 'Facebook',  label: 'Cover',           w: 820,  h: 312,  selected: false },
-  { id: 'li-post',    platform: 'LinkedIn',  label: 'Post',            w: 1200, h: 627,  selected: false },
-  { id: 'li-banner',  platform: 'LinkedIn',  label: 'Banner',          w: 1584, h: 396,  selected: false },
+  { id: 'li-post',    platform: 'LinkedIn',  label: 'Post',            w: 1200, h: 627,  selected: true },
   { id: 'yt-thumb',   platform: 'YouTube',   label: 'Thumbnail',       w: 1280, h: 720,  selected: true },
-  { id: 'yt-banner',  platform: 'YouTube',   label: 'Channel Banner',  w: 2560, h: 1440, selected: false },
-  { id: 'tt-post',    platform: 'TikTok',    label: 'Post',            w: 1080, h: 1920, selected: false },
-  { id: 'og',         platform: 'Web',       label: 'OG / Social Card',w: 1200, h: 630,  selected: false },
-  { id: 'apple-touch',platform: 'iOS',       label: 'App Icon',        w: 180,  h: 180,  selected: false },
+  { id: 'og',         platform: 'Web',       label: 'Open Graph',      w: 1200, h: 630,  selected: true },
 ];
 
 type Fit = 'cover' | 'contain' | 'fill';
 
-function resizeToCanvas(img: HTMLImageElement, w: number, h: number, fit: Fit): HTMLCanvasElement {
+async function resizeToCanvas(img: HTMLImageElement, w: number, h: number, fit: Fit): Promise<string> {
   const c = document.createElement('canvas');
   c.width = w; c.height = h;
   const ctx = c.getContext('2d')!;
+  
+  // High quality smoothing
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+  
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, w, h);
 
   const iw = img.naturalWidth, ih = img.naturalHeight;
-  const sw = iw, sh = ih, sx = 0, sy = 0;
   let dx = 0, dy = 0, dw = w, dh = h;
 
   if (fit === 'cover') {
     const scale = Math.max(w / iw, h / ih);
-    const fw = iw * scale, fh = ih * scale;
-    dx = (w - fw) / 2; dy = (h - fh) / 2;
-    dw = fw; dh = fh;
+    dw = iw * scale; dh = ih * scale;
+    dx = (w - dw) / 2; dy = (h - dh) / 2;
   } else if (fit === 'contain') {
     const scale = Math.min(w / iw, h / ih);
-    const fw = iw * scale, fh = ih * scale;
-    dx = (w - fw) / 2; dy = (h - fh) / 2;
-    dw = fw; dh = fh;
+    dw = iw * scale; dh = ih * scale;
+    dx = (w - dw) / 2; dy = (h - dh) / 2;
   }
 
-  ctx.drawImage(img, sx, sy, sw, sh, dx, dy, dw, dh);
-  return c;
+  ctx.drawImage(img, 0, 0, iw, ih, dx, dy, dw, dh);
+  return c.toDataURL('image/png');
 }
 
 export default function SocialResizeTool() {
   const [image, setImage] = useState<HTMLImageElement | null>(null);
-  const [preview, setPreview] = useState<string | null>(null);
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [presets, setPresets] = useState<Preset[]>(DEFAULT_PRESETS);
   const [fit, setFit] = useState<Fit>('cover');
-  const [exporting, setExporting] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
   const [results, setResults] = useState<{ id: string; url: string; label: string; platform: string; w: number; h: number }[]>([]);
-  const inputRef = useRef<HTMLInputElement>(null);
 
   const loadFile = useCallback((file: File) => {
-    if (!file.type.startsWith('image/')) return;
-    setResults([]);
     const url = URL.createObjectURL(file);
-    setPreview(url);
+    setPreviewUrl(url);
     const img = new window.Image();
-    img.onload = () => setImage(img);
+    img.onload = () => {
+        setImage(img);
+        setResults([]);
+    };
     img.src = url;
   }, []);
 
@@ -80,130 +80,154 @@ export default function SocialResizeTool() {
     setPresets(p => p.map(x => x.id === id ? { ...x, selected: !x.selected } : x));
   };
 
-  const exportAll = useCallback(async () => {
+  const generateAll = useCallback(async () => {
     if (!image) return;
-    setExporting(true);
+    setIsProcessing(true);
     const selected = presets.filter(p => p.selected);
     const out: typeof results = [];
 
     for (const p of selected) {
-      const c = resizeToCanvas(image, p.w, p.h, fit);
-      out.push({ id: p.id, url: c.toDataURL('image/png'), label: p.label, platform: p.platform, w: p.w, h: p.h });
+      const url = await resizeToCanvas(image, p.w, p.h, fit);
+      out.push({ id: p.id, url, label: p.label, platform: p.platform, w: p.w, h: p.h });
     }
 
     setResults(out);
-    setExporting(false);
+    setIsProcessing(false);
   }, [image, presets, fit]);
 
-  const downloadAll = useCallback(async () => {
+  const downloadAll = async () => {
     if (!results.length) return;
-    try {
-      const { default: JSZip } = await import('jszip');
-      const zip = new JSZip();
-      for (const r of results) {
-        const base64 = r.url.split(',')[1];
-        zip.file(`${r.platform}-${r.label.replace(/\s+/g, '-')}-${r.w}x${r.h}.png`, base64, { base64: true });
-      }
-      const blob = await zip.generateAsync({ type: 'blob' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'social-media-resized.zip';
-      a.click();
-    } catch {
-      // Fallback: download individually
-      for (const r of results) {
-        const a = document.createElement('a');
-        a.href = r.url;
-        a.download = `${r.platform}-${r.label}-${r.w}x${r.h}.png`;
-        a.click();
-      }
-    }
-  }, [results]);
+    const { default: JSZip } = await import('jszip');
+    const zip = new JSZip();
+    results.forEach(r => {
+      const base64 = r.url.split(',')[1];
+      zip.file(`${r.platform}-${r.label}-${r.w}x${r.h}.png`, base64, { base64: true });
+    });
+    const blob = await zip.generateAsync({ type: 'blob' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'social-exports.zip';
+    a.click();
+  };
 
-  const platforms = [...new Set(DEFAULT_PRESETS.map(p => p.platform))];
+  const platforms = useMemo(() => Array.from(new Set(DEFAULT_PRESETS.map(p => p.platform))), []);
 
   return (
-    <div className="social-resize-tool">
-      {/* Upload */}
-      {!preview ? (
-        <div
-          className="tool-dropzone"
-          onClick={() => inputRef.current?.click()}
-          onDragOver={e => e.preventDefault()}
-          onDrop={e => { e.preventDefault(); const f = e.dataTransfer.files?.[0]; if (f) loadFile(f); }}
-        >
-          <p className="tool-dropzone-text">Drop your image here or click to browse</p>
-          <p className="tool-dropzone-sub">PNG · JPG · WebP · GIF</p>
-          <p className="tool-dropzone-private">All processing in your browser</p>
-          <input ref={inputRef} type="file" accept="image/*" className="tool-file-input-hidden" onChange={e => { const f = e.target.files?.[0]; if (f) loadFile(f); }} />
-        </div>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      {!previewUrl ? (
+        <Dropzone 
+            onFileSelect={loadFile}
+            label="Drop an image to batch resize for social media"
+            description="PNG, JPG, WebP supported. All processing is local."
+        />
       ) : (
-        <div className="social-resize-layout">
-          {/* Left: settings */}
-          <div className="social-resize-settings">
-            <div className="social-resize-preview-wrap">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={preview} alt="Source" className="social-resize-preview" />
-              <button className="btn-ghost-xs social-resize-change" onClick={() => { setPreview(null); setImage(null); setResults([]); }}>Change image</button>
-            </div>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Sidebar: Settings */}
+            <div className="space-y-6">
+                <Card title="Configuration">
+                    <div className="space-y-6">
+                        <div className="flex items-center justify-between">
+                            <span className="text-xs font-bold uppercase text-white/40">Fit Mode</span>
+                            <Tabs 
+                                activeTab={fit}
+                                onChange={id => setFit(id as Fit)}
+                                tabs={[
+                                    { id: 'cover', label: 'Cover' },
+                                    { id: 'contain', label: 'Contain' },
+                                    { id: 'fill', label: 'Stretch' },
+                                ]}
+                                className="scale-90 origin-right"
+                            />
+                        </div>
 
-            {/* Fit mode */}
-            <div className="gen-row" style={{marginTop:'1rem'}}>
-              <label className="gen-label">Fit:</label>
-              {(['cover','contain','fill'] as Fit[]).map(f => (
-                <button key={f} className={`json-mode-btn${fit === f ? ' active' : ''}`} onClick={() => setFit(f)}>{f}</button>
-              ))}
-            </div>
+                        <div className="space-y-4 pt-4 border-t border-white/5">
+                            <h4 className="text-[10px] font-black uppercase text-white/20 tracking-widest">Select Targets</h4>
+                            {platforms.map(platform => (
+                                <div key={platform} className="space-y-2">
+                                    <div className="text-[10px] font-bold text-accent uppercase">{platform}</div>
+                                    <div className="space-y-1">
+                                        {presets.filter(p => p.platform === platform).map(p => (
+                                            <label key={p.id} className="flex items-center justify-between p-2 rounded-lg hover:bg-white/5 cursor-pointer transition-colors group">
+                                                <div className="flex items-center gap-3">
+                                                    <input 
+                                                        type="checkbox" 
+                                                        checked={p.selected} 
+                                                        onChange={() => togglePreset(p.id)}
+                                                        className="w-4 h-4 rounded border-white/10 bg-white/5 text-accent focus:ring-accent"
+                                                    />
+                                                    <span className="text-xs font-medium text-white/70 group-hover:text-white transition-colors">{p.label}</span>
+                                                </div>
+                                                <span className="text-[10px] font-mono text-white/20">{p.w}×{p.h}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
 
-            {/* Platform presets */}
-            <div style={{marginTop:'1rem'}}>
-              <p className="json-panel-label" style={{marginBottom:'0.5rem'}}>Select sizes to export:</p>
-              {platforms.map(platform => (
-                <div key={platform} className="social-platform-group">
-                  <p className="social-platform-name">{platform}</p>
-                  {presets.filter(p => p.platform === platform).map(preset => (
-                    <label key={preset.id} className="social-preset-item">
-                      <input type="checkbox" checked={preset.selected} onChange={() => togglePreset(preset.id)} />
-                      <span className="social-preset-label">{preset.label}</span>
-                      <span className="social-preset-dims">{preset.w}×{preset.h}</span>
-                    </label>
-                  ))}
-                </div>
-              ))}
-            </div>
-
-            <div className="gen-row" style={{marginTop:'1.5rem'}}>
-              <button className="btn-primary" onClick={exportAll} disabled={exporting || !presets.some(p => p.selected)}>
-                {exporting ? 'Generating…' : 'Generate'}
-              </button>
-              {results.length > 0 && (
-                <button className="btn-ghost" onClick={downloadAll}>
-                  Download ZIP ({results.length})
-                </button>
-              )}
-            </div>
-          </div>
-
-          {/* Right: results grid */}
-          {results.length > 0 && (
-            <div className="social-resize-results">
-              <p className="json-panel-label" style={{marginBottom:'0.75rem'}}>Results ({results.length})</p>
-              <div className="social-results-grid">
-                {results.map(r => (
-                  <div key={r.id} className="social-result-card">
-                    {/* eslint-disable-next-line @next/next/no-img-element */}
-                    <img src={r.url} alt={r.label} className="social-result-img" />
-                    <div className="social-result-info">
-                      <span className="social-result-platform">{r.platform}</span>
-                      <span className="social-result-label">{r.label}</span>
-                      <span className="social-result-dims">{r.w}×{r.h}</span>
+                        <div className="pt-4 space-y-3">
+                            <Button onClick={generateAll} className="w-full" size="lg" loading={isProcessing}>
+                                Generate {presets.filter(p => p.selected).length} Sizes
+                            </Button>
+                            <Button variant="ghost" onClick={() => { setPreviewUrl(null); setImage(null); setResults([]); }} className="w-full" size="sm">
+                                Change Source Image
+                            </Button>
+                        </div>
                     </div>
-                    <a href={r.url} download={`${r.platform}-${r.label.replace(/\s+/g, '-')}-${r.w}x${r.h}.png`} className="btn-ghost-xs">Download</a>
-                  </div>
-                ))}
-              </div>
+                </Card>
             </div>
-          )}
+
+            {/* Main: Results */}
+            <div className="lg:col-span-2 space-y-6">
+                {results.length > 0 ? (
+                    <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+                        <div className="flex items-center justify-between px-1">
+                            <h3 className="text-sm font-bold text-white flex items-center gap-2">
+                                <span className="w-2 h-5 bg-success rounded-full" />
+                                Generated Results ({results.length})
+                            </h3>
+                            <Button variant="secondary" size="sm" onClick={downloadAll}>
+                                Download All (.zip)
+                            </Button>
+                        </div>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {results.map((r) => (
+                                <Card key={r.id} className="p-0 overflow-hidden border-white/10 group">
+                                    <div className="aspect-video bg-[#0a0a0a] flex items-center justify-center p-4 border-b border-white/5 overflow-hidden">
+                                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                                        <img src={r.url} alt={r.label} className="max-w-full max-h-full object-contain shadow-2xl transition-transform group-hover:scale-105 duration-500" />
+                                    </div>
+                                    <div className="p-4 flex items-center justify-between">
+                                        <div>
+                                            <div className="text-[10px] font-bold text-accent uppercase">{r.platform}</div>
+                                            <div className="text-xs font-bold text-white/80">{r.label}</div>
+                                            <div className="text-[10px] font-mono text-white/30">{r.w} × {r.h} px</div>
+                                        </div>
+                                        <Button href={r.url} download={`${r.platform}-${r.label}.png`} variant="secondary" size="sm">
+                                            Save
+                                        </Button>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    </div>
+                ) : (
+                    <div className="h-full min-h-[500px] rounded-3xl border-2 border-dashed border-white/5 bg-white/[0.01] flex flex-col items-center justify-center text-center p-12 overflow-hidden">
+                        <div className="relative w-48 aspect-video mb-8">
+                             {/* eslint-disable-next-line @next/next/no-img-element */}
+                            <img src={previewUrl} alt="Preview" className="w-full h-full object-cover rounded-xl opacity-20 grayscale" />
+                            <div className="absolute inset-0 flex items-center justify-center">
+                                <div className="w-12 h-12 rounded-full bg-white/10 backdrop-blur-sm flex items-center justify-center animate-pulse">
+                                    <svg className="w-6 h-6 text-white/40" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.587-1.587a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" /></svg>
+                                </div>
+                            </div>
+                        </div>
+                        <h3 className="text-xl font-bold text-white/80 mb-2">Ready to resize</h3>
+                        <p className="text-sm text-white/30 max-w-xs">Select the social media formats you need from the sidebar and click generate to process them all at once.</p>
+                    </div>
+                )}
+            </div>
         </div>
       )}
     </div>

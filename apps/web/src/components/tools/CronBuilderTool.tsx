@@ -1,6 +1,9 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
 
 const PRESETS = [
   { label: 'Every minute',  value: '* * * * *' },
@@ -31,13 +34,12 @@ function describePart(val: string, unit: string, names?: string[], offset = 0): 
 
 function describeExpression(expr: string): string {
   const rawParts = expr.trim().split(/\s+/);
-  if (rawParts.length !== 5 && rawParts.length !== 6) return 'Invalid cron expression (need 5 or 6 fields)';
-  // If 6 fields (seconds included), drop the seconds for description
+  if (rawParts.length !== 5 && rawParts.length !== 6) return 'Invalid expression';
   const parts = rawParts.length === 6 ? rawParts.slice(1) : rawParts;
   const [min, hr, dom, mon, dow] = parts;
   const phrases: string[] = [];
   if (min !== '*') phrases.push(`at minute ${describePart(min, 'minute')}`);
-  if (hr  !== '*') phrases.push(`hour ${describePart(hr, 'hour')}`);
+  if (hr  !== '*') phrases.push(`at hour ${describePart(hr, 'hour')}`);
   if (dom !== '*') phrases.push(`on day ${describePart(dom, 'day')} of the month`);
   if (mon !== '*') phrases.push(`in ${describePart(mon, 'month', MONTHS, 1)}`);
   if (dow !== '*') phrases.push(`on ${describePart(dow, 'weekday', WEEKDAYS)}`);
@@ -45,152 +47,95 @@ function describeExpression(expr: string): string {
   return phrases.join(', ');
 }
 
-function matchesCron(date: Date, parts: string[]): boolean {
-  // parts should be 5 fields: minute, hour, dom, month, dow
-  const [min, hr, dom, mon, dow] = parts;
-  const match = (val: string, n: number, offset = 0): boolean => {
-    if (val === '*') return true;
-    if (val.startsWith('*/')) return n % parseInt(val.slice(2)) === 0;
-    if (val.includes(',')) return val.split(',').some(v => parseInt(v) - offset === n);
-    if (val.includes('-')) {
-      const [a, b] = val.split('-').map(Number);
-      return n >= a - offset && n <= b - offset;
-    }
-    return parseInt(val) - offset === n;
-  };
-  return (
-    match(min, date.getMinutes()) &&
-    match(hr,  date.getHours()) &&
-    match(dom, date.getDate(), 0) &&
-    match(mon, date.getMonth(), 1) &&
-    match(dow, date.getDay(), 0)
-  );
-}
-
-function nextRuns(expr: string, count = 5): Date[] {
-  const rawParts = expr.trim().split(/\s+/);
-  if (rawParts.length !== 5 && rawParts.length !== 6) return [];
-  const parts = rawParts.length === 6 ? rawParts.slice(1) : rawParts;
-  const results: Date[] = [];
-  const now = new Date();
-  now.setSeconds(0, 0);
-  now.setMinutes(now.getMinutes() + 1);
-  let d = new Date(now);
-  let attempts = 0;
-  while (results.length < count && attempts < 100000) {
-    if (matchesCron(d, parts)) results.push(new Date(d));
-    d = new Date(d.getTime() + 60000);
-    attempts++;
-  }
-  return results;
-}
-
 export default function CronBuilderTool() {
   const [expr, setExpr] = useState('0 9 * * 1-5');
-  const [copied, setCopied] = useState(false);
-
-  const parts = expr.trim().split(/\s+/);
-  const isValid = parts.length === 5;
-  const description = describeExpression(expr);
-  const runs = isValid ? nextRuns(expr) : [];
-
-  const setPart = useCallback((idx: number, val: string) => {
+  const parts = useMemo(() => {
     const p = expr.trim().split(/\s+/);
-    while (p.length < 5) p.push('*');
-    p[idx] = val || '*';
-    setExpr(p.join(' '));
+    return Array.from({ length: 5 }, (_, i) => p[i] ?? '*');
   }, [expr]);
 
-  const copy = () => {
-    navigator.clipboard.writeText(expr).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
+  const description = useMemo(() => describeExpression(expr), [expr]);
+
+  const setPart = (idx: number, val: string) => {
+    const next = [...parts];
+    next[idx] = val || '*';
+    setExpr(next.join(' '));
   };
 
   const FIELDS = ['Minute', 'Hour', 'Day', 'Month', 'Weekday'];
 
   return (
-    <div className="cron-tool">
-      <div className="cron-tool__presets">
-        {PRESETS.map(p => (
-          <button key={p.value} className="btn btn-secondary" style={{ fontSize: 12 }} onClick={() => setExpr(p.value)}>
-            {p.label}
-          </button>
-        ))}
-      </div>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Editor */}
+        <div className="lg:col-span-2 space-y-6">
+            <Card title="Expression Builder">
+                <div className="grid grid-cols-3 sm:grid-cols-5 gap-3">
+                    {FIELDS.map((label, i) => (
+                        <div key={label} className="space-y-2">
+                            <label className="text-[10px] font-black uppercase text-white/20 tracking-widest px-1">{label}</label>
+                            <input
+                                className="w-full bg-[#0d0d0d] border border-white/10 rounded-xl px-3 py-2 text-center font-mono text-sm text-accent focus:outline-none focus:ring-2 focus:ring-accent/50 transition-all"
+                                value={parts[i]}
+                                onChange={e => setPart(i, e.target.value)}
+                                spellCheck={false}
+                            />
+                        </div>
+                    ))}
+                </div>
+            </Card>
 
-      <div className="cron-tool__fields">
-        {FIELDS.map((label, i) => (
-          <div key={label} className="cron-tool__field">
-            <label className="tool-label">{label}</label>
-            <input
-              className="cron-tool__input"
-              value={parts[i] ?? '*'}
-              onChange={e => setPart(i, e.target.value)}
-              spellCheck={false}
-            />
-          </div>
-        ))}
-      </div>
+            <div className="space-y-4">
+                <div className="flex justify-between items-center px-1">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-white/40">Manual Override</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setExpr('* * * * *')} className="h-7 text-[10px]">Reset</Button>
+                </div>
+                <Input 
+                    value={expr}
+                    onChange={e => setExpr(e.target.value)}
+                    className="text-lg font-mono font-black tracking-widest text-center"
+                    spellCheck={false}
+                />
+            </div>
 
-      <div className="cron-tool__expr-row">
-        <input className="cron-tool__expr-input" value={expr} onChange={e => setExpr(e.target.value)} spellCheck={false} />
-        <button className="btn btn-primary" onClick={copy}>{copied ? 'Copied!' : 'Copy'}</button>
-      </div>
-
-      <div className="cron-tool__desc">{description}</div>
-
-      {runs.length > 0 && (
-        <div className="cron-tool__runs">
-          <div className="cron-tool__runs-title">Next 5 run dates</div>
-          {runs.map((d, i) => (
-            <div key={i} className="cron-tool__run">{d.toLocaleString()}</div>
-          ))}
+            <div className="p-8 rounded-3xl bg-accent/5 border border-accent/10 flex flex-col items-center text-center space-y-4">
+                <div className="text-[10px] font-black uppercase text-accent tracking-[0.2em]">Human Readable</div>
+                <p className="text-lg font-bold text-white leading-relaxed max-w-lg">&ldquo;{description}&rdquo;</p>
+            </div>
         </div>
-      )}
 
-      <style>{`
-        .cron-tool { display: flex; flex-direction: column; gap: 18px; }
-        .cron-tool__presets { display: flex; flex-wrap: wrap; gap: 8px; }
-        .cron-tool__fields { display: grid; grid-template-columns: repeat(5, 1fr); gap: 10px; }
-        @media (max-width: 640px) { .cron-tool__fields { grid-template-columns: repeat(3, 1fr); } }
-        .cron-tool__field { display: flex; flex-direction: column; gap: 4px; }
-        .cron-tool__input {
-          padding: 8px 10px; font-size: 14px; font-family: 'Menlo','Consolas',monospace;
-          background: var(--bg); color: var(--text); border: 1px solid var(--surface-border);
-          border-radius: 6px; outline: none; text-align: center;
-        }
-        .cron-tool__input:focus { border-color: var(--accent); }
-        .cron-tool__expr-row { display: flex; gap: 8px; }
-        .cron-tool__expr-input {
-          flex: 1; padding: 10px 12px; font-size: 14px; font-family: 'Menlo','Consolas',monospace;
-          background: var(--bg); color: var(--text); border: 1px solid var(--surface-border);
-          border-radius: 6px; outline: none;
-        }
-        .cron-tool__expr-input:focus { border-color: var(--accent); }
-        .cron-tool__desc {
-          padding: 12px 16px; background: var(--accent-subtle);
-          border: 1px solid var(--accent-glow); border-radius: 6px;
-          color: #a5b4fc; font-size: 14px;
-        }
-        .cron-tool__runs {
-          background: var(--bg-surface); border: 1px solid var(--surface-border);
-          border-radius: 8px; overflow: hidden;
-        }
-        .cron-tool__runs-title {
-          padding: 8px 14px; font-size: 11px; font-weight: 700; text-transform: uppercase;
-          letter-spacing: 0.06em; color: var(--text-muted);
-          border-bottom: 1px solid var(--surface-border);
-          background: var(--surface-card);
-        }
-        .cron-tool__run {
-          padding: 8px 14px; font-size: 13px; color: var(--text-secondary);
-          border-bottom: 1px solid var(--surface-border);
-          font-family: 'Menlo','Consolas',monospace;
-        }
-        .cron-tool__run:last-child { border-bottom: none; }
-      `}</style>
+        {/* Sidebar: Presets */}
+        <div className="space-y-6">
+            <Card title="Quick Presets">
+                <div className="grid grid-cols-1 gap-2">
+                    {PRESETS.map(p => (
+                        <button
+                            key={p.value}
+                            onClick={() => setExpr(p.value)}
+                            className={`flex flex-col items-start p-3 rounded-xl border transition-all ${expr === p.value ? 'bg-accent/10 border-accent/30 shadow-inner' : 'bg-surface-raised border-white/5 text-white/40 hover:text-white hover:bg-white/[0.02]'}`}
+                        >
+                            <span className="text-xs font-bold text-white/80">{p.label}</span>
+                            <code className="text-[10px] font-mono text-accent opacity-60 mt-1">{p.value}</code>
+                        </button>
+                    ))}
+                </div>
+            </Card>
+
+            <Button variant="primary" size="lg" className="w-full" onClick={() => navigator.clipboard.writeText(expr)}>
+                Copy Expression
+            </Button>
+
+            <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5">
+                <h4 className="text-[10px] font-black uppercase text-white/20 tracking-widest mb-2">Ref Syntax</h4>
+                <div className="space-y-2 text-[10px] text-white/40 font-medium">
+                    <div className="flex justify-between"><span>*</span> <span>any value</span></div>
+                    <div className="flex justify-between"><span>,</span> <span>value list separator</span></div>
+                    <div className="flex justify-between"><span>-</span> <span>range of values</span></div>
+                    <div className="flex justify-between"><span>/</span> <span>step values</span></div>
+                </div>
+            </div>
+        </div>
+      </div>
     </div>
   );
 }

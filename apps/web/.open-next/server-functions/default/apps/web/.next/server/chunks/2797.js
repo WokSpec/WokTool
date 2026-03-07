@@ -1,0 +1,1 @@
+"use strict";exports.id=2797,exports.ids=[2797],exports.modules={32797:(o,e,s)=>{s.r(e),s.d(e,{default:()=>t});let t=(0,s(53189).createProxy)(String.raw`/home/user9007/main/projects/wokspec/WokTool/apps/web/src/app/tools/pomodoro/_client.tsx#default`)}};

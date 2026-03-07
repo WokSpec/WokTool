@@ -1,16 +1,21 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import Card from '@/components/ui/Card';
+import Select from '@/components/ui/Select';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
+import CodeBlock from '@/components/ui/CodeBlock';
 
 const RATIOS = [
-  { name: 'Minor Second', value: 1.067 },
-  { name: 'Major Second', value: 1.125 },
-  { name: 'Minor Third', value: 1.2 },
-  { name: 'Major Third', value: 1.25 },
-  { name: 'Perfect Fourth', value: 1.333 },
-  { name: 'Augmented Fourth', value: 1.414 },
-  { name: 'Perfect Fifth', value: 1.5 },
-  { name: 'Golden Ratio', value: 1.618 },
+  { label: 'Minor Second (1.067)', value: 1.067 },
+  { label: 'Major Second (1.125)', value: 1.125 },
+  { label: 'Minor Third (1.200)', value: 1.2 },
+  { label: 'Major Third (1.250)', value: 1.25 },
+  { label: 'Perfect Fourth (1.333)', value: 1.333 },
+  { label: 'Augmented Fourth (1.414)', value: 1.414 },
+  { label: 'Perfect Fifth (1.500)', value: 1.5 },
+  { label: 'Golden Ratio (1.618)', value: 1.618 },
 ];
 
 const STEPS = [
@@ -22,64 +27,87 @@ const STEPS = [
   { name: 'xl', exp: 3 },
   { name: '2xl', exp: 4 },
   { name: '3xl', exp: 5 },
+  { name: '4xl', exp: 6 },
 ];
 
 export default function TypeScaleTool() {
-  const [base, setBase] = useState(16);
-  const [ratioIdx, setRatioIdx] = useState(4);
-  const [previewText, setPreviewText] = useState('The quick brown fox');
-  const [copied, setCopied] = useState(false);
+  const [baseSize, setBaseSize] = useState(16);
+  const [ratio, setRatio] = useState(1.333);
+  const [previewText, setPreviewText] = useState('Visual Type Scale');
 
-  const ratio = RATIOS[ratioIdx].value;
-  const sizes = STEPS.map(s => {
-    const px = Math.round(base * Math.pow(ratio, s.exp) * 100) / 100; // base * ratio^exp
-    const rem = Math.round((px / 16) * 1000) / 1000;
-    return { ...s, px, rem };
-  });
+  const scale = useMemo(() => {
+    return STEPS.map(s => {
+      const px = baseSize * Math.pow(ratio, s.exp);
+      const rem = px / 16;
+      return { ...s, px: px.toFixed(2), rem: rem.toFixed(3) };
+    });
+  }, [baseSize, ratio]);
 
-  const copyCss = () => {
-    const vars = sizes.map(s => `  --text-${s.name}: ${s.rem}rem;`).join('\n');
-    navigator.clipboard.writeText(`:root {\n${vars}\n}`);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1500);
-  };
+  const cssOutput = `:root {\n${scale.map(s => `  --text-${s.name}: ${s.rem}rem; /* ${s.px}px */`).join('\n')}\n}`;
 
   return (
-    <div className="tool-panel">
-      <div className="type-scale-controls">
-        <label className="type-scale-label">
-          <span>Base size (px)</span>
-          <input type="number" min={8} max={32} value={base} onChange={e => setBase(Number(e.target.value))} className="type-scale-input" />
-        </label>
-        <label className="type-scale-label">
-          <span>Scale ratio</span>
-          <select value={ratioIdx} onChange={e => setRatioIdx(Number(e.target.value))} className="type-scale-input">
-            {RATIOS.map((r, i) => <option key={i} value={i}>{r.name} ({r.value})</option>)}
-          </select>
-        </label>
-        <label className="type-scale-label" style={{ flex: '1 1 200px' }}>
-          <span>Preview text</span>
-          <input value={previewText} onChange={e => setPreviewText(e.target.value)} className="type-scale-input" />
-        </label>
-      </div>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Controls */}
+        <div className="space-y-6">
+          <Card title="Scale Settings">
+            <div className="space-y-6">
+              <Input 
+                label="Base Size (px)" 
+                type="number" 
+                value={baseSize} 
+                onChange={e => setBaseSize(Number(e.target.value))}
+                min={8} max={64}
+              />
+              
+              <Select 
+                label="Scale Ratio"
+                value={ratio}
+                onChange={e => setRatio(Number(e.target.value))}
+                options={RATIOS.map(r => ({ value: r.value, label: r.label }))}
+              />
 
-      <div className="type-scale-preview">
-        {[...sizes].reverse().map(s => (
-          <div key={s.name} className="type-scale-row">
-            <div className="type-scale-meta">
-              <code className="type-scale-name">{s.name}</code>
-              <span className="type-scale-size">{s.px}px / {s.rem}rem</span>
+              <Input 
+                label="Preview Text" 
+                value={previewText} 
+                onChange={e => setPreviewText(e.target.value)}
+                placeholder="Enter sample text..."
+              />
             </div>
-            <div className="type-scale-sample" style={{ fontSize: `${s.rem}rem`, lineHeight: 1.2 }}>
-              {previewText}
+          </Card>
+
+          <Card title="Export CSS">
+            <div className="space-y-4">
+              <CodeBlock code={cssOutput} language="css" maxHeight="200px" />
+              <Button variant="primary" className="w-full" onClick={() => navigator.clipboard.writeText(cssOutput)}>
+                Copy Variables
+              </Button>
             </div>
+          </Card>
+        </div>
+
+        {/* Preview Area */}
+        <div className="lg:col-span-2 space-y-4">
+          <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 px-1">Visual Preview</h3>
+          <div className="space-y-1">
+            {[...scale].reverse().map((step) => (
+              <div key={step.name} className="group relative flex flex-col md:flex-row md:items-center gap-2 md:gap-8 p-6 rounded-2xl border border-transparent hover:border-white/5 hover:bg-white/[0.02] transition-all">
+                <div className="w-24 shrink-0">
+                  <div className="text-[10px] font-black text-accent uppercase tracking-tighter mb-1">{step.name}</div>
+                  <div className="text-xs font-mono text-white/30">{step.px}px</div>
+                  <div className="text-[10px] font-mono text-white/20">{step.rem}rem</div>
+                </div>
+                <div 
+                  className="flex-1 text-white truncate leading-tight"
+                  style={{ fontSize: `${step.rem}rem` }}
+                >
+                  {previewText}
+                </div>
+              </div>
+            ))}
           </div>
-        ))}
+        </div>
       </div>
-
-      <button className="btn-primary" style={{ marginTop: '1.5rem' }} onClick={copyCss}>
-        {copied ? 'Copied!' : 'Copy CSS variables'}
-      </button>
     </div>
   );
 }

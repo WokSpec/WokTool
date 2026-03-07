@@ -1,0 +1,1 @@
+"use strict";exports.id=3243,exports.ids=[3243],exports.modules={33243:(e,r,s)=>{s.r(r),s.d(r,{default:()=>t});let t=(0,s(53189).createProxy)(String.raw`/home/user9007/main/projects/wokspec/WokTool/apps/web/src/app/tools/curl-builder/_client.tsx#default`)}};

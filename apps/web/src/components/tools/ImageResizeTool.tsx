@@ -1,6 +1,12 @@
 'use client';
 
 import { useState, useRef, useCallback } from 'react';
+import Dropzone from '@/components/ui/Dropzone';
+import Slider from '@/components/ui/Slider';
+import Button from '@/components/ui/Button';
+import Select from '@/components/ui/Select';
+import Input from '@/components/ui/Input';
+import Card from '@/components/ui/Card';
 
 type FitMode = 'contain' | 'cover' | 'fill';
 
@@ -14,10 +20,21 @@ const PRESETS = [
   { label: 'OG Image', w: 1200, h: 630 },
 ];
 
+const FIT_MODES = [
+  { value: 'contain', label: 'Contain (Letterbox)' },
+  { value: 'cover', label: 'Cover (Crop)' },
+  { value: 'fill', label: 'Fill (Stretch)' },
+];
+
+const OUTPUT_FORMATS = [
+    { value: 'image/png', label: 'PNG' },
+    { value: 'image/jpeg', label: 'JPG' },
+    { value: 'image/webp', label: 'WebP' },
+];
+
 export default function ImageResizeTool() {
   const [originalUrl, setOriginalUrl] = useState<string | null>(null);
   const [resultUrl, setResultUrl] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [width, setWidth] = useState(800);
   const [height, setHeight] = useState(600);
   const [lockAspect, setLockAspect] = useState(true);
@@ -25,24 +42,27 @@ export default function ImageResizeTool() {
   const [fileName, setFileName] = useState('resized');
   const [naturalW, setNaturalW] = useState(0);
   const [naturalH, setNaturalH] = useState(0);
-  const [originalSize, setOriginalSize] = useState(0);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [outputFormat, setOutputFormat] = useState<'image/png'|'image/jpeg'|'image/webp'>('image/png');
   const [quality, setQuality] = useState(90);
-  const inputRef = useRef<HTMLInputElement>(null);
   const imgRef = useRef<HTMLImageElement | null>(null);
 
   const loadFile = useCallback((file: File) => {
-    if (!file.type.startsWith('image/')) return;
+    if (!file.type.startsWith('image/')) {
+        setError('Please upload a valid image file');
+        return;
+    }
+    
     setError(null);
     if (originalUrl) URL.revokeObjectURL(originalUrl);
     if (resultUrl) URL.revokeObjectURL(resultUrl);
     setResultUrl(null);
+    
     const url = URL.createObjectURL(file);
     setOriginalUrl(url);
-    setOriginalSize(file.size);
     setFileName(file.name.replace(/\.[^.]+$/, ''));
+    
     const img = new window.Image();
     img.onload = () => {
       imgRef.current = img;
@@ -51,15 +71,9 @@ export default function ImageResizeTool() {
       setWidth(img.naturalWidth);
       setHeight(img.naturalHeight);
     };
+    img.onerror = () => setError('Failed to load image');
     img.src = url;
   }, [originalUrl, resultUrl]);
-
-  const onDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setIsDragging(false);
-    const f = e.dataTransfer.files?.[0];
-    if (f) loadFile(f);
-  }, [loadFile]);
 
   const handleWidthChange = (val: number) => {
     setWidth(val);
@@ -91,46 +105,69 @@ export default function ImageResizeTool() {
       setError('Invalid dimensions');
       return;
     }
-    const canvas = document.createElement('canvas');
-    canvas.width = width;
-    canvas.height = height;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) {
-      setError('Canvas not available');
-      return;
-    }
+    
     setIsLoading(true);
 
-    ctx.fillStyle = '#000000';
-    ctx.fillRect(0, 0, width, height);
+    // Small timeout to allow UI to update
+    setTimeout(() => {
+        try {
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const ctx = canvas.getContext('2d');
+            
+            if (!ctx) {
+                throw new Error('Canvas not available');
+            }
 
-    if (fitMode === 'fill') {
-      ctx.drawImage(img, 0, 0, width, height);
-    } else if (fitMode === 'contain') {
-      const scale = Math.min(width / img.naturalWidth, height / img.naturalHeight);
-      const sw = img.naturalWidth * scale;
-      const sh = img.naturalHeight * scale;
-      ctx.clearRect(0, 0, width, height);
-      ctx.drawImage(img, (width - sw) / 2, (height - sh) / 2, sw, sh);
-    } else {
-      // cover — crop center
-      const scale = Math.max(width / img.naturalWidth, height / img.naturalHeight);
-      const sw = img.naturalWidth * scale;
-      const sh = img.naturalHeight * scale;
-      ctx.drawImage(img, (width - sw) / 2, (height - sh) / 2, sw, sh);
-    }
+            // Fill background with white/black depending on format if needed, 
+            // but let's default to black for letterboxing as standard practice or transparent for PNG
+            if (outputFormat === 'image/jpeg') {
+                ctx.fillStyle = '#FFFFFF';
+            } else {
+                ctx.fillStyle = 'rgba(0,0,0,0)'; // Transparent
+            }
+            
+            // For 'contain' mode with letterboxing, maybe black is better? 
+            // Let's stick to transparency for PNG/WebP and White for JPG
+            if (fitMode === 'contain' && outputFormat === 'image/jpeg') {
+                 ctx.fillStyle = '#FFFFFF';
+            }
+            
+            ctx.fillRect(0, 0, width, height);
 
-    canvas.toBlob(blob => {
-      if (!blob) {
-        setError('Failed to create image');
-        setIsLoading(false);
-        return;
-      }
-      if (resultUrl) URL.revokeObjectURL(resultUrl);
-      setResultUrl(URL.createObjectURL(blob));
-      setIsLoading(false);
-    }, outputFormat, outputFormat === 'image/png' ? undefined : quality / 100);
-  }, [imgRef, width, height, fitMode, resultUrl, outputFormat, quality]);
+            if (fitMode === 'fill') {
+                ctx.drawImage(img, 0, 0, width, height);
+            } else if (fitMode === 'contain') {
+                const scale = Math.min(width / img.naturalWidth, height / img.naturalHeight);
+                const sw = img.naturalWidth * scale;
+                const sh = img.naturalHeight * scale;
+                // If JPG and contain, we might want black bars instead of white? 
+                // Let's keep it simple for now.
+                ctx.drawImage(img, (width - sw) / 2, (height - sh) / 2, sw, sh);
+            } else {
+                // cover — crop center
+                const scale = Math.max(width / img.naturalWidth, height / img.naturalHeight);
+                const sw = img.naturalWidth * scale;
+                const sh = img.naturalHeight * scale;
+                ctx.drawImage(img, (width - sw) / 2, (height - sh) / 2, sw, sh);
+            }
+
+            canvas.toBlob(blob => {
+                if (!blob) {
+                    throw new Error('Failed to create image');
+                }
+                
+                if (resultUrl) URL.revokeObjectURL(resultUrl);
+                setResultUrl(URL.createObjectURL(blob));
+                setIsLoading(false);
+            }, outputFormat, outputFormat === 'image/png' ? undefined : quality / 100);
+        } catch (err) {
+            setError('Resize failed');
+            setIsLoading(false);
+        }
+    }, 50);
+  }, [width, height, fitMode, resultUrl, outputFormat, quality]);
 
   const reset = () => {
     if (originalUrl) URL.revokeObjectURL(originalUrl);
@@ -140,165 +177,177 @@ export default function ImageResizeTool() {
     imgRef.current = null;
     setNaturalW(0);
     setNaturalH(0);
-    if (inputRef.current) inputRef.current.value = '';
+    setError(null);
   };
 
   return (
-    <div className="img-resize-tool">
+    <div className="space-y-8 animate-in fade-in duration-500">
       {/* Drop zone */}
       {!originalUrl && (
-        <div
-          className={`tool-dropzone${isDragging ? ' img-conv-dragging' : ''}`}
-          onClick={() => inputRef.current?.click()}
-          onDragOver={e => { e.preventDefault(); setIsDragging(true); }}
-          onDragLeave={() => setIsDragging(false)}
-          onDrop={onDrop}
-          role="button"
-          tabIndex={0}
-          onKeyDown={e => e.key === 'Enter' && inputRef.current?.click()}
-        >
-          <p className="tool-dropzone-text">Drop an image here or click to browse</p>
-          <p className="tool-dropzone-sub">PNG · JPG · WebP · GIF</p>
-          <p className="tool-dropzone-private">100% client-side — nothing uploaded</p>
-          <input
-            ref={inputRef}
-            type="file"
-            accept=".png,.jpg,.jpeg,.webp,.gif"
-            className="tool-file-input-hidden"
-            onChange={e => { const f = e.target.files?.[0]; if (f) loadFile(f); }}
-          />
+        <Dropzone 
+          onFileSelect={loadFile}
+          accept="image/*"
+          label="Drop an image to resize"
+          description="Supports PNG, JPG, WebP, GIF"
+        />
+      )}
+
+      {error && (
+        <div className="p-4 rounded-xl bg-danger/10 border border-danger/20 text-danger text-sm font-medium">
+            Error: {error}
         </div>
       )}
 
       {originalUrl && (
-        <>
-          {error && <div className="img-resize-error">Error: {error}</div>}
-          {isLoading && <div className="img-resize-loading">Processing…</div>}
-          {/* Presets */}
-          <div className="img-resize-presets">
-            <span className="img-conv-label">Presets</span>
-            <div className="img-resize-preset-grid">
-              {PRESETS.map(p => (
-                <button
-                  key={p.label}
-                  className="img-resize-preset-btn"
-                  onClick={() => applyPreset(p.w, p.h)}
-                >
-                  <span className="img-resize-preset-name">{p.label}</span>
-                  <span className="img-resize-preset-dims">{p.w}×{p.h}</span>
-                </button>
-              ))}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Settings */}
+            <div className="space-y-6">
+                <Card title="Dimensions">
+                    <div className="space-y-4">
+                        <div className="grid grid-cols-2 gap-4">
+                            <Input 
+                                label="Width" 
+                                type="number" 
+                                value={width} 
+                                onChange={e => handleWidthChange(Number(e.target.value))}
+                                min={1}
+                            />
+                            <Input 
+                                label="Height" 
+                                type="number" 
+                                value={height} 
+                                onChange={e => handleHeightChange(Number(e.target.value))}
+                                min={1}
+                            />
+                        </div>
+                        
+                        <div className="flex items-center justify-between">
+                            <button
+                                onClick={() => setLockAspect(!lockAspect)}
+                                className={`flex items-center gap-2 text-sm font-medium transition-colors ${
+                                    lockAspect ? 'text-accent' : 'text-white/40 hover:text-white'
+                                }`}
+                            >
+                                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    {lockAspect ? (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                    ) : (
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 11V7a4 4 0 118 0m-4 8v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                                    )}
+                                </svg>
+                                {lockAspect ? 'Aspect Ratio Locked' : 'Aspect Ratio Unlocked'}
+                            </button>
+                            
+                            {naturalW > 0 && (
+                                <span className="text-xs text-white/40 font-mono">
+                                    Orig: {naturalW}×{naturalH}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                </Card>
+
+                <Card title="Options">
+                    <div className="space-y-6">
+                        <Select 
+                            label="Fit Mode"
+                            value={fitMode}
+                            onChange={(e) => setFitMode(e.target.value as FitMode)}
+                            options={FIT_MODES}
+                        />
+                        
+                        <Select 
+                            label="Output Format"
+                            value={outputFormat}
+                            onChange={(e) => setOutputFormat(e.target.value as any)}
+                            options={OUTPUT_FORMATS}
+                        />
+                        
+                        {outputFormat !== 'image/png' && (
+                            <Slider
+                                label="Quality"
+                                value={quality}
+                                min={1}
+                                max={100}
+                                onChange={setQuality}
+                                unit="%"
+                            />
+                        )}
+                    </div>
+                </Card>
+
+                <div className="space-y-4">
+                    <h3 className="text-sm font-bold text-white/50 uppercase tracking-wider">Social Presets</h3>
+                    <div className="grid grid-cols-2 gap-2">
+                        {PRESETS.map(p => (
+                            <button
+                                key={p.label}
+                                onClick={() => applyPreset(p.w, p.h)}
+                                className="text-left p-2.5 rounded-lg bg-surface-raised border border-white/5 hover:border-accent/30 hover:bg-white/5 transition-all group"
+                            >
+                                <div className="text-xs font-semibold text-white/80 group-hover:text-white">{p.label}</div>
+                                <div className="text-[10px] text-white/40 font-mono mt-0.5">{p.w} × {p.h}</div>
+                            </button>
+                        ))}
+                    </div>
+                </div>
             </div>
-          </div>
 
-          {/* Dimensions */}
-          <div className="img-resize-dims">
-            <div className="img-resize-dim-row">
-              <label className="img-conv-label" htmlFor="resize-w">Width (px)</label>
-              <input
-                id="resize-w"
-                type="number"
-                min={1}
-                max={8000}
-                value={width}
-                onChange={e => handleWidthChange(Number(e.target.value))}
-                className="tool-input"
-                style={{ width: '100px' }}
-              />
-              <button
-                className={`img-resize-lock-btn${lockAspect ? ' active' : ''}`}
-                onClick={() => setLockAspect(l => !l)}
-                title={lockAspect ? 'Unlock aspect ratio' : 'Lock aspect ratio'}
-              >
-                {lockAspect ? 'Lock' : 'Unlock'}
-              </button>
-              <label className="img-conv-label" htmlFor="resize-h">Height (px)</label>
-              <input
-                id="resize-h"
-                type="number"
-                min={1}
-                max={8000}
-                value={height}
-                onChange={e => handleHeightChange(Number(e.target.value))}
-                className="tool-input"
-                style={{ width: '100px' }}
-              />
-              {naturalW > 0 && (
-                <span className="img-resize-orig-dims">
-                  (original: {naturalW}×{naturalH})
-                </span>
-              )}
+            {/* Preview */}
+            <div className="lg:col-span-2 space-y-6">
+                <div className="relative rounded-2xl overflow-hidden border border-white/10 bg-[#0a0a0a] shadow-2xl min-h-[400px] flex items-center justify-center p-8">
+                     {/* Checkerboard */}
+                    <div className="absolute inset-0 opacity-20 pointer-events-none" 
+                        style={{ 
+                            backgroundImage: 'linear-gradient(45deg, #1a1a1a 25%, transparent 25%), linear-gradient(-45deg, #1a1a1a 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #1a1a1a 75%), linear-gradient(-45deg, transparent 75%, #1a1a1a 75%)',
+                            backgroundSize: '20px 20px',
+                            backgroundPosition: '0 0, 0 10px, 10px -10px, -10px 0px'
+                        }} 
+                    />
+                    
+                    {resultUrl ? (
+                        <img 
+                            src={resultUrl} 
+                            alt="Resized" 
+                            className="max-w-full max-h-[600px] object-contain shadow-2xl animate-in zoom-in-95 duration-300" 
+                        />
+                    ) : (
+                         <div className="text-center opacity-40">
+                            <p className="text-sm">Preview will appear here after resizing</p>
+                        </div>
+                    )}
+                    
+                    {isLoading && (
+                        <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+                             <div className="w-10 h-10 border-2 border-white/20 border-t-accent rounded-full animate-spin" />
+                             <p className="text-sm font-medium text-white">Processing...</p>
+                        </div>
+                    )}
+                </div>
+
+                <div className="flex items-center gap-4">
+                    <Button onClick={doResize} size="lg" className="flex-1" loading={isLoading}>
+                        {resultUrl ? 'Update Resize' : 'Resize Image'}
+                    </Button>
+                    
+                    {resultUrl && (
+                        <Button 
+                            href={resultUrl} 
+                            download={`${fileName}-${width}x${height}.${outputFormat === 'image/png' ? 'png' : outputFormat === 'image/jpeg' ? 'jpg' : 'webp'}`} 
+                            variant="secondary" 
+                            size="lg"
+                            className="flex-1"
+                        >
+                            Download
+                        </Button>
+                    )}
+                    
+                    <Button onClick={reset} variant="ghost" size="lg">
+                        Reset
+                    </Button>
+                </div>
             </div>
-          </div>
-
-          {/* Fit mode */}
-          <div className="img-conv-format-row">
-            <span className="img-conv-label">Fit mode</span>
-            <div className="img-conv-format-btns">
-              {(['contain', 'cover', 'fill'] as FitMode[]).map(m => (
-                <button
-                  key={m}
-                  className={`img-conv-fmt-btn${fitMode === m ? ' active' : ''}`}
-                  onClick={() => setFitMode(m)}
-                  title={m === 'contain' ? 'Letterbox (fit inside)' : m === 'cover' ? 'Crop to fill' : 'Stretch to fill'}
-                >
-                  {m === 'contain' ? 'Contain (letterbox)' : m === 'cover' ? 'Cover (crop)' : 'Fill (stretch)'}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          {/* Output format */}
-          <div className="img-conv-format-row">
-            <span className="img-conv-label">Output format</span>
-            <div className="img-conv-format-btns">
-              {(['image/png','image/jpeg','image/webp'] as const).map(fmt => (
-                <button
-                  key={fmt}
-                  className={`img-conv-fmt-btn${outputFormat === fmt ? ' active' : ''}`}
-                  onClick={() => setOutputFormat(fmt)}
-                >
-                  {fmt === 'image/png' ? 'PNG' : fmt === 'image/jpeg' ? 'JPG' : 'WebP'}
-                </button>
-              ))}
-            </div>
-            {outputFormat !== 'image/png' && (
-              <div className="img-conv-quality-row">
-                <span className="img-conv-label">Quality</span>
-                <input type="range" min={0} max={100} value={quality} onChange={e => setQuality(Number(e.target.value))} />
-                <span className="img-conv-quality-val">{quality}%</span>
-              </div>
-            )}
-          </div>
-
-          {originalSize > 10 * 1024 * 1024 && (
-            <div className="img-resize-warning">Warning: image &gt; 10MB — processing may be slow or fail in some browsers.</div>
-          )}
-
-          {/* Result preview */}
-          {resultUrl && (
-            <div className="img-resize-result">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={resultUrl} alt="Resized" className="img-resize-preview" />
-              <p className="img-resize-result-info">{width}×{height}px {outputFormat === 'image/png' ? 'PNG' : outputFormat === 'image/jpeg' ? 'JPG' : 'WebP'}</p>
-            </div>
-          )}
-
-          {/* Actions */}
-          <div className="bgr-actions">
-            <button className="btn-primary" onClick={doResize}>
-              Resize to {width}×{height}
-            </button>
-            {resultUrl && (
-              <a href={resultUrl} download={`${fileName}-${width}x${height}.${outputFormat === 'image/png' ? 'png' : outputFormat === 'image/jpeg' ? 'jpg' : 'webp'}`} className="btn-primary">
-                ↓ Download {outputFormat === 'image/png' ? 'PNG' : outputFormat === 'image/jpeg' ? 'JPG' : 'WebP'}
-              </a>
-            )}
-            <button className="btn-ghost" onClick={reset}>
-              Load Another
-            </button>
-          </div>
-        </>
+        </div>
       )}
     </div>
   );

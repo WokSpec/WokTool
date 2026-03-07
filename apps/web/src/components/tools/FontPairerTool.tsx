@@ -1,8 +1,12 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Textarea from '@/components/ui/Textarea';
+import Button from '@/components/ui/Button';
+import CodeBlock from '@/components/ui/CodeBlock';
 
-// Curated font pairings
 interface FontPair {
   heading: { name: string; weights: number[] };
   body: { name: string; weights: number[] };
@@ -46,7 +50,6 @@ export default function FontPairerTool() {
   const [headingText, setHeadingText] = useState('Create Anything');
   const [fontsLoaded, setFontsLoaded] = useState(false);
 
-  // Load all Google Fonts
   useEffect(() => {
     const url = getGoogleFontUrl(FONT_PAIRS);
     const link = document.createElement('link');
@@ -73,118 +76,84 @@ body, p, li, td {
   font-weight: ${pair.body.weights[0]};
 }`, [pair]);
 
-  const [copied, setCopied] = useState(false);
-  const copy = async () => {
-    await navigator.clipboard.writeText(css);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
   return (
-    <div className="font-pairer">
-      <div className="font-pairer-layout">
-        {/* Pair selector */}
-        <div className="font-pair-list">
-          {FONT_PAIRS.map((p, i) => (
-            <button
-              key={i}
-              className={`font-pair-item${selected === i ? ' active' : ''}`}
-              onClick={() => setSelected(i)}
-            >
-              <span className="font-pair-item-label">{p.label}</span>
-              <span className="font-pair-item-style">{p.style}</span>
-              <span className="font-pair-item-names" style={{ fontFamily: `'${p.heading.name}', sans-serif` }}>
-                {p.heading.name}
-              </span>
-            </button>
-          ))}
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left: Selection */}
+        <div className="space-y-6">
+            <Card title="Curated Pairings">
+                <div className="space-y-2 max-h-[500px] overflow-y-auto custom-scrollbar pr-2">
+                    {FONT_PAIRS.map((p, i) => (
+                        <button
+                            key={i}
+                            onClick={() => setSelected(i)}
+                            className={`w-full text-left p-3 rounded-xl border transition-all flex items-center justify-between ${selected === i ? 'bg-accent/10 border-accent/30 shadow-inner' : 'bg-surface-raised border-white/5 hover:border-white/10'}`}
+                        >
+                            <div>
+                                <div className={`text-xs font-bold ${selected === i ? 'text-accent' : 'text-white/80'}`}>{p.label}</div>
+                                <div className="text-[10px] text-white/40">{p.heading.name} + {p.body.name}</div>
+                            </div>
+                            <span className="text-[9px] font-black uppercase text-white/20 tracking-widest bg-white/5 px-2 py-1 rounded">{p.style}</span>
+                        </button>
+                    ))}
+                </div>
+            </Card>
+
+            <div className="space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 px-1">CSS Variables</h3>
+                <CodeBlock code={css} language="css" maxHeight="300px" />
+                <Button variant="ghost" className="w-full" size="sm" onClick={() => navigator.clipboard.writeText(css)}>Copy CSS</Button>
+            </div>
         </div>
 
-        {/* Preview */}
-        <div className="font-pair-preview">
-          {!fontsLoaded && (
-            <div className="tool-processing" style={{padding:'1rem'}}>
-              <p className="tool-processing-label">Loading fonts…</p>
-            </div>
-          )}
-
-          <div className="font-preview-controls">
-            <input
-              className="tool-input"
-              value={headingText}
-              onChange={e => setHeadingText(e.target.value)}
-              placeholder="Heading text…"
-            />
-            <textarea
-              className="json-textarea"
-              rows={3}
-              value={customText}
-              onChange={e => setCustomText(e.target.value)}
-              style={{ fontFamily: `'${pair.body.name}', sans-serif`, fontSize: '0.9rem' }}
-            />
-          </div>
-
-          {/* Live preview */}
-          <div className="font-preview-box">
-            <div className="font-preview-meta">
-              <span>{pair.label}</span>
-              <span className="font-pair-item-style">{pair.style}</span>
+        {/* Right: Preview */}
+        <div className="lg:col-span-2 space-y-6">
+            <div className="flex gap-4">
+                <Input value={headingText} onChange={e => setHeadingText(e.target.value)} placeholder="Heading..." className="flex-1" />
+                <Input value={customText} onChange={e => setCustomText(e.target.value)} placeholder="Body..." className="flex-[2]" />
             </div>
 
-            <h1 className="font-preview-h1" style={{ fontFamily: `'${pair.heading.name}', sans-serif`, fontWeight: pair.heading.weights[pair.heading.weights.length - 1] }}>
-              {headingText}
-            </h1>
-            <h2 className="font-preview-h2" style={{ fontFamily: `'${pair.heading.name}', sans-serif`, fontWeight: pair.heading.weights[0] }}>
-              Subheading in {pair.heading.name}
-            </h2>
-            <p className="font-preview-body" style={{ fontFamily: `'${pair.body.name}', sans-serif`, fontWeight: pair.body.weights[0] }}>
-              {customText}
-            </p>
-            <p className="font-preview-body-sm" style={{ fontFamily: `'${pair.body.name}', sans-serif` }}>
-              Body ({pair.body.name}) pairs with heading ({pair.heading.name})
-            </p>
-          </div>
+            <div className="relative min-h-[500px] rounded-3xl bg-white text-black p-12 shadow-2xl overflow-hidden flex flex-col justify-center gap-8 transition-all duration-500">
+                {!fontsLoaded && (
+                    <div className="absolute inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-10 text-white">
+                        Loading fonts...
+                    </div>
+                )}
+                
+                <div>
+                    <h1 
+                        className="text-6xl leading-tight mb-4 transition-all"
+                        style={{ fontFamily: `'${pair.heading.name}', sans-serif`, fontWeight: pair.heading.weights[pair.heading.weights.length - 1] }}
+                    >
+                        {headingText}
+                    </h1>
+                    <h2 
+                        className="text-3xl opacity-60 mb-8 transition-all"
+                        style={{ fontFamily: `'${pair.heading.name}', sans-serif`, fontWeight: pair.heading.weights[0] }}
+                    >
+                        The intelligent choice for {pair.style.toLowerCase()} projects.
+                    </h2>
+                    <p 
+                        className="text-lg leading-relaxed max-w-2xl opacity-80 transition-all"
+                        style={{ fontFamily: `'${pair.body.name}', sans-serif`, fontWeight: pair.body.weights[0] }}
+                    >
+                        {customText} typography plays a crucial role in user experience. Good pairing creates hierarchy and harmony.
+                        <br/><br/>
+                        {customText} The quick brown fox jumps over the lazy dog.
+                    </p>
+                </div>
 
-          {/* Font info */}
-          <div className="font-info-grid">
-            <div className="font-info-card">
-              <p className="font-info-role">Heading</p>
-              <p className="font-info-name" style={{ fontFamily: `'${pair.heading.name}', sans-serif` }}>{pair.heading.name}</p>
-              <p className="font-info-weights">Weights: {pair.heading.weights.join(', ')}</p>
-              <a
-                href={`https://fonts.google.com/specimen/${pair.heading.name.replace(/ /g, '+')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="tool-link"
-                style={{ fontSize: '0.8rem' }}
-              >
-                View on Google Fonts →
-              </a>
+                <div className="pt-8 border-t border-black/10 flex gap-12">
+                    <div>
+                        <div className="text-xs font-bold opacity-40 uppercase tracking-widest mb-1">Heading Font</div>
+                        <a href={`https://fonts.google.com/specimen/${pair.heading.name.replace(/ /g, '+')}`} target="_blank" className="text-lg font-bold hover:underline">{pair.heading.name}</a>
+                    </div>
+                    <div>
+                        <div className="text-xs font-bold opacity-40 uppercase tracking-widest mb-1">Body Font</div>
+                        <a href={`https://fonts.google.com/specimen/${pair.body.name.replace(/ /g, '+')}`} target="_blank" className="text-lg font-bold hover:underline">{pair.body.name}</a>
+                    </div>
+                </div>
             </div>
-            <div className="font-info-card">
-              <p className="font-info-role">Body</p>
-              <p className="font-info-name" style={{ fontFamily: `'${pair.body.name}', sans-serif` }}>{pair.body.name}</p>
-              <p className="font-info-weights">Weights: {pair.body.weights.join(', ')}</p>
-              <a
-                href={`https://fonts.google.com/specimen/${pair.body.name.replace(/ /g, '+')}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="tool-link"
-                style={{ fontSize: '0.8rem' }}
-              >
-                View on Google Fonts →
-              </a>
-            </div>
-          </div>
-
-          {/* CSS output */}
-          <div className="css-gen-output">
-            <div className="json-panel-header">
-              <span className="json-panel-label">CSS</span>
-              <button className="btn-ghost-xs" onClick={copy}>{copied ? 'Copied' : 'Copy'}</button>
-            </div>
-            <pre className="css-gen-code">{css}</pre>
-          </div>
         </div>
       </div>
     </div>

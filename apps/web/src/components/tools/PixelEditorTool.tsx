@@ -1,6 +1,12 @@
 'use client';
 
-import { useEffect, useRef, useState, useCallback } from 'react';
+import { useEffect, useRef, useState, useCallback, useMemo } from 'react';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
+import Slider from '@/components/ui/Slider';
+import Switch from '@/components/ui/Switch';
+import Select from '@/components/ui/Select';
+import Input from '@/components/ui/Input';
 
 type Tool = 'pencil' | 'eraser' | 'fill' | 'eyedropper';
 
@@ -10,14 +16,19 @@ const PALETTE_DEFAULTS = [
   '#444444','#888888','#cccccc','#ff8888',
 ];
 
-const GRID_SIZES = [8, 16, 32, 48, 64];
+const GRID_SIZES = [
+    { value: 8, label: '8 × 8' },
+    { value: 16, label: '16 × 16' },
+    { value: 32, label: '32 × 32' },
+    { value: 48, label: '48 × 48' },
+    { value: 64, label: '64 × 64' },
+];
 
 export default function PixelEditorTool() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [gridSize, setGridSize] = useState(16);
-  const [cellSize, setCellSize] = useState(20);
   const [tool, setTool] = useState<Tool>('pencil');
-  const [color, setColor] = useState('#000000');
+  const [color, setColor] = useState('#818cf8');
   const [palette, setPalette] = useState(PALETTE_DEFAULTS);
   const [showGrid, setShowGrid] = useState(true);
   const isDrawing = useRef(false);
@@ -25,13 +36,14 @@ export default function PixelEditorTool() {
   // pixel data: index = y * gridSize + x
   const pixels = useRef<string[]>(new Array(64 * 64).fill(''));
 
+  const cellSize = useMemo(() => Math.floor(520 / gridSize), [gridSize]);
+
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const ctx = canvas.getContext('2d')!;
     ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-    // Draw pixels
     for (let y = 0; y < gridSize; y++) {
       for (let x = 0; x < gridSize; x++) {
         const c = pixels.current[y * gridSize + x];
@@ -42,58 +54,40 @@ export default function PixelEditorTool() {
       }
     }
 
-    // Draw grid
     if (showGrid) {
-      ctx.strokeStyle = 'rgba(128,128,128,0.3)';
-      ctx.lineWidth = 0.5;
+      ctx.strokeStyle = 'rgba(255,255,255,0.05)';
+      ctx.lineWidth = 1;
       for (let x = 0; x <= gridSize; x++) {
-        ctx.beginPath();
-        ctx.moveTo(x * cellSize, 0);
-        ctx.lineTo(x * cellSize, gridSize * cellSize);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(x * cellSize, 0); ctx.lineTo(x * cellSize, gridSize * cellSize); ctx.stroke();
       }
       for (let y = 0; y <= gridSize; y++) {
-        ctx.beginPath();
-        ctx.moveTo(0, y * cellSize);
-        ctx.lineTo(gridSize * cellSize, y * cellSize);
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(0, y * cellSize); ctx.lineTo(gridSize * cellSize, y * cellSize); ctx.stroke();
       }
     }
   }, [gridSize, cellSize, showGrid]);
 
-  useEffect(() => {
-    draw();
-  }, [draw]);
-
-  const getCell = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const rect = canvasRef.current!.getBoundingClientRect();
-    const x = Math.floor((e.clientX - rect.left) / cellSize);
-    const y = Math.floor((e.clientY - rect.top) / cellSize);
-    if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return null;
-    return { x, y };
-  };
-
-  const floodFill = (x: number, y: number, targetColor: string, newColor: string) => {
-    if (targetColor === newColor) return;
-    const idx = y * gridSize + x;
-    if (pixels.current[idx] !== targetColor) return;
-    if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return;
-    pixels.current[idx] = newColor;
-    floodFill(x+1, y, targetColor, newColor);
-    floodFill(x-1, y, targetColor, newColor);
-    floodFill(x, y+1, targetColor, newColor);
-    floodFill(x, y-1, targetColor, newColor);
-  };
+  useEffect(() => { draw(); }, [draw]);
 
   const applyTool = (x: number, y: number) => {
+    if (x < 0 || x >= gridSize || y < 0 || y >= gridSize) return;
     const idx = y * gridSize + x;
-    if (tool === 'pencil') {
-      pixels.current[idx] = color;
-    } else if (tool === 'eraser') {
-      pixels.current[idx] = '';
-    } else if (tool === 'fill') {
+    if (tool === 'pencil') pixels.current[idx] = color;
+    else if (tool === 'eraser') pixels.current[idx] = '';
+    else if (tool === 'fill') {
       const target = pixels.current[idx];
-      floodFill(x, y, target, color);
+      if (target === color) return;
+      const stack = [[x, y]];
+      while(stack.length) {
+        const [cx, cy] = stack.pop()!;
+        const ci = cy * gridSize + cx;
+        if (pixels.current[ci] === target) {
+            pixels.current[ci] = color;
+            if (cx > 0) stack.push([cx-1, cy]);
+            if (cx < gridSize - 1) stack.push([cx+1, cy]);
+            if (cy > 0) stack.push([cx, cy-1]);
+            if (cy < gridSize - 1) stack.push([cx, cy+1]);
+        }
+      }
     } else if (tool === 'eyedropper') {
       const c = pixels.current[idx];
       if (c) setColor(c);
@@ -101,144 +95,118 @@ export default function PixelEditorTool() {
     draw();
   };
 
-  const onMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    isDrawing.current = true;
-    const cell = getCell(e);
-    if (cell) applyTool(cell.x, cell.y);
-  };
-
-  const onMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    if (!isDrawing.current || tool === 'fill' || tool === 'eyedropper') return;
-    const cell = getCell(e);
-    if (cell) applyTool(cell.x, cell.y);
-  };
-
-  const onMouseUp = () => { isDrawing.current = false; };
-
-  const clear = () => {
-    pixels.current = new Array(64 * 64).fill('');
-    draw();
+  const handlePointer = (e: React.MouseEvent | React.TouchEvent) => {
+    const canvas = canvasRef.current!;
+    const rect = canvas.getBoundingClientRect();
+    const clientX = 'touches' in e ? e.touches[0].clientX : (e as React.MouseEvent).clientX;
+    const clientY = 'touches' in e ? e.touches[0].clientY : (e as React.MouseEvent).clientY;
+    const x = Math.floor((clientX - rect.left) / (rect.width / gridSize));
+    const y = Math.floor((clientY - rect.top) / (rect.height / gridSize));
+    applyTool(x, y);
   };
 
   const exportPng = () => {
-    const canvas = canvasRef.current!;
-    // Export at 1x (no grid)
     const exp = document.createElement('canvas');
-    exp.width = gridSize;
-    exp.height = gridSize;
+    exp.width = gridSize; exp.height = gridSize;
     const ctx = exp.getContext('2d')!;
     for (let y = 0; y < gridSize; y++) {
       for (let x = 0; x < gridSize; x++) {
         const c = pixels.current[y * gridSize + x];
-        if (c) {
-          ctx.fillStyle = c;
-          ctx.fillRect(x, y, 1, 1);
-        }
+        if (c) { ctx.fillStyle = c; ctx.fillRect(x, y, 1, 1); }
       }
     }
-    const a = document.createElement('a');
-    a.download = `pixel-art-${gridSize}x${gridSize}.png`;
-    a.href = exp.toDataURL();
-    a.click();
+    const a = document.createElement('a'); a.download = `pixel-art.png`; a.href = exp.toDataURL(); a.click();
   };
 
-  const changeGridSize = (size: number) => {
-    pixels.current = new Array(64 * 64).fill('');
-    setGridSize(size);
-    const maxCell = Math.floor(520 / size);
-    setCellSize(Math.min(maxCell, 32));
-  };
+  const TOOLS = [
+    { id: 'pencil', icon: '✏️', label: 'Pencil' },
+    { id: 'eraser', icon: '🧹', label: 'Eraser' },
+    { id: 'fill', icon: '🧪', label: 'Bucket' },
+    { id: 'eyedropper', icon: '💉', label: 'Pick' },
+  ];
 
   return (
-    <div className="pixel-editor">
-      {/* Toolbar */}
-      <div className="pixel-toolbar">
-        <div className="pixel-tool-group">
-          {([
-            ['pencil', '', 'Draw'],
-            ['eraser', '', 'Erase'],
-            ['fill', '', 'Fill'],
-            ['eyedropper', '', 'Pick Color'],
-          ] as [Tool, string, string][]).map(([t, icon, label]) => (
-            <button
-              key={t}
-              className={`pixel-tool-btn${tool === t ? ' active' : ''}`}
-              onClick={() => setTool(t)}
-              title={label}
-            >
-              {icon}
-            </button>
-          ))}
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        {/* Sidebar: Toolbar */}
+        <div className="space-y-6">
+            <Card title="Toolbar">
+                <div className="grid grid-cols-2 gap-2">
+                    {TOOLS.map(t => (
+                        <button
+                            key={t.id}
+                            onClick={() => setTool(t.id as Tool)}
+                            className={`flex flex-col items-center justify-center p-3 rounded-xl border transition-all ${tool === t.id ? 'bg-accent border-accent text-white shadow-lg' : 'bg-surface-raised border-white/5 text-white/40 hover:text-white'}`}
+                        >
+                            <span className="text-xl mb-1">{t.icon}</span>
+                            <span className="text-[10px] font-black uppercase tracking-tighter">{t.label}</span>
+                        </button>
+                    ))}
+                </div>
+            </Card>
+
+            <Card title="Canvas Config">
+                <div className="space-y-6">
+                    <Select label="Grid Resolution" value={gridSize} onChange={e => { setGridSize(Number(e.target.value)); pixels.current.fill(''); }} options={GRID_SIZES} />
+                    <Switch label="Visible Grid" checked={showGrid} onChange={setShowGrid} />
+                    <div className="pt-4 border-t border-white/5 space-y-3">
+                        <Button variant="primary" className="w-full" onClick={exportPng}>Download PNG</Button>
+                        <Button variant="ghost" className="w-full" size="sm" onClick={() => { pixels.current.fill(''); draw(); }}>Clear Canvas</Button>
+                    </div>
+                </div>
+            </Card>
         </div>
 
-        <div className="pixel-tool-group">
-          <label className="gen-label">Size:</label>
-          {GRID_SIZES.map(s => (
-            <button
-              key={s}
-              className={`json-mode-btn${gridSize === s ? ' active' : ''}`}
-              onClick={() => changeGridSize(s)}
-            >
-              {s}×{s}
-            </button>
-          ))}
+        {/* Main: Canvas */}
+        <div className="lg:col-span-2 flex items-center justify-center bg-[#0a0a0a] rounded-3xl border border-white/10 shadow-2xl p-8 relative overflow-hidden h-[600px]">
+            <div className="absolute inset-0 opacity-10 pointer-events-none" 
+                style={{ 
+                    backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)',
+                    backgroundSize: '24px 24px'
+                }} 
+            />
+            <canvas
+                ref={canvasRef}
+                width={gridSize * cellSize}
+                height={gridSize * cellSize}
+                className="max-w-full h-auto cursor-crosshair shadow-2xl relative z-10 bg-transparent"
+                onMouseDown={e => { isDrawing.current = true; handlePointer(e); }}
+                onMouseMove={e => isDrawing.current && handlePointer(e)}
+                onMouseUp={() => isDrawing.current = false}
+                onMouseLeave={() => isDrawing.current = false}
+            />
         </div>
 
-        <div className="pixel-tool-group">
-          <label className="gen-check-label">
-            <input type="checkbox" checked={showGrid} onChange={e => setShowGrid(e.target.checked)} />
-            Grid
-          </label>
-        </div>
+        {/* Right: Color Panel */}
+        <div className="space-y-6">
+            <Card title="Color Picker">
+                <div className="space-y-6">
+                    <div className="flex gap-4 items-center">
+                        <div className="w-12 h-12 rounded-xl shadow-inner border border-white/10 shrink-0" style={{ background: color }} />
+                        <Input value={color} onChange={e => setColor(e.target.value)} className="font-mono uppercase" />
+                    </div>
+                    <input type="color" value={color} onChange={e => setColor(e.target.value)} className="w-full h-10 rounded-xl bg-white/5 border border-white/10 cursor-pointer p-1" />
+                </div>
+            </Card>
 
-        <div className="pixel-tool-group pixel-tool-group-right">
-          <button className="btn-ghost" onClick={clear}>Clear</button>
-          <button className="btn-primary" onClick={exportPng}>Export PNG</button>
-        </div>
-      </div>
-
-      <div className="pixel-editor-body">
-        {/* Canvas */}
-        <div className="pixel-canvas-wrap">
-          <canvas
-            ref={canvasRef}
-            width={gridSize * cellSize}
-            height={gridSize * cellSize}
-            className="pixel-canvas"
-            onMouseDown={onMouseDown}
-            onMouseMove={onMouseMove}
-            onMouseUp={onMouseUp}
-            onMouseLeave={onMouseUp}
-          />
-        </div>
-
-        {/* Color panel */}
-        <div className="pixel-color-panel">
-          <div className="pixel-current-color-wrap">
-            <div className="pixel-current-color" style={{ background: color }} />
-            <input type="color" className="color-picker-native" value={color} onChange={e => setColor(e.target.value)} />
-            <input className="tool-input-sm" value={color} onChange={e => setColor(e.target.value)} maxLength={7} />
-          </div>
-
-          <p className="json-panel-label" style={{marginTop:'1rem'}}>Palette</p>
-          <div className="pixel-palette">
-            {palette.map((c, i) => (
-              <button
-                key={i}
-                className={`pixel-palette-swatch${color === c ? ' active' : ''}`}
-                style={{ background: c }}
-                onClick={() => setColor(c)}
-                title={c}
-              />
-            ))}
-          </div>
-
-          {/* Add custom to palette */}
-          <button className="btn-ghost-xs" style={{marginTop:'0.5rem'}} onClick={() => {
-            if (!palette.includes(color)) setPalette(p => [...p, color]);
-          }}>
-            + Add current to palette
-          </button>
+            <Card title="Swatches">
+                <div className="grid grid-cols-4 gap-2">
+                    {palette.map((c, i) => (
+                        <button
+                            key={i}
+                            onClick={() => setColor(c)}
+                            className={`aspect-square rounded-lg border transition-all ${color === c ? 'border-white ring-2 ring-white/10 scale-110 z-10' : 'border-white/5 hover:scale-105'}`}
+                            style={{ background: c }}
+                        />
+                    ))}
+                    <button 
+                        onClick={() => !palette.includes(color) && setPalette([...palette, color])}
+                        className="aspect-square rounded-lg bg-white/5 border border-dashed border-white/20 flex items-center justify-center text-white/20 hover:text-white hover:border-white/40 transition-all"
+                    >
+                        +
+                    </button>
+                </div>
+            </Card>
         </div>
       </div>
     </div>

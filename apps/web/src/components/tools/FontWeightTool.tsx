@@ -1,6 +1,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Slider from '@/components/ui/Slider';
+import Button from '@/components/ui/Button';
 
 const WEIGHTS = [100, 200, 300, 400, 500, 600, 700, 800, 900];
 const WEIGHT_NAMES: Record<number, string> = {
@@ -19,7 +23,7 @@ export default function FontWeightTool() {
   const [fontName, setFontName] = useState('Inter');
   const [inputFont, setInputFont] = useState('Inter');
   const [sampleText, setSampleText] = useState('The quick brown fox jumps over the lazy dog');
-  const [fontSize, setFontSize] = useState(20);
+  const [fontSize, setFontSize] = useState(32);
   const [loaded, setLoaded] = useState(false);
   const [copied, setCopied] = useState<number | null>(null);
 
@@ -55,77 +59,85 @@ export default function FontWeightTool() {
   const importUrl = `https://fonts.googleapis.com/css2?family=${encodeURIComponent(fontName)}:wght@${WEIGHTS.join(';')}&display=swap`;
 
   return (
-    <div className="tool-panel">
-      <div className="grad-controls" style={{ maxWidth: '600px', marginBottom: '1.5rem' }}>
-        <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-          <input
-            type="text"
-            value={inputFont}
-            onChange={e => setInputFont(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && loadFont(inputFont)}
-            placeholder="Google Font name…"
-            style={{ flex: 1, minWidth: '180px' }}
-          />
-          <button className="btn-primary" onClick={() => loadFont(inputFont)}>Load Font</button>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left: Controls */}
+        <div className="space-y-6">
+            <Card title="Font Selection">
+                <div className="space-y-6">
+                    <div className="flex gap-2">
+                        <Input 
+                            value={inputFont} 
+                            onChange={e => setInputFont(e.target.value)} 
+                            onKeyDown={e => e.key === 'Enter' && loadFont(inputFont)}
+                            placeholder="Google Font Name" 
+                        />
+                        <Button onClick={() => loadFont(inputFont)}>Load</Button>
+                    </div>
+                    
+                    <div className="space-y-4 pt-4 border-t border-white/5">
+                        <Input 
+                            label="Sample Text"
+                            value={sampleText}
+                            onChange={e => setSampleText(e.target.value)}
+                        />
+                        <Slider 
+                            label="Preview Size"
+                            min={12} max={96}
+                            value={fontSize}
+                            onChange={setFontSize}
+                            unit="px"
+                        />
+                    </div>
+                </div>
+            </Card>
+
+            <div className="p-6 rounded-3xl bg-white/[0.02] border border-white/5 space-y-4">
+                <h4 className="text-xs font-bold text-white/40 uppercase tracking-widest">Import URL</h4>
+                <code className="block text-[10px] font-mono text-accent bg-black/20 p-3 rounded-lg break-all border border-white/5">
+                    @import url('{importUrl}');
+                </code>
+                <Button variant="secondary" size="sm" className="w-full" onClick={() => navigator.clipboard.writeText(`@import url('${importUrl}');`)}>
+                    Copy Import
+                </Button>
+            </div>
         </div>
 
-        <div className="grad-form-row" style={{ marginTop: '0.75rem' }}>
-          <label>Sample Text</label>
-          <input
-            type="text"
-            value={sampleText}
-            onChange={e => setSampleText(e.target.value)}
-            style={{ flex: 1 }}
-          />
-        </div>
-
-        <div className="br-row" style={{ marginTop: '0.5rem' }}>
-          <div className="br-row-label">
-            <span>Font Size</span>
-            <strong>{fontSize}px</strong>
-          </div>
-          <input type="range" min={12} max={48} value={fontSize} onChange={e => setFontSize(Number(e.target.value))} />
+        {/* Right: Preview List */}
+        <div className="lg:col-span-2 space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 px-1">Weight Spectrum</h3>
+            {!loaded ? (
+                <div className="py-20 text-center text-white/20 animate-pulse">Loading font assets...</div>
+            ) : (
+                <div className="grid gap-3">
+                    {WEIGHTS.map(w => (
+                        <div key={w} className="group flex items-center justify-between p-6 rounded-2xl bg-white/[0.02] border border-white/5 hover:border-white/10 hover:bg-white/[0.04] transition-all">
+                            <div className="flex items-center gap-6 overflow-hidden">
+                                <div className="w-20 shrink-0">
+                                    <div className="text-lg font-black text-white">{w}</div>
+                                    <div className="text-[10px] font-bold text-white/30 uppercase tracking-widest">{WEIGHT_NAMES[w]}</div>
+                                </div>
+                                <div 
+                                    className="truncate text-white transition-all"
+                                    style={{ fontFamily: `'${fontName}', sans-serif`, fontWeight: w, fontSize: fontSize }}
+                                >
+                                    {sampleText}
+                                </div>
+                            </div>
+                            <Button 
+                                variant="ghost" 
+                                size="sm" 
+                                onClick={() => copyDecl(w)}
+                                className={`opacity-0 group-hover:opacity-100 transition-opacity ${copied === w ? 'text-success' : ''}`}
+                            >
+                                {copied === w ? 'Copied' : 'Copy CSS'}
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
       </div>
-
-      {!loaded && (
-        <p style={{ color: 'var(--fg-muted)', marginBottom: '1rem', fontSize: '0.85rem' }}>Loading font…</p>
-      )}
-
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-        {WEIGHTS.map(w => (
-          <div key={w} style={{ background: 'var(--bg-surface)', borderRadius: '0.5rem', padding: '0.75rem 1rem', display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <div style={{ minWidth: '90px', fontSize: '0.75rem', color: 'var(--fg-muted)', flexShrink: 0 }}>
-              <strong style={{ color: 'var(--fg)' }}>{w}</strong> · {WEIGHT_NAMES[w]}
-            </div>
-            <div style={{
-              flex: 1,
-              fontFamily: `'${fontName}', sans-serif`,
-              fontWeight: w,
-              fontSize: `${fontSize}px`,
-              overflow: 'hidden',
-              textOverflow: 'ellipsis',
-              whiteSpace: 'nowrap',
-            }}>
-              {sampleText}
-            </div>
-            <button
-              className="btn-ghost"
-              style={{ fontSize: '0.75rem', padding: '0.15rem 0.45rem', flexShrink: 0 }}
-              onClick={() => copyDecl(w)}
-            >
-              {copied === w ? 'Copied' : 'Copy'}
-            </button>
-          </div>
-        ))}
-      </div>
-
-      <details style={{ marginTop: '1.5rem' }}>
-        <summary style={{ cursor: 'pointer', fontSize: '0.85rem', color: 'var(--fg-muted)' }}>Google Fonts @import URL</summary>
-        <pre className="grad-code" style={{ marginTop: '0.5rem', wordBreak: 'break-all', whiteSpace: 'pre-wrap', fontSize: '0.75rem' }}>
-          {`@import url('${importUrl}');`}
-        </pre>
-      </details>
     </div>
   );
 }

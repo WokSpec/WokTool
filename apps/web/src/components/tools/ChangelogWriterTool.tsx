@@ -1,6 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Textarea from '@/components/ui/Textarea';
+import Button from '@/components/ui/Button';
+import CodeBlock from '@/components/ui/CodeBlock';
 
 type Category = 'features' | 'fixes' | 'breaking' | 'improvements';
 
@@ -35,7 +40,6 @@ function categorize(raw: string): Categorized {
   const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
 
   for (const line of lines) {
-    // Strip git log prefixes like "abc1234 " or "* "
     const clean = line.replace(/^[a-f0-9]{6,10}\s+/, '').replace(/^\*\s+/, '').replace(/^[-•]\s+/, '');
     if (!clean) continue;
 
@@ -72,28 +76,17 @@ fix: navbar overflow on mobile
 refactor: extract utility functions
 breaking: remove deprecated API endpoints
 add user profile page
-fix crash when uploading large files
-improve loading performance
-update dependencies`;
+fix crash when uploading large files`;
 
 export default function ChangelogWriterTool() {
   const [input, setInput] = useState(SAMPLE_INPUT);
   const [version, setVersion] = useState('1.0.0');
   const [date, setDate] = useState(new Date().toISOString().split('T')[0]);
   const [output, setOutput] = useState('');
-  const [copied, setCopied] = useState(false);
 
   const generate = () => {
     const cat = categorize(input);
     setOutput(renderChangelog(cat, version, date));
-  };
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(output);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {}
   };
 
   const download = () => {
@@ -102,78 +95,55 @@ export default function ChangelogWriterTool() {
     a.href = URL.createObjectURL(blob);
     a.download = 'CHANGELOG.md';
     a.click();
-    URL.revokeObjectURL(a.href);
   };
 
   return (
-    <div className="cl-tool">
-      <div className="cl-tool__form">
-        <div className="cl-tool__row">
-          <label className="cl-tool__field">
-            <span>Version</span>
-            <input value={version} onChange={e => setVersion(e.target.value)} placeholder="1.0.0" />
-          </label>
-          <label className="cl-tool__field">
-            <span>Release Date</span>
-            <input type="date" value={date} onChange={e => setDate(e.target.value)} />
-          </label>
-        </div>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <div className="space-y-6">
+            <Card title="Release Meta">
+                <div className="grid grid-cols-2 gap-4">
+                    <Input label="Version" value={version} onChange={e => setVersion(e.target.value)} placeholder="1.0.0" />
+                    <Input label="Release Date" type="date" value={date} onChange={e => setDate(e.target.value)} />
+                </div>
+            </Card>
 
-        <label className="cl-tool__field cl-tool__field--full">
-          <span>Git Log / Bullet Points</span>
-          <textarea
-            className="cl-tool__textarea"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            rows={10}
-            placeholder={`Paste git log output or bullet points, e.g.:\nfeat: add dark mode\nfix: crash on mobile\nrefactor: clean up utils`}
-          />
-        </label>
-
-        <button className="btn btn-primary" onClick={generate}>Generate Changelog</button>
-      </div>
-
-      {output && (
-        <div className="cl-tool__output">
-          <div className="cl-tool__output-header">
-            <span className="cl-tool__output-title">Generated CHANGELOG.md Entry</span>
-            <div className="cl-tool__output-btns">
-              <button className="btn btn-sm" onClick={copy}>{copied ? 'Copied!' : 'Copy'}</button>
-              <button className="btn btn-sm" onClick={download}>Download .md</button>
+            <div className="space-y-2">
+                <div className="flex justify-between items-center px-1">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-white/40">Raw Activity Log</h3>
+                    <Button variant="ghost" size="sm" onClick={() => setInput('')} className="h-7 text-[10px]">Clear</Button>
+                </div>
+                <Textarea 
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    placeholder="Paste git log or list of changes here..."
+                    className="min-h-[300px] font-mono text-xs"
+                />
             </div>
-          </div>
-          <pre className="cl-tool__preview">{output}</pre>
-        </div>
-      )}
 
-      <style>{`
-        .cl-tool { display: flex; flex-direction: column; gap: 20px; }
-        .cl-tool__form {
-          background: var(--bg-surface); border: 1px solid var(--surface-border);
-          border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 14px;
-        }
-        .cl-tool__row { display: flex; gap: 12px; flex-wrap: wrap; }
-        .cl-tool__field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; font-size: 12px; color: var(--text-secondary); }
-        .cl-tool__field--full { flex: unset; }
-        .cl-tool__field input {
-          background: var(--bg); border: 1px solid var(--surface-border); border-radius: 4px;
-          color: var(--text); padding: 6px 8px; font-size: 13px;
-        }
-        .cl-tool__textarea {
-          background: var(--bg); border: 1px solid var(--surface-border); border-radius: 4px;
-          color: var(--text); padding: 8px 10px; font-size: 13px; font-family: 'Menlo','Consolas',monospace;
-          resize: vertical; width: 100%; box-sizing: border-box; outline: none;
-        }
-        .cl-tool__output {
-          background: var(--bg-surface); border: 1px solid var(--surface-border); border-radius: 8px; overflow: hidden;
-        }
-        .cl-tool__output-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--surface-border); }
-        .cl-tool__output-title { font-size: 13px; font-weight: 600; color: var(--text); }
-        .cl-tool__output-btns { display: flex; gap: 8px; }
-        .cl-tool__preview { padding: 16px; font-size: 13px; font-family: 'Menlo','Consolas',monospace; white-space: pre-wrap; color: var(--text); max-height: 480px; overflow-y: auto; margin: 0; }
-        .btn.btn-sm { padding: 5px 12px; font-size: 12px; cursor: pointer; background: var(--surface-raised); border: 1px solid var(--surface-border); color: var(--text); border-radius: 4px; }
-        .btn.btn-sm:hover { background: var(--surface-hover); }
-      `}</style>
+            <Button onClick={generate} className="w-full" size="lg" disabled={!input.trim()}>
+                Categorize & Format
+            </Button>
+        </div>
+
+        <div className="space-y-6">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 px-1">Markdown Output</h3>
+            {output ? (
+                <div className="space-y-4 animate-in slide-in-from-right-4">
+                    <CodeBlock code={output} language="markdown" maxHeight="500px" />
+                    <div className="flex gap-3">
+                        <Button variant="primary" className="flex-1" onClick={download}>Download .md</Button>
+                        <Button variant="secondary" onClick={() => navigator.clipboard.writeText(output)}>Copy</Button>
+                    </div>
+                </div>
+            ) : (
+                <div className="h-[400px] rounded-3xl border-2 border-dashed border-white/5 bg-white/[0.01] flex flex-col items-center justify-center text-center p-12 opacity-20">
+                    <div className="w-16 h-16 rounded-2xl bg-white/[0.03] flex items-center justify-center mb-4 text-2xl">📝</div>
+                    <p className="text-sm">Formatted changelog will appear here</p>
+                </div>
+            )}
+        </div>
+      </div>
     </div>
   );
 }

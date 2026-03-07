@@ -1,6 +1,9 @@
 'use client';
 
 import { useState } from 'react';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
 
 interface FaviconEntry {
   url: string;
@@ -26,71 +29,78 @@ export default function FaviconExtractorTool() {
         body: JSON.stringify({ url: input.trim() }),
       });
       const json = await res.json();
-      if (!res.ok) { setError(json.error || 'Failed'); return; }
+      if (!res.ok) { setError(json.error || 'Failed to extract favicons.'); return; }
       setFavicons(json.favicons ?? []);
       setDone(true);
-    } catch { setError('Network error'); }
+    } catch { setError('Network error. Could not connect to the extraction service.'); }
     finally { setLoading(false); }
   };
 
   return (
-    <div className="tool-page-root">
-      <div className="tool-page-header">
-        <h1 className="tool-page-title">Favicon Extractor</h1>
-        <p className="tool-page-desc">Extract all favicon variants from any domain or URL.</p>
-      </div>
-
-      <div className="tool-section">
-        <div style={{ display: 'flex', gap: 8 }}>
-          <input
-            className="tool-input"
-            style={{ flex: 1 }}
-            placeholder="https://github.com"
-            value={input}
-            onChange={e => setInput(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && extract()}
-          />
-          <button className="btn btn-primary" onClick={extract} disabled={loading}>
-            {loading ? <><span style={{marginRight:8}}>⏳</span>Fetching...</> : 'Extract'}
-          </button>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <Card title="Extract Domain Icons" description="Pull all available favicon variants, including Apple Touch Icons and Manifest icons, from any URL.">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <Input
+                placeholder="https://github.com"
+                value={input}
+                onChange={e => setInput(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && extract()}
+                leftIcon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
+            />
+          </div>
+          <Button onClick={extract} loading={loading} disabled={!input.trim()}>
+            {loading ? 'Fetching...' : 'Extract Icons'}
+          </Button>
         </div>
-        {error && <div style={{ marginTop: 8, padding: '8px 12px', borderRadius: 6, background: 'var(--danger-bg)', border: '1px solid var(--danger-border)', color: 'var(--danger)', fontSize: 13 }}>{error.includes('Network') ? 'Network error — check your connection and try again.' : error}</div>}
-      </div>
+        {error && (
+            <div className="mt-4 p-4 rounded-xl bg-danger/10 border border-danger/20 text-danger text-xs font-medium animate-in slide-in-from-top-2">
+                {error}
+            </div>
+        )}
+      </Card>
 
-      {done && favicons.length === 0 && (
-        <div className="tool-section">
-          <p style={{ color: 'var(--text-muted)' }}>No favicons found.</p>
+      {done && favicons.length === 0 && !loading && (
+        <div className="h-48 rounded-3xl border-2 border-dashed border-white/5 bg-white/[0.01] flex flex-col items-center justify-center text-center p-8 opacity-20">
+          <p className="text-sm">No icons found. The site might not have standard favicon meta tags.</p>
         </div>
       )}
 
       {favicons.length > 0 && (
-        <div className="tool-section">
-          <h2 style={{ fontSize: 14, fontWeight: 600, marginBottom: 14, color: 'var(--text-muted)' }}>
-            Found {favicons.length} favicon{favicons.length > 1 ? 's' : ''}
-          </h2>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 12 }}>
+        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+          <h3 className="text-sm font-bold text-white flex items-center gap-2 px-1">
+            <span className="w-2 h-5 bg-accent rounded-full" />
+            Extracted Assets ({favicons.length})
+          </h3>
+          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
             {favicons.map((fav, i) => (
-              <div key={i} className="card" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 10, padding: 16 }}>
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
-                  src={fav.url}
-                  alt={fav.rel}
-                  style={{ width: 48, height: 48, objectFit: 'contain' }}
-                  onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
-                />
-                <div style={{ textAlign: 'center', width: '100%' }}>
-                  {fav.sizes && <p style={{ fontSize: 11, color: 'var(--accent)', marginBottom: 2 }}>{fav.sizes}</p>}
-                  <p style={{ fontSize: 10, color: 'var(--text-muted)', wordBreak: 'break-all' }}>{fav.rel}</p>
+              <Card key={i} className="p-0 overflow-hidden border-white/10 group flex flex-col">
+                <div className="p-8 flex-1 bg-[#0a0a0a] flex items-center justify-center border-b border-white/5">
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                        src={fav.url}
+                        alt={fav.rel}
+                        className="w-12 h-12 object-contain shadow-2xl group-hover:scale-110 transition-transform duration-500"
+                        onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                    />
                 </div>
-                <a
-                  href={fav.url}
-                  download
-                  className="btn"
-                  style={{ fontSize: 11, padding: '4px 10px', width: '100%', textAlign: 'center', textDecoration: 'none' }}
-                >
-                  Download
-                </a>
-              </div>
+                <div className="p-4 space-y-3">
+                    <div className="min-h-[40px]">
+                        <div className="text-[10px] font-black text-accent uppercase tracking-tighter mb-0.5">{fav.sizes || 'Auto Size'}</div>
+                        <div className="text-[10px] font-medium text-white/40 truncate" title={fav.rel}>{fav.rel}</div>
+                    </div>
+                    <Button 
+                        href={fav.url} 
+                        download 
+                        variant="secondary" 
+                        size="sm" 
+                        className="w-full"
+                        icon={<svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>}
+                    >
+                        Save Asset
+                    </Button>
+                </div>
+              </Card>
             ))}
           </div>
         </div>

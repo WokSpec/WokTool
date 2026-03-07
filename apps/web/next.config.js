@@ -21,6 +21,7 @@ const nextConfig = {
   poweredByHeader: false,
   webpack(config, { isServer }) {
     config.plugins = config.plugins ?? [];
+    
     config.plugins.push(
       new webpack.NormalModuleReplacementPlugin(
         /onnxruntime-web/,
@@ -46,19 +47,13 @@ const nextConfig = {
   async headers() {
     const csp = [
       "default-src 'self'",
-      // Next.js hydration + WASM tools (background-remover, PDF.js) need unsafe-eval
       "script-src 'self' 'unsafe-eval' 'unsafe-inline'",
-      // framer-motion, tldraw, and several tools inject inline styles
       "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "font-src 'self' data: https://fonts.gstatic.com",
-      // tools process images from user files (data:) and blobs, plus external favicons/OG
       "img-src 'self' data: blob: https:",
       "media-src 'self' data: blob:",
-      // Web Workers (background-remover WASM worker, PDF.js worker)
       "worker-src 'self' blob:",
-      // client-side API calls and WASM streaming
       "connect-src 'self' https: blob:",
-      // no iframes used
       "frame-src 'none'",
       "object-src 'none'",
       "base-uri 'self'",

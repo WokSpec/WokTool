@@ -1,8 +1,11 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-
-// ── Color math helpers ────────────────────────────────────────────────────
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Tabs from '@/components/ui/Tabs';
+import Button from '@/components/ui/Button';
+import ColorSwatch from '@/components/ui/ColorSwatch';
 
 function hexToRgb(hex: string): [number,number,number] | null {
   const clean = hex.replace('#','');
@@ -61,16 +64,14 @@ function harmonies(h: number, s: number, l: number) {
     complementary: [[(h+180)%360, s, l]],
     triadic:       [[(h+120)%360, s, l],[(h+240)%360, s, l]],
     analogous:     [[(h+30)%360, s, l],[(h-30+360)%360, s, l]],
-    split:         [[(h+150)%360, s, l],[(h+210)%360, s, l]],
     tetradic:      [[(h+90)%360, s, l],[(h+180)%360, s, l],[(h+270)%360, s, l]],
   };
 }
 
 export default function ColorTool() {
-  const [hex, setHex] = useState('#6366f1');
+  const [hex, setHex] = useState('#818cf8');
   const [bgHex, setBgHex] = useState('#ffffff');
-  const [tab, setTab] = useState<'convert' | 'contrast' | 'harmonies'>('convert');
-  const [copied, setCopied] = useState<string|null>(null);
+  const [activeTab, setActiveTab] = useState<'convert' | 'contrast' | 'harmonies'>('convert');
 
   const rgb = useMemo(() => hexToRgb(hex), [hex]);
   const hsl = useMemo(() => rgb ? rgbToHsl(...rgb) : null, [rgb]);
@@ -80,11 +81,6 @@ export default function ColorTool() {
     if (!rgb || !bgRgb) return null;
     return contrast(...rgb, ...bgRgb);
   }, [rgb, bgRgb]);
-
-  const copy = async (text: string) => {
-    await navigator.clipboard.writeText(text);
-    setCopied(text); setTimeout(() => setCopied(null), 1500);
-  };
 
   const harmColors = useMemo(() => {
     if (!hsl) return null;
@@ -100,108 +96,124 @@ export default function ColorTool() {
   }, [hsl]);
 
   return (
-    <div className="color-tool">
-      {/* Picker */}
-      <div className="color-picker-row">
-        <input type="color" className="color-picker-native" value={hex} onChange={e => setHex(e.target.value)} />
-        <input className="tool-input" value={hex} onChange={e => setHex(e.target.value)} placeholder="#6366f1" maxLength={7} />
-        <div className="color-swatch" style={{ background: hex }} />
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex justify-center">
+        <Tabs 
+            activeTab={activeTab}
+            onChange={id => setActiveTab(id as any)}
+            tabs={[
+                { id: 'convert', label: 'Info & Conversion', icon: 'ℹ️' },
+                { id: 'contrast', label: 'Contrast Check', icon: '👁️' },
+                { id: 'harmonies', label: 'Color Harmonies', icon: '🎨' },
+            ]}
+            className="w-full max-w-xl"
+        />
       </div>
 
-      {/* Tabs */}
-      <div className="json-tool-modes">
-        {(['convert','contrast','harmonies'] as const).map(t => (
-          <button key={t} className={`json-mode-btn${tab === t ? ' active' : ''}`} onClick={() => setTab(t)}>
-            {t.charAt(0).toUpperCase() + t.slice(1)}
-          </button>
-        ))}
+      <div className="min-h-[400px]">
+        {activeTab === 'convert' && rgb && hsl && (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-in slide-in-from-bottom-2">
+                <Card title="Quick Picker">
+                    <div className="space-y-6">
+                        <div className="flex gap-4 items-center">
+                            <div className="w-16 h-16 rounded-2xl border border-white/10 shadow-2xl shrink-0 transition-transform hover:scale-110" style={{ background: hex }} />
+                            <Input value={hex} onChange={e => setHex(e.target.value)} className="font-mono text-lg font-black uppercase" maxLength={7} />
+                        </div>
+                        <input type="color" value={hex} onChange={e => setHex(e.target.value)} className="w-full h-10 rounded-xl bg-white/5 border border-white/10 cursor-pointer p-1" />
+                    </div>
+                </Card>
+
+                <div className="grid grid-cols-1 gap-3">
+                    {[
+                        { l: 'RGB', v: `rgb(${rgb.join(', ')})` },
+                        { l: 'HSL', v: `hsl(${hsl[0]}, ${hsl[1]}%, ${hsl[2]}%)` },
+                        { l: 'Luminance', v: luminance(...rgb).toFixed(4) },
+                    ].map(f => (
+                        <div key={f.l} className="group flex items-center justify-between p-4 rounded-xl bg-surface-raised border border-white/5 hover:border-white/10 transition-all">
+                            <div>
+                                <div className="text-[10px] font-black uppercase text-white/20 tracking-widest">{f.l}</div>
+                                <code className="text-sm font-bold text-white/80">{f.v}</code>
+                            </div>
+                            <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(f.v)} className="opacity-0 group-hover:opacity-100">Copy</Button>
+                        </div>
+                    ))}
+                </div>
+            </div>
+        )}
+
+        {activeTab === 'contrast' && (
+            <div className="max-w-3xl mx-auto space-y-8 animate-in slide-in-from-bottom-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <Card title="Foreground">
+                        <div className="flex gap-4 items-center mb-4">
+                            <div className="w-10 h-10 rounded-xl border border-white/5" style={{ background: hex }} />
+                            <Input value={hex} onChange={e => setHex(e.target.value)} className="font-mono" maxLength={7} />
+                        </div>
+                        <input type="color" value={hex} onChange={e => setHex(e.target.value)} className="w-full h-8 rounded-lg bg-white/5 cursor-pointer border-none" />
+                    </Card>
+                    <Card title="Background">
+                        <div className="flex gap-4 items-center mb-4">
+                            <div className="w-10 h-10 rounded-xl border border-white/5" style={{ background: bgHex }} />
+                            <Input value={bgHex} onChange={e => setBgHex(e.target.value)} className="font-mono" maxLength={7} />
+                        </div>
+                        <input type="color" value={bgHex} onChange={e => setBgHex(e.target.value)} className="w-full h-8 rounded-lg bg-white/5 cursor-pointer border-none" />
+                    </Card>
+                </div>
+
+                {contrastRatio && (
+                    <div className="space-y-6">
+                        <div 
+                            className="h-48 rounded-3xl flex items-center justify-center text-4xl font-black shadow-2xl transition-all border border-white/10"
+                            style={{ background: bgHex, color: hex }}
+                        >
+                            Aa Preview
+                        </div>
+
+                        <div className="flex flex-col md:flex-row items-center justify-between gap-6 p-8 rounded-3xl bg-surface-raised border border-white/5 shadow-xl">
+                            <div className="text-center md:text-left">
+                                <div className="text-[10px] font-black uppercase text-white/20 tracking-[0.2em] mb-1">Contrast Ratio</div>
+                                <div className="text-5xl font-black text-white font-mono">{contrastRatio.toFixed(2)}</div>
+                            </div>
+                            
+                            <div className="grid grid-cols-2 gap-3">
+                                {[
+                                    { l: 'AA Normal', ok: contrastRatio >= 4.5 },
+                                    { l: 'AA Large', ok: contrastRatio >= 3.0 },
+                                    { l: 'AAA Normal', ok: contrastRatio >= 7.0 },
+                                    { l: 'AAA Large', ok: contrastRatio >= 4.5 },
+                                ].map(b => (
+                                    <div key={b.l} className={`px-4 py-2 rounded-xl border font-black text-[10px] uppercase tracking-widest text-center ${b.ok ? 'bg-success/10 border-success/30 text-success' : 'bg-danger/10 border-danger/30 text-danger'}`}>
+                                        {b.ok ? 'Pass' : 'Fail'} {b.l}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        )}
+
+        {activeTab === 'harmonies' && harmColors && (
+            <div className="space-y-8 animate-in slide-in-from-bottom-2">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    {harmColors.map(h => (
+                        <Card key={h.key} title={h.key.charAt(0).toUpperCase() + h.key.slice(1)}>
+                            <div className="flex items-center gap-2 mb-4 h-16">
+                                <div className="flex-1 h-full rounded-xl shadow-lg transition-transform hover:scale-105 cursor-pointer border border-white/10" style={{ background: hex }} onClick={() => navigator.clipboard.writeText(hex)} />
+                                {h.colors.map(c => (
+                                    <div key={c} className="flex-1 h-full rounded-xl shadow-lg transition-transform hover:scale-105 cursor-pointer border border-white/10" style={{ background: c }} onClick={() => navigator.clipboard.writeText(c)} />
+                                ))}
+                            </div>
+                            <div className="flex justify-between font-mono text-[10px] font-bold text-white/30 uppercase px-1">
+                                <span>{hex}</span>
+                                {h.colors.map(c => <span key={c}>{c}</span>)}
+                            </div>
+                        </Card>
+                    ))}
+                </div>
+            </div>
+        )}
       </div>
-
-      {/* Convert */}
-      {tab === 'convert' && rgb && hsl && (
-        <div className="color-values-grid">
-          {[
-            ['HEX', hex],
-            ['RGB', `rgb(${rgb.join(', ')})`],
-            ['HSL', `hsl(${hsl[0]}, ${hsl[1]}%, ${hsl[2]}%)`],
-            ['R', String(rgb[0])],
-            ['G', String(rgb[1])],
-            ['B', String(rgb[2])],
-            ['H', String(hsl[0]) + '°'],
-            ['S', hsl[1] + '%'],
-            ['L', hsl[2] + '%'],
-            ['Luminance', luminance(...rgb).toFixed(4)],
-          ].map(([label, val]) => (
-            <div key={label} className="color-value-row" onClick={() => copy(val)}>
-              <span className="color-value-label">{label}</span>
-              <code className="color-value">{val}</code>
-              <span className="color-copy-hint">{copied === val ? 'Copied' : 'Copy'}</span>
-            </div>
-          ))}
-        </div>
-      )}
-
-      {/* Contrast */}
-      {tab === 'contrast' && (
-        <div className="color-contrast-section">
-          <div className="color-contrast-pickers">
-            <div className="color-picker-row">
-              <label className="gen-label">Foreground</label>
-              <input type="color" className="color-picker-native" value={hex} onChange={e => setHex(e.target.value)} />
-              <input className="tool-input" value={hex} onChange={e => setHex(e.target.value)} maxLength={7} />
-            </div>
-            <div className="color-picker-row">
-              <label className="gen-label">Background</label>
-              <input type="color" className="color-picker-native" value={bgHex} onChange={e => setBgHex(e.target.value)} />
-              <input className="tool-input" value={bgHex} onChange={e => setBgHex(e.target.value)} maxLength={7} />
-            </div>
-          </div>
-          {contrastRatio && (
-            <>
-              <div className="color-contrast-preview" style={{ background: bgHex, color: hex }}>
-                <span className="color-contrast-preview-text">Aa Preview Text — How does this look?</span>
-              </div>
-              <div className="color-contrast-ratio">
-                Contrast ratio: <strong>{contrastRatio.toFixed(2)}:1</strong>
-              </div>
-              <div className="color-wcag-grid">
-                {[
-                  ['AA Normal',  contrastRatio >= 4.5],
-                  ['AA Large',   contrastRatio >= 3.0],
-                  ['AAA Normal', contrastRatio >= 7.0],
-                  ['AAA Large',  contrastRatio >= 4.5],
-                ].map(([label, pass]) => (
-                  <div key={String(label)} className={`wcag-badge ${pass ? 'pass' : 'fail'}`}>
-                    {pass ? 'Pass' : 'Fail'} {label}
-                  </div>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
-      )}
-
-      {/* Harmonies */}
-      {tab === 'harmonies' && harmColors && (
-        <div className="color-harmonies">
-          {harmColors.map(({ key, colors }) => (
-            <div key={key} className="color-harmony-row">
-              <span className="color-harmony-label">{key}</span>
-              <div className="color-harmony-swatches">
-                <div className="color-swatch" style={{ background: hex }} title={hex} onClick={() => copy(hex)} />
-                {colors.map(c => (
-                  <div key={c} className="color-swatch" style={{ background: c }} title={c} onClick={() => copy(c)} />
-                ))}
-              </div>
-              <div className="color-harmony-vals">
-                {[hex, ...colors].map(c => (
-                  <code key={c} className="color-harmony-hex" onClick={() => copy(c)}>{c}</code>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      )}
     </div>
   );
 }

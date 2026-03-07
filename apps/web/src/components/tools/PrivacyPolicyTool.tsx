@@ -1,6 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
+import Select from '@/components/ui/Select';
+import CodeBlock from '@/components/ui/CodeBlock';
 
 type Jurisdiction = 'US' | 'EU' | 'UK' | 'AU';
 
@@ -102,7 +107,6 @@ export default function PrivacyPolicyTool() {
     jurisdiction: 'US',
   });
   const [policy, setPolicy] = useState('');
-  const [copied, setCopied] = useState(false);
 
   const toggleData = (id: string) => {
     setForm(prev => ({
@@ -113,15 +117,7 @@ export default function PrivacyPolicyTool() {
     }));
   };
 
-  const generate = () => setPolicy(generatePolicy(form));
-
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(policy);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    } catch {}
-  };
+  const handleGenerate = () => setPolicy(generatePolicy(form));
 
   const download = () => {
     const blob = new Blob([policy], { type: 'text/plain' });
@@ -129,93 +125,79 @@ export default function PrivacyPolicyTool() {
     a.href = URL.createObjectURL(blob);
     a.download = 'privacy-policy.txt';
     a.click();
-    URL.revokeObjectURL(a.href);
   };
 
   return (
-    <div className="pp-tool">
-      <div className="pp-tool__form">
-        <div className="pp-tool__row">
-          <label className="pp-tool__field">
-            <span>Company / Website Name</span>
-            <input value={form.company} onChange={e => setForm(p => ({ ...p, company: e.target.value }))} placeholder="Acme Inc." />
-          </label>
-          <label className="pp-tool__field">
-            <span>Website URL</span>
-            <input value={form.website} onChange={e => setForm(p => ({ ...p, website: e.target.value }))} placeholder="https://example.com" />
-          </label>
-        </div>
-        <div className="pp-tool__row">
-          <label className="pp-tool__field">
-            <span>Contact Email</span>
-            <input type="email" value={form.email} onChange={e => setForm(p => ({ ...p, email: e.target.value }))} placeholder="privacy@example.com" />
-          </label>
-          <label className="pp-tool__field">
-            <span>Jurisdiction</span>
-            <select value={form.jurisdiction} onChange={e => setForm(p => ({ ...p, jurisdiction: e.target.value as Jurisdiction }))}>
-              <option value="US">United States</option>
-              <option value="EU">European Union (GDPR)</option>
-              <option value="UK">United Kingdom</option>
-              <option value="AU">Australia</option>
-            </select>
-          </label>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Form */}
+        <div className="space-y-6">
+            <Card title="Identity">
+                <div className="space-y-4">
+                    <Input label="Company / Website Name" value={form.company} onChange={e => setForm(p => ({...p, company: e.target.value}))} placeholder="Acme Inc." />
+                    <Input label="Website URL" value={form.website} onChange={e => setForm(p => ({...p, website: e.target.value}))} placeholder="https://example.com" />
+                    <Input label="Contact Email" type="email" value={form.email} onChange={e => setForm(p => ({...p, email: e.target.value}))} placeholder="privacy@example.com" />
+                </div>
+            </Card>
+
+            <Card title="Legal & Data">
+                <div className="space-y-6">
+                    <Select 
+                        label="Primary Jurisdiction" 
+                        value={form.jurisdiction} 
+                        onChange={e => setForm(p => ({...p, jurisdiction: e.target.value as Jurisdiction}))}
+                        options={[
+                            { value: 'US', label: 'United States' },
+                            { value: 'EU', label: 'European Union (GDPR)' },
+                            { value: 'UK', label: 'United Kingdom' },
+                            { value: 'AU', label: 'Australia' },
+                        ]}
+                    />
+
+                    <div className="space-y-3">
+                        <label className="text-[10px] font-black uppercase text-white/20 tracking-widest px-1">Data Points Collected</label>
+                        <div className="grid grid-cols-2 gap-2">
+                            {DATA_OPTIONS.map(opt => (
+                                <button
+                                    key={opt.id}
+                                    onClick={() => toggleData(opt.id)}
+                                    className={`flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${form.dataCollected.includes(opt.id) ? 'bg-accent/10 border-accent/30 text-accent' : 'bg-surface-raised border-white/5 text-white/40 hover:text-white hover:bg-white/[0.02]'}`}
+                                >
+                                    <div className={`w-4 h-4 rounded border flex items-center justify-center shrink-0 transition-colors ${form.dataCollected.includes(opt.id) ? 'bg-accent border-accent text-white' : 'border-white/10 bg-white/5'}`}>
+                                        {form.dataCollected.includes(opt.id) && <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" /></svg>}
+                                    </div>
+                                    <span className="text-xs font-bold">{opt.label}</span>
+                                </button>
+                            ))}
+                        </div>
+                    </div>
+                </div>
+            </Card>
+
+            <Button onClick={handleGenerate} size="lg" className="w-full">
+                Generate Privacy Policy
+            </Button>
         </div>
 
-        <div className="pp-tool__checks-label">Data Collected</div>
-        <div className="pp-tool__checks">
-          {DATA_OPTIONS.map(opt => (
-            <label key={opt.id} className="pp-tool__check">
-              <input
-                type="checkbox"
-                checked={form.dataCollected.includes(opt.id)}
-                onChange={() => toggleData(opt.id)}
-              />
-              {opt.label}
-            </label>
-          ))}
+        {/* Preview */}
+        <div className="space-y-6">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 px-1">Generated Policy</h3>
+            {policy ? (
+                <div className="space-y-4 animate-in slide-in-from-right-4">
+                    <CodeBlock code={policy} language="text" maxHeight="600px" />
+                    <div className="flex gap-3">
+                        <Button variant="primary" className="flex-1" onClick={download}>Download .txt</Button>
+                        <Button variant="secondary" onClick={() => navigator.clipboard.writeText(policy)}>Copy to Clipboard</Button>
+                    </div>
+                </div>
+            ) : (
+                <div className="h-[500px] rounded-3xl border-2 border-dashed border-white/5 bg-white/[0.01] flex flex-col items-center justify-center text-center p-12 opacity-20">
+                    <div className="w-16 h-16 rounded-2xl bg-white/[0.03] flex items-center justify-center mb-4 text-2xl">🛡️</div>
+                    <p className="text-sm">Your policy will appear here after generation</p>
+                </div>
+            )}
         </div>
-
-        <button className="btn btn-primary" onClick={generate}>Generate Privacy Policy</button>
       </div>
-
-      {policy && (
-        <div className="pp-tool__output">
-          <div className="pp-tool__output-header">
-            <span className="pp-tool__output-title">Generated Policy</span>
-            <div className="pp-tool__output-btns">
-              <button className="btn btn-sm" onClick={copy}>{copied ? 'Copied!' : 'Copy'}</button>
-              <button className="btn btn-sm" onClick={download}>Download .txt</button>
-            </div>
-          </div>
-          <pre className="pp-tool__preview">{policy}</pre>
-        </div>
-      )}
-
-      <style>{`
-        .pp-tool { display: flex; flex-direction: column; gap: 20px; }
-        .pp-tool__form {
-          background: var(--bg-surface); border: 1px solid var(--surface-border);
-          border-radius: 8px; padding: 16px; display: flex; flex-direction: column; gap: 14px;
-        }
-        .pp-tool__row { display: flex; gap: 12px; flex-wrap: wrap; }
-        .pp-tool__field { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 160px; font-size: 12px; color: var(--text-secondary); }
-        .pp-tool__field input, .pp-tool__field select {
-          background: var(--bg); border: 1px solid var(--surface-border); border-radius: 4px;
-          color: var(--text); padding: 6px 8px; font-size: 13px;
-        }
-        .pp-tool__checks-label { font-size: 12px; color: var(--text-secondary); font-weight: 500; }
-        .pp-tool__checks { display: flex; flex-wrap: wrap; gap: 10px; }
-        .pp-tool__check { display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--text-secondary); cursor: pointer; user-select: none; }
-        .pp-tool__output {
-          background: var(--bg-surface); border: 1px solid var(--surface-border); border-radius: 8px; overflow: hidden;
-        }
-        .pp-tool__output-header { display: flex; justify-content: space-between; align-items: center; padding: 10px 14px; border-bottom: 1px solid var(--surface-border); }
-        .pp-tool__output-title { font-size: 13px; font-weight: 600; color: var(--text); }
-        .pp-tool__output-btns { display: flex; gap: 8px; }
-        .pp-tool__preview { padding: 16px; font-size: 12px; white-space: pre-wrap; word-break: break-word; color: var(--text); max-height: 480px; overflow-y: auto; margin: 0; }
-        .btn.btn-sm { padding: 5px 12px; font-size: 12px; cursor: pointer; background: var(--surface-raised); border: 1px solid var(--surface-border); color: var(--text); border-radius: 4px; }
-        .btn.btn-sm:hover { background: var(--surface-hover); }
-      `}</style>
     </div>
   );
 }

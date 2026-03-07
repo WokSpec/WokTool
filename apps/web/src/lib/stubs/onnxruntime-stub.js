@@ -1,2 +1,10 @@
-// Stub for onnxruntime-web — @imgly/background-removal falls back to WASM
-module.exports = {};
+// Enhanced stub for onnxruntime-web to prevent property access crashes
+module.exports = {
+  env: {
+    wasm: {
+      proxy: false,
+      numThreads: 1,
+      initTimeout: 0,
+    }
+  }
+};

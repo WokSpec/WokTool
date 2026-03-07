@@ -1,114 +1,128 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState } from 'react';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
 
-interface UrlResult {
+interface LinkResult {
   url: string;
-  status: number | null;
-  label: string;
-  error?: string;
-}
-
-function statusColor(status: number | null, error?: string): string {
-  if (error) return '#6b7280';
-  if (!status) return '#6b7280';
-  if (status >= 200 && status < 300) return '#34d399';
-  if (status >= 300 && status < 400) return '#fbbf24';
-  return '#f87171';
+  status: number | string;
+  ok: boolean;
+  type: string;
 }
 
 export default function LinkCheckerTool() {
-  const [input, setInput] = useState('');
-  const [results, setResults] = useState<UrlResult[]>([]);
-  const [running, setRunning] = useState(false);
-  const [progress, setProgress] = useState(0);
-  const abortRef = useRef<AbortController | null>(null);
+  const [url, setUrl] = useState('');
+  const [results, setResults] = useState<LinkResult[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const check = async () => {
-    const urls = input.split('\n').map(u => u.trim()).filter(Boolean);
-    if (!urls.length) return;
-    setRunning(true);
-    setResults([]);
-    setProgress(0);
-    abortRef.current = new AbortController();
-    const out: UrlResult[] = [];
-
-    for (let i = 0; i < urls.length; i++) {
-      const url = urls[i];
-      try {
-        const res = await fetch(url, { method: 'HEAD', mode: 'no-cors', signal: abortRef.current.signal });
-        // no-cors gives opaque response — status is 0 but no error means reachable
-        out.push({ url, status: res.status || null, label: res.status ? String(res.status) : 'OK (opaque)' });
-      } catch (e: unknown) {
-        if (e instanceof Error && e.name === 'AbortError') break;
-        out.push({ url, status: null, error: 'Unreachable', label: 'Error' });
-      }
-      setResults([...out]);
-      setProgress(Math.round(((i + 1) / urls.length) * 100));
+  const checkLinks = async () => {
+    const trimmed = url.trim();
+    if (!trimmed) return;
+    setLoading(true); setError(''); setResults([]);
+    try {
+      const res = await fetch('/api/tools/link-checker', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ url: trimmed }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to check links');
+      setResults(data.links || []);
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
     }
-
-    setRunning(false);
   };
 
-  const stop = () => { abortRef.current?.abort(); setRunning(false); };
-
-  const exportCsv = () => {
-    const csv = ['URL,Status,Label', ...results.map(r => `"${r.url}",${r.status ?? ''},${r.label}`)].join('\n');
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv' }));
-    a.download = 'link-check.csv';
-    a.click();
-  };
+  const broken = results.filter(r => !r.ok);
 
   return (
-    <div className="tool-page-root">
-      <div className="tool-page-header">
-        <h1 className="tool-page-title">Link Checker</h1>
-        <p className="tool-page-desc">Check HTTP status codes for a list of URLs. Runs in your browser — no server needed.</p>
-      </div>
-
-      <div className="tool-section">
-        <label style={{ fontSize: 13, color: 'var(--text-muted)', display: 'block', marginBottom: 6 }}>URLs (one per line)</label>
-        <textarea
-          className="tool-input"
-          rows={6}
-          style={{ fontFamily: 'monospace', fontSize: 12, resize: 'vertical' }}
-          placeholder={'https://example.com\nhttps://github.com'}
-          value={input}
-          onChange={e => setInput(e.target.value)}
-        />
-        <div style={{ display: 'flex', gap: 8, marginTop: 8 }}>
-          <button className="btn btn-primary" onClick={check} disabled={running}>
-            {running ? `Checking... ${progress}%` : 'Check Links'}
-          </button>
-          {running && <button className="btn" onClick={stop}>Stop</button>}
-          {results.length > 0 && !running && (
-            <button className="btn" style={{ marginLeft: 'auto' }} onClick={exportCsv}>Export CSV</button>
-          )}
-        </div>
-        {running && (
-          <div style={{ marginTop: 10, height: 4, background: 'var(--surface-border)', borderRadius: 2 }}>
-            <div style={{ height: '100%', width: `${progress}%`, background: 'var(--accent)', borderRadius: 2, transition: 'width 0.2s' }} />
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <Card title="Page Link Auditor" description="Crawl a webpage and identify all broken, redirected, or valid links. Useful for SEO and health checks.">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <Input
+                placeholder="https://example.com"
+                value={url}
+                onChange={e => setUrl(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && checkLinks()}
+                leftIcon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.828a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" /></svg>}
+            />
           </div>
+          <Button onClick={checkLinks} loading={loading} disabled={!url.trim()}>
+            Start Audit
+          </Button>
+        </div>
+        {error && (
+            <div className="mt-4 p-4 rounded-xl bg-danger/10 border border-danger/20 text-danger text-xs font-medium">
+                {error}
+            </div>
         )}
-      </div>
+      </Card>
 
       {results.length > 0 && (
-        <div className="tool-section">
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-            {results.map((r, i) => (
-              <div key={i} className="card" style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '8px 12px' }}>
-                <span style={{
-                  minWidth: 70, fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 4,
-                  background: `${statusColor(r.status, r.error)}22`,
-                  color: statusColor(r.status, r.error),
-                }}>
-                  {r.label}
-                </span>
-                <span style={{ fontSize: 12, color: 'var(--text-secondary)', wordBreak: 'break-all' }}>{r.url}</span>
-              </div>
-            ))}
-          </div>
+        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Card className="p-4 text-center">
+                    <div className="text-[10px] font-black uppercase text-white/20 mb-1">Total Links</div>
+                    <div className="text-2xl font-black text-white">{results.length}</div>
+                </Card>
+                <Card className="p-4 text-center border-success/20 bg-success/5">
+                    <div className="text-[10px] font-black uppercase text-success/40 mb-1">Healthy</div>
+                    <div className="text-2xl font-black text-success">{results.length - broken.length}</div>
+                </Card>
+                <Card className={`p-4 text-center ${broken.length > 0 ? 'border-danger/40 bg-danger/10 animate-pulse' : 'border-white/5 bg-white/[0.01]'}`}>
+                    <div className="text-[10px] font-black uppercase text-danger/40 mb-1">Broken</div>
+                    <div className={`text-2xl font-black ${broken.length > 0 ? 'text-danger' : 'text-white/20'}`}>{broken.length}</div>
+                </Card>
+            </div>
+
+            <Card title="Detailed Report" className="p-0 overflow-hidden border-white/10">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left border-collapse">
+                        <thead>
+                            <tr className="bg-white/[0.03]">
+                                <th className="p-4 text-[10px] font-black uppercase text-white/20 tracking-widest">Status</th>
+                                <th className="p-4 text-[10px] font-black uppercase text-white/20 tracking-widest">URL</th>
+                                <th className="p-4 text-[10px] font-black uppercase text-white/20 tracking-widest">Type</th>
+                            </tr>
+                        </thead>
+                        <tbody className="divide-y divide-white/[0.03]">
+                            {results.map((r, i) => (
+                                <tr key={i} className="hover:bg-white/[0.01] transition-colors group">
+                                    <td className="p-4">
+                                        <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase border ${r.ok ? 'bg-success/10 border-success/20 text-success' : 'bg-danger/10 border-danger/20 text-danger'}`}>
+                                            {r.status}
+                                        </span>
+                                    </td>
+                                    <td className="p-4">
+                                        <div className="flex items-center gap-2">
+                                            <code className="text-xs font-mono text-white/60 truncate max-w-[400px]">{r.url}</code>
+                                            <a href={r.url} target="_blank" rel="noopener noreferrer" className="opacity-0 group-hover:opacity-100 p-1 rounded hover:bg-white/10 text-white/40 hover:text-white transition-all">
+                                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" /></svg>
+                                            </a>
+                                        </div>
+                                    </td>
+                                    <td className="p-4">
+                                        <span className="text-[10px] font-bold text-white/20 uppercase tracking-tighter">{r.type}</span>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+            </Card>
+        </div>
+      )}
+
+      {results.length === 0 && !loading && !error && (
+        <div className="py-20 flex flex-col items-center justify-center text-center opacity-20">
+            <div className="w-20 h-20 rounded-3xl border-2 border-dashed border-white/40 flex items-center justify-center text-3xl mb-4">✅</div>
+            <p className="text-sm font-medium">Results will appear here after analysis</p>
         </div>
       )}
     </div>

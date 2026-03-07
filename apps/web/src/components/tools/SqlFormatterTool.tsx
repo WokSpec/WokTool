@@ -1,6 +1,10 @@
 'use client';
 
 import { useState } from 'react';
+import Card from '@/components/ui/Card';
+import Textarea from '@/components/ui/Textarea';
+import Button from '@/components/ui/Button';
+import CodeBlock from '@/components/ui/CodeBlock';
 
 const KEYWORDS = [
   'SELECT', 'FROM', 'WHERE', 'JOIN', 'LEFT', 'RIGHT', 'INNER', 'OUTER', 'CROSS',
@@ -11,7 +15,6 @@ const KEYWORDS = [
   'EXISTS', 'CASE', 'WHEN', 'THEN', 'ELSE', 'END', 'WITH', 'RETURNING',
 ];
 
-// Keywords that start a new logical line
 const LINE_BREAK_KEYWORDS = new Set([
   'SELECT', 'FROM', 'WHERE', 'JOIN', 'LEFT JOIN', 'RIGHT JOIN', 'INNER JOIN',
   'OUTER JOIN', 'CROSS JOIN', 'ON', 'AND', 'OR', 'HAVING', 'GROUP BY',
@@ -21,31 +24,22 @@ const LINE_BREAK_KEYWORDS = new Set([
 
 function formatSQL(raw: string): string {
   if (!raw.trim()) return '';
-
-  // Normalize whitespace
   let sql = raw.replace(/\s+/g, ' ').trim();
-
-  // Uppercase keywords (handle multi-word first)
   const sortedKeywords = [...KEYWORDS].sort((a, b) => b.length - a.length);
   for (const kw of sortedKeywords) {
     const re = new RegExp('\\b' + kw.replace(/ /g, '\\s+') + '\\b', 'gi');
     sql = sql.replace(re, kw);
   }
-
-  // Insert line breaks before major keywords to make formatting simpler
   const breakers = [...LINE_BREAK_KEYWORDS].sort((a, b) => b.length - a.length);
   for (const br of breakers) {
     const re = new RegExp('\\s+' + br.replace(/ /g, '\\s+') + '\\b', 'gi');
     sql = sql.replace(re, '\n' + br);
   }
-
-  // Split into lines and indent simply
   const lines = sql.split(/\n+/).map(l => l.trim()).filter(Boolean);
   let outLines: string[] = [];
   for (const line of lines) {
     if (/^(SELECT|INSERT|UPDATE|DELETE|CREATE|DROP|WITH)\b/i.test(line)) {
       outLines.push(line);
-      // For SELECT lists, try to break columns onto separate lines
       if (line.startsWith('SELECT')) {
         const rest = line.slice(6).trim();
         if (rest) {
@@ -57,82 +51,56 @@ function formatSQL(raw: string): string {
       outLines.push('  ' + line);
     }
   }
-
   return outLines.join('\n');
 }
 
 export default function SqlFormatterTool() {
-  const [input, setInput] = useState('');
+  const [input, setInput] = useState('SELECT u.id, u.name, p.title FROM users u LEFT JOIN posts p ON u.id = p.user_id WHERE u.active = 1 AND p.published_at IS NOT NULL ORDER BY u.created_at DESC LIMIT 10;');
   const [output, setOutput] = useState('');
-  const [copied, setCopied] = useState(false);
 
-  const format = () => setOutput(formatSQL(input));
-
-  const copy = () => {
-    if (!output) return;
-    navigator.clipboard.writeText(output).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
-  };
+  const handleFormat = () => setOutput(formatSQL(input));
 
   return (
-    <div className="sql-tool">
-      <div className="sql-tool__area">
-        <label className="tool-label">Input SQL</label>
-        <textarea
-          className="sql-tool__textarea"
-          rows={10}
-          value={input}
-          onChange={e => setInput(e.target.value)}
-          placeholder="SELECT * FROM users WHERE active = 1 ORDER BY created_at DESC;"
-          spellCheck={false}
-        />
-      </div>
-
-      <div className="sql-tool__actions">
-        <button className="btn btn-primary" onClick={format} disabled={!input.trim()}>Format SQL</button>
-        <button className="btn btn-secondary" onClick={() => { setInput(''); setOutput(''); }}>Clear</button>
-      </div>
-
-      {output && (
-        <div className="sql-tool__output-wrap">
-          <div className="sql-tool__output-header">
-            <span className="tool-label" style={{ margin: 0 }}>Formatted SQL</span>
-            <button className="btn btn-secondary" style={{ fontSize: 12 }} onClick={copy}>
-              {copied ? 'Copied!' : 'Copy'}
-            </button>
-          </div>
-          <pre className="sql-tool__output">{output}</pre>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left: Input */}
+        <div className="space-y-6">
+            <div className="space-y-2">
+                <div className="flex justify-between items-center px-1">
+                    <h3 className="text-xs font-bold uppercase tracking-widest text-white/40">Raw SQL Query</h3>
+                    <Button variant="ghost" size="sm" onClick={() => { setInput(''); setOutput(''); }} className="h-7 text-[10px]">Clear</Button>
+                </div>
+                <Textarea 
+                    value={input}
+                    onChange={e => setInput(e.target.value)}
+                    placeholder="SELECT * FROM table..."
+                    className="min-h-[300px] font-mono text-sm leading-relaxed"
+                    spellCheck={false}
+                />
+            </div>
+            <Button onClick={handleFormat} className="w-full" size="lg" disabled={!input.trim()}>
+                Format & Beautify
+            </Button>
         </div>
-      )}
 
-      <style>{`
-        .sql-tool { display: flex; flex-direction: column; gap: 16px; }
-        .sql-tool__area { display: flex; flex-direction: column; gap: 6px; }
-        .sql-tool__textarea {
-          padding: 10px 12px; font-size: 13px; font-family: 'Menlo','Consolas',monospace;
-          line-height: 1.6; background: var(--bg); color: var(--text);
-          border: 1px solid var(--surface-border); border-radius: 6px;
-          outline: none; resize: vertical; width: 100%;
-        }
-        .sql-tool__textarea:focus { border-color: #818cf8; }
-        .sql-tool__actions { display: flex; gap: 8px; flex-wrap: wrap; }
-        .sql-tool__output-wrap {
-          background: var(--bg-surface); border: 1px solid var(--surface-border);
-          border-radius: 8px; overflow: hidden;
-        }
-        .sql-tool__output-header {
-          display: flex; align-items: center; justify-content: space-between;
-          padding: 8px 14px; border-bottom: 1px solid var(--surface-border);
-          background: var(--surface-card);
-        }
-        .sql-tool__output {
-          padding: 14px; font-size: 13px; font-family: 'Menlo','Consolas',monospace;
-          line-height: 1.7; color: var(--text-secondary); margin: 0;
-          overflow: auto; white-space: pre;
-        }
-      `}</style>
+        {/* Right: Output */}
+        <div className="space-y-6">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 px-1">Formatted Result</h3>
+            {output ? (
+                <div className="space-y-4 animate-in slide-in-from-right-4 duration-500">
+                    <CodeBlock code={output} language="sql" maxHeight="450px" />
+                    <Button variant="primary" className="w-full" size="lg" onClick={() => navigator.clipboard.writeText(output)}>
+                        Copy SQL
+                    </Button>
+                </div>
+            ) : (
+                <div className="h-[400px] rounded-3xl border-2 border-dashed border-white/5 bg-white/[0.01] flex flex-col items-center justify-center text-center p-12 opacity-20">
+                    <div className="w-16 h-16 rounded-2xl bg-white/[0.03] flex items-center justify-center mb-4 text-2xl">📊</div>
+                    <p className="text-sm">Prettified SQL will appear here</p>
+                </div>
+            )}
+        </div>
+      </div>
     </div>
   );
 }

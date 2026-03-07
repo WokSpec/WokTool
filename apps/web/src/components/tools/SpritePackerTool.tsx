@@ -1,6 +1,13 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import Card from '@/components/ui/Card';
+import Slider from '@/components/ui/Slider';
+import Select from '@/components/ui/Select';
+import Button from '@/components/ui/Button';
+import Switch from '@/components/ui/Switch';
+import CodeBlock from '@/components/ui/CodeBlock';
+import Dropzone from '@/components/ui/Dropzone';
 
 interface Sprite {
   id: string;
@@ -8,45 +15,12 @@ interface Sprite {
   img: HTMLImageElement;
   w: number;
   h: number;
-  x: number;
-  y: number;
+  url: string;
 }
 
 interface PackedSprite extends Sprite {
   px: number;
   py: number;
-}
-
-// Simple shelf-packing algorithm
-function packSprites(sprites: Sprite[], padding = 1): { items: PackedSprite[]; width: number; height: number } {
-  const sorted = [...sprites].sort((a, b) => Math.max(b.w, b.h) - Math.max(a.w, a.h));
-  const items: PackedSprite[] = [];
-  const shelves: { y: number; x: number; h: number }[] = [];
-  const maxW = Math.pow(2, Math.ceil(Math.log2(Math.sqrt(sprites.reduce((a, s) => a + s.w * s.h, 0)) * 1.2)));
-  let totalH = 0;
-
-  for (const s of sorted) {
-    const sw = s.w + padding;
-    const sh = s.h + padding;
-    let placed = false;
-    for (const shelf of shelves) {
-      if (shelf.x + sw <= maxW && sh <= shelf.h + padding) {
-        items.push({ ...s, px: shelf.x, py: shelf.y });
-        shelf.x += sw;
-        placed = true;
-        break;
-      }
-    }
-    if (!placed) {
-      items.push({ ...s, px: 0, py: totalH });
-      shelves.push({ y: totalH, x: sw, h: sh });
-      totalH += sh;
-    }
-  }
-
-  const w = nextPow2(Math.max(...items.map(i => i.px + i.w + padding), 1));
-  const h = nextPow2(Math.max(...items.map(i => i.py + i.h + padding), 1));
-  return { items, width: w, height: h };
 }
 
 function nextPow2(n: number) {
@@ -55,56 +29,79 @@ function nextPow2(n: number) {
   return p;
 }
 
+function packSprites(sprites: Sprite[], padding = 2): { items: PackedSprite[]; width: number; height: number } {
+  if (sprites.length === 0) return { items: [], width: 0, height: 0 };
+  
+  // Sort by height descending for shelf packing
+  const sorted = [...sprites].sort((a, b) => b.h - a.h);
+  const items: PackedSprite[] = [];
+  const shelves: { y: number; x: number; h: number }[] = [];
+  
+  // Estimate a reasonable max width (square-ish power of 2)
+  const totalArea = sprites.reduce((a, s) => a + (s.w + padding) * (s.h + padding), 0);
+  const side = Math.sqrt(totalArea * 1.2);
+  const maxW = nextPow2(Math.max(side, sorted[0].w + padding));
+  
+  let currentY = 0;
+
+  for (const s of sorted) {
+    const sw = s.w + padding;
+    const sh = s.h + padding;
+    let placed = false;
+
+    for (const shelf of shelves) {
+      if (shelf.x + sw <= maxW && sh <= shelf.h) {
+        items.push({ ...s, px: shelf.x, py: shelf.y });
+        shelf.x += sw;
+        placed = true;
+        break;
+      }
+    }
+
+    if (!placed) {
+      items.push({ ...s, px: 0, py: currentY });
+      shelves.push({ y: currentY, x: sw, h: sh });
+      currentY += sh;
+    }
+  }
+
+  const finalW = nextPow2(Math.max(...items.map(i => i.px + i.w + padding), 1));
+  const finalH = nextPow2(Math.max(...items.map(i => i.py + i.h + padding), 1));
+  
+  return { items, width: finalW, height: finalH };
+}
+
 export default function SpritePackerTool() {
   const [sprites, setSprites] = useState<Sprite[]>([]);
-  const [packed, setPacked] = useState<{ items: PackedSprite[]; width: number; height: number } | null>(null);
   const [padding, setPadding] = useState(2);
   const [format, setFormat] = useState<'json-hash' | 'json-array' | 'css'>('json-hash');
   const [showGrid, setShowGrid] = useState(true);
+  const [loading, setLoading] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
-  const loadFiles = (files: FileList | null) => {
-    if (!files) return;
-    const newSprites: Sprite[] = [];
-    let loaded = 0;
-    Array.from(files).forEach(f => {
-      const img = new Image();
-      const url = URL.createObjectURL(f);
-      img.onload = () => {
-        newSprites.push({ id: crypto.randomUUID(), name: f.name.replace(/\.[^.]+$/, ''), img, w: img.width, h: img.height, x: 0, y: 0 });
-        loaded++;
-        URL.revokeObjectURL(url);
-        if (loaded === files.length) {
-          setSprites(prev => [...prev, ...newSprites]);
-        }
-      };
-      img.onerror = () => {
-        loaded++;
-        URL.revokeObjectURL(url);
-        console.error('Failed to load image', f.name);
-        if (loaded === files.length) {
-          setSprites(prev => [...prev, ...newSprites]);
-        }
-      };
-      img.src = url;
-    });
-  };
+  const loadFiles = useCallback((file: File) => {
+    setLoading(true);
+    const img = new Image();
+    const url = URL.createObjectURL(file);
+    img.onload = () => {
+      setSprites(prev => [...prev, {
+        id: crypto.randomUUID(),
+        name: file.name.replace(/\.[^.]+$/, ''),
+        img,
+        w: img.width,
+        h: img.height,
+        url
+      }]);
+      setLoading(false);
+    };
+    img.src = url;
+  }, []);
 
-  const removeSprite = (id: string) => {
-    setSprites(prev => prev.filter(s => s.id !== id));
-    setPacked(null);
-  };
+  const packed = useMemo(() => packSprites(sprites, padding), [sprites, padding]);
 
-  const doPack = useCallback(() => {
-    if (sprites.length === 0) return;
-    const result = packSprites(sprites, padding);
-    setPacked(result);
-  }, [sprites, padding]);
-
-  // Draw canvas when packed changes
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas || !packed) return;
+    if (!canvas || !packed.width) return;
     canvas.width = packed.width;
     canvas.height = packed.height;
     const ctx = canvas.getContext('2d')!;
@@ -112,152 +109,119 @@ export default function SpritePackerTool() {
 
     packed.items.forEach(s => {
       ctx.drawImage(s.img, s.px, s.py, s.w, s.h);
-    });
-
-    if (showGrid) {
-      ctx.strokeStyle = 'rgba(99,102,241,0.4)';
-      ctx.lineWidth = 0.5;
-      packed.items.forEach(s => {
+      if (showGrid) {
+        ctx.strokeStyle = '#818cf866';
+        ctx.lineWidth = 1;
         ctx.strokeRect(s.px, s.py, s.w, s.h);
-      });
-    }
+      }
+    });
   }, [packed, showGrid]);
 
-  const exportPng = () => {
+  const manifest = useMemo(() => {
+    if (!packed.items.length) return '';
+    if (format === 'json-hash') {
+      const frames: any = {};
+      packed.items.forEach(s => {
+        frames[s.name] = { frame: { x: s.px, y: s.py, w: s.w, h: s.h }, sourceSize: { w: s.w, h: s.h } };
+      });
+      return JSON.stringify({ frames, meta: { size: { w: packed.width, h: packed.height } } }, null, 2);
+    }
+    if (format === 'json-array') {
+      return JSON.stringify(packed.items.map(s => ({ name: s.name, x: s.px, y: s.py, w: s.w, h: s.h })), null, 2);
+    }
+    return packed.items.map(s => `.sprite-${s.name} { width: ${s.w}px; height: ${s.h}px; background-position: -${s.px}px -${s.py}px; }`).join('\n');
+  }, [packed, format]);
+
+  const downloadAll = () => {
     const canvas = canvasRef.current;
     if (!canvas) return;
     const a = document.createElement('a');
     a.href = canvas.toDataURL('image/png');
     a.download = 'spritesheet.png';
     a.click();
-  };
-
-  const getManifest = (): string => {
-    if (!packed) return '';
-    if (format === 'json-hash') {
-      const frames: Record<string, object> = {};
-      packed.items.forEach(s => {
-        frames[s.name] = { frame: { x: s.px, y: s.py, w: s.w, h: s.h }, rotated: false, trimmed: false, sourceSize: { w: s.w, h: s.h } };
-      });
-      return JSON.stringify({ frames, meta: { app: 'WokTool Sprite Packer', size: { w: packed.width, h: packed.height }, image: 'spritesheet.png' } }, null, 2);
-    }
-    if (format === 'json-array') {
-      return JSON.stringify(packed.items.map(s => ({ name: s.name, x: s.px, y: s.py, w: s.w, h: s.h })), null, 2);
-    }
-    // CSS
-    return packed.items.map(s =>
-      `.sprite-${s.name} { width: ${s.w}px; height: ${s.h}px; background: url('spritesheet.png') -${s.px}px -${s.py}px; }`
-    ).join('\n');
-  };
-
-  const exportManifest = () => {
-    const content = getManifest();
-    const ext = format === 'css' ? 'css' : 'json';
-    const blob = new Blob([content], { type: 'text/plain' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = `spritesheet.${ext}`;
-    a.click();
-  };
-
-  const [manifestCopied, setManifestCopied] = useState(false);
-  const copyManifest = async () => {
-    await navigator.clipboard.writeText(getManifest());
-    setManifestCopied(true);
-    setTimeout(() => setManifestCopied(false), 1500);
+    
+    const blob = new Blob([manifest], { type: 'text/plain' });
+    const a2 = document.createElement('a');
+    a2.href = URL.createObjectURL(blob);
+    a2.download = `spritesheet.${format === 'css' ? 'css' : 'json'}`;
+    a2.click();
   };
 
   return (
-    <div className="sprite-packer">
-      <div className="sprite-packer-layout">
-        {/* Controls */}
-        <div className="sprite-packer-controls">
-          <label
-            className="tool-file-label sprite-drop-zone"
-            onDragOver={e => e.preventDefault()}
-            onDrop={e => { e.preventDefault(); loadFiles(e.dataTransfer.files); }}
-          >
-            <div>Upload</div>
-            <p>Drop PNGs here or click to browse</p>
-            <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>Supports PNG, JPG, WebP, GIF</p>
-            <input type="file" accept="image/*" multiple onChange={e => loadFiles(e.target.files)} style={{ display: 'none' }} />
-          </label>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left: Management */}
+        <div className="space-y-6">
+            <Card title="Add Sprites">
+                <Dropzone onFileSelect={loadFiles} label="Drop PNG/SVG icons" description="Select multiple files to pack them" className="h-32" />
+                
+                {sprites.length > 0 && (
+                    <div className="mt-6 space-y-2">
+                        <div className="flex justify-between items-center px-1">
+                            <span className="text-[10px] font-black uppercase text-white/20 tracking-widest">Library ({sprites.length})</span>
+                            <button onClick={() => setSprites([])} className="text-[10px] font-bold text-danger/60 hover:text-danger">Clear</button>
+                        </div>
+                        <div className="max-h-[300px] overflow-y-auto pr-2 space-y-2 custom-scrollbar">
+                            {sprites.map(s => (
+                                <div key={s.id} className="flex items-center justify-between p-2 rounded-xl bg-white/[0.02] border border-white/5 group">
+                                    <div className="flex items-center gap-3">
+                                        <img src={s.url} className="w-8 h-8 object-contain bg-white/5 rounded" alt="" />
+                                        <div className="min-w-0">
+                                            <div className="text-[10px] font-bold text-white/80 truncate max-w-[120px]">{s.name}</div>
+                                            <div className="text-[9px] font-mono text-white/20">{s.w}×{s.h}</div>
+                                        </div>
+                                    </div>
+                                    <button onClick={() => setSprites(prev => prev.filter(x => x.id !== s.id))} className="p-1.5 text-white/10 hover:text-danger opacity-0 group-hover:opacity-100 transition-all">✕</button>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+            </Card>
 
-          {sprites.length > 0 && (
-            <div className="sprite-list">
-              {sprites.map(s => (
-                <div key={s.id} className="sprite-list-item">
-                  <img src={s.img.src} alt={s.name} className="sprite-list-thumb" />
-                  <span className="sprite-list-name">{s.name}</span>
-                  <span className="sprite-list-size">{s.w}×{s.h}</span>
-                  <button className="sprite-list-del" onClick={() => removeSprite(s.id)}>Remove</button>
+            <Card title="Packing Logic">
+                <div className="space-y-6">
+                    <Slider label="Padding" min={0} max={32} value={padding} onChange={setPadding} unit="px" />
+                    <Select 
+                        label="Output Format"
+                        value={format}
+                        onChange={e => setFormat(e.target.value as any)}
+                        options={[
+                            { value: 'json-hash', label: 'JSON Hash (TexturePacker)' },
+                            { value: 'json-array', label: 'JSON Array' },
+                            { value: 'css', label: 'CSS Classes' },
+                        ]}
+                    />
+                    <Switch label="Show Grid Overlay" checked={showGrid} onChange={setShowGrid} />
                 </div>
-              ))}
-            </div>
-          )}
-
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            <div className="sprite-control-row">
-              <label className="tilemap-label">Padding (px)</label>
-              <input type="number" className="tool-input" value={padding} min={0} max={16}
-                onChange={e => setPadding(Math.max(0, Number(e.target.value)))}
-                style={{ width: '70px' }} />
-              <label className="tilemap-label" style={{ marginLeft: '0.5rem' }}>
-                <input type="checkbox" checked={showGrid} onChange={e => setShowGrid(e.target.checked)} style={{ marginRight: '0.3rem' }} />
-                Grid overlay
-              </label>
-            </div>
-
-            <div className="sprite-control-row">
-              <label className="tilemap-label">Manifest</label>
-              <select className="tool-select" value={format} onChange={e => setFormat(e.target.value as typeof format)}>
-                <option value="json-hash">JSON (TexturePacker)</option>
-                <option value="json-array">JSON (array)</option>
-                <option value="css">CSS sprites</option>
-              </select>
-            </div>
-
-            <button
-              className="btn-primary"
-              onClick={doPack}
-              disabled={sprites.length === 0}
-            >
-              Pack {sprites.length > 0 ? `${sprites.length} sprites` : '…'}
-            </button>
-          </div>
+            </Card>
         </div>
 
-        {/* Preview + export */}
-        <div className="sprite-packer-preview">
-          {packed ? (
-            <>
-              <div className="sprite-preview-header">
-                <span className="sprite-preview-size">{packed.width}×{packed.height}px · {packed.items.length} sprites</span>
-                <div style={{ display: 'flex', gap: '0.5rem' }}>
-                  <button className="btn-ghost-xs" onClick={exportManifest}>Export manifest</button>
-                  <button className="btn-secondary btn-sm" onClick={exportPng}>Export PNG</button>
+        {/* Right: Preview & Code */}
+        <div className="lg:col-span-2 space-y-6">
+            <div className="flex justify-between items-center px-1">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-white/40">Atlas Preview</h3>
+                <div className="flex gap-3">
+                    <span className="text-[10px] font-black text-accent uppercase bg-accent/5 px-2 py-1 rounded border border-accent/10">{packed.width} × {packed.height}</span>
+                    <Button variant="primary" size="sm" onClick={downloadAll} disabled={!sprites.length}>Download Atlas</Button>
                 </div>
-              </div>
-              <div className="sprite-canvas-wrap">
-                <canvas ref={canvasRef} className="sprite-canvas" />
-              </div>
-
-              <div className="css-gen-output" style={{ marginTop: '0.75rem' }}>
-                <div className="json-panel-header">
-                  <span className="json-panel-label">Manifest — {format}</span>
-                  <button className="btn-ghost-xs" onClick={copyManifest}>{manifestCopied ? 'Copied' : 'Copy'}</button>
-                </div>
-                <pre className="css-gen-code" style={{ maxHeight: '200px', overflow: 'auto', fontSize: '0.72rem' }}>
-                  {getManifest()}
-                </pre>
-              </div>
-            </>
-          ) : (
-            <div className="sprite-empty">
-              <canvas ref={canvasRef} style={{ display: 'none' }} />
-              <p>Add sprites and click Pack to generate your atlas</p>
             </div>
-          )}
+
+            <div className="relative aspect-square rounded-3xl bg-[#0a0a0a] border border-white/10 overflow-auto shadow-2xl flex items-center justify-center p-8 custom-scrollbar">
+                <div className="absolute inset-0 opacity-10 pointer-events-none" 
+                    style={{ 
+                        backgroundImage: 'linear-gradient(45deg, #161616 25%, transparent 25%), linear-gradient(-45deg, #161616 25%, transparent 25%), linear-gradient(45deg, transparent 75%, #161616 75%), linear-gradient(-45deg, transparent 75%, #161616 75%)',
+                        backgroundSize: '24px 24px'
+                    }} 
+                />
+                <canvas ref={canvasRef} className="max-w-none shadow-2xl" />
+                {!sprites.length && <p className="text-white/10 font-bold uppercase tracking-widest text-sm">Add sprites to begin</p>}
+            </div>
+
+            <div className="space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 px-1">Generated Manifest</h3>
+                <CodeBlock code={manifest} language={format.includes('json') ? 'json' : 'css'} maxHeight="300px" />
+            </div>
         </div>
       </div>
     </div>

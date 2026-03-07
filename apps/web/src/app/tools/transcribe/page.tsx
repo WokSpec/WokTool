@@ -1,177 +1,159 @@
 'use client';
-import { useState } from 'react';
-import ToolShell from '@/components/tools/ToolShell';
 
-function formatSrtTime(ms: number) {
-  const totalSeconds = Math.floor(ms / 1000);
-  const h = Math.floor(totalSeconds / 3600);
-  const m = Math.floor((totalSeconds % 3600) / 60);
-  const s = totalSeconds % 60;
-  const ms3 = ms % 1000;
-  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')},${String(ms3).padStart(3, '0')}`;
+import { useState, useCallback } from 'react';
+import Card from '@/components/ui/Card';
+import Dropzone from '@/components/ui/Dropzone';
+import Button from '@/components/ui/Button';
+import Tabs from '@/components/ui/Tabs';
+import { Mic, Clock, User, MessageSquare, Download, Play, Info } from 'lucide-react';
+
+interface TranscriptUtterance {
+  speaker: string;
+  text: string;
+  start: number;
+  end: number;
+}
+
+interface TranscribeResult {
+  text: string;
+  utterances?: TranscriptUtterance[];
+  duration: number;
+  status: string;
 }
 
 export default function TranscribePage() {
-  const [audioUrl, setAudioUrl] = useState('');
+  const [file, setFile] = useState<File | null>(null);
   const [loading, setLoading] = useState(false);
-  const [result, setResult] = useState<any>(null);
+  const [result, setResult] = useState<TranscribeResult | null>(null);
   const [error, setError] = useState('');
-  const [copied, setCopied] = useState(false);
-  const [options, setOptions] = useState({ speakerLabels: true, entityDetection: true, sentimentAnalysis: false, autoChapters: false });
+  const [activeTab, setActiveTab] = useState<'raw' | 'speakers'>('raw');
 
-  async function transcribe() {
-    if (!audioUrl.trim()) return;
+  const handleTranscribe = async () => {
+    if (!file) return;
     setLoading(true); setError(''); setResult(null);
     try {
+      const formData = new FormData();
+      formData.append('file', file);
       const res = await fetch('/api/tools/transcribe', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ audioUrl, ...options }),
+        body: formData,
       });
       const data = await res.json();
-      if (!res.ok) { setError(data.error?.message || 'Transcription failed'); return; }
+      if (!res.ok) throw new Error(data.error || 'Transcription failed');
       setResult(data.data);
     } catch (e: any) {
       setError(e.message);
     } finally {
       setLoading(false);
     }
-  }
-
-  function copyText() {
-    if (result?.text) {
-      navigator.clipboard.writeText(result.text);
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  }
-
-  function downloadBlob(content: string, filename: string, type: string) {
-    const blob = new Blob([content], { type });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url; a.download = filename; a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  function exportTranscript(format: 'txt' | 'srt' | 'json') {
-    if (!result) return;
-    if (format === 'txt') {
-      const text = result.utterances?.map((u: any) => `${u.speaker}: ${u.text}`).join('\n') || result.text || '';
-      downloadBlob(text, 'transcript.txt', 'text/plain');
-    } else if (format === 'srt') {
-      const srt = result.words?.map((w: any, i: number) =>
-        `${i + 1}\n${formatSrtTime(w.start)} --> ${formatSrtTime(w.end)}\n${w.text}\n`
-      ).join('\n') || '';
-      downloadBlob(srt, 'transcript.srt', 'text/plain');
-    } else if (format === 'json') {
-      downloadBlob(JSON.stringify(result, null, 2), 'transcript.json', 'application/json');
-    }
-  }
+  };
 
   return (
-    <ToolShell id="transcribe" label="Audio Transcription" description="Transcribe audio with speaker labels, entity detection, and sentiment analysis — powered by AssemblyAI Universal-2." icon="TR">
-      <div className="tool-page-root">
-      <div className="tool-page-header">
-        <h1 className="tool-page-title">Audio Transcription</h1>
-        <p className="tool-page-desc">Transcribe audio with speaker labels, entity detection, and sentiment analysis — powered by AssemblyAI Universal-2.</p>
-      </div>
-      <div className="tool-section">
-        <label className="tool-field-label">Audio URL (MP3, WAV, M4A, FLAC, WebM)</label>
-        <input
-          value={audioUrl}
-          onChange={e => setAudioUrl(e.target.value)}
-          placeholder="https://example.com/audio.mp3"
-          className="tool-field-input"
-        />
-        <div className="tool-options-row">
-          {[
-            { key: 'speakerLabels', label: 'Speaker labels' },
-            { key: 'entityDetection', label: 'Entity detection' },
-            { key: 'sentimentAnalysis', label: 'Sentiment analysis' },
-            { key: 'autoChapters', label: 'Auto chapters' },
-          ].map(o => (
-            <label key={o.key} className="tool-option-label">
-              <input type="checkbox" checked={(options as any)[o.key]} onChange={e => setOptions(prev => ({ ...prev, [o.key]: e.target.checked }))} />
-              {o.label}
-            </label>
-          ))}
-        </div>
-        <button type="button" onClick={transcribe} disabled={loading || !audioUrl.trim()} className="btn btn-primary tool-submit-btn">
-          {loading ? 'Transcribing... (~30–60s)' : 'Transcribe Audio'}
-        </button>
-
-        {error && <p className="tool-error">{error}</p>}
-
-        {result && (
-          <div className="tool-result">
-            {audioUrl && (
-              <div className="tool-audio-preview">
-                {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
-                <audio controls className="tool-audio-player" src={audioUrl}>
-                  Your browser does not support audio.
-                </audio>
-              </div>
-            )}
-            <div className="tool-result-header">
-              <div className="tool-result-meta">
-                {result.audioDuration ? `${Math.round(result.audioDuration)}s audio` : ''} · {Math.round((result.confidence || 0) * 100)}% confidence
-              </div>
-              <div className="tool-result-actions">
-                <button type="button" onClick={copyText} className="btn btn-secondary tool-action-btn">
-                  {copied ? '✓ Copied' : 'Copy'}
-                </button>
-                <button type="button" onClick={() => exportTranscript('txt')} className="btn btn-secondary tool-action-btn">TXT</button>
-                {result.words?.length > 0 && (
-                  <button type="button" onClick={() => exportTranscript('srt')} className="btn btn-secondary tool-action-btn">SRT</button>
-                )}
-                <button type="button" onClick={() => exportTranscript('json')} className="btn btn-secondary tool-action-btn">JSON</button>
-              </div>
-            </div>
-            <div className="tool-transcript-body">
-              {result.words?.length > 0 ? (
-                <>
-                  {result.words.map((word: any, i: number) => (
-                    <span
-                      key={i}
-                      className={word.confidence < 0.7 ? 'tool-word--low-conf' : undefined}
-                      title={`Confidence: ${Math.round((word.confidence ?? 1) * 100)}%`}
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left: Input */}
+        <div className="space-y-6">
+            <Card title="Audio Source" description="Upload an interview, podcast, or meeting recording to transcribe with AI.">
+                <div className="space-y-6">
+                    <Dropzone 
+                        onFileSelect={setFile}
+                        accept="audio/*,video/*"
+                        label={file ? file.name : "Drop audio/video file"}
+                        className="h-48"
+                    />
+                    
+                    <Button 
+                        onClick={handleTranscribe} 
+                        className="w-full" 
+                        size="lg" 
+                        loading={loading}
+                        disabled={!file}
                     >
-                      {word.text}{' '}
-                    </span>
-                  ))}
-                </>
-              ) : (
-                <span className="tool-transcript-text">{result.text}</span>
-              )}
-            </div>
-            {result.utterances?.length > 0 && (
-              <div className="tool-subsection">
-                <div className="tool-subsection-label">Speaker Breakdown</div>
-                {result.utterances.slice(0, 8).map((u: any, i: number) => (
-                  <div key={i} className="tool-speaker-row">
-                    <span className="tool-speaker-name">Speaker {u.speaker}</span>
-                    <span className="tool-speaker-text">{u.text}</span>
-                  </div>
-                ))}
-              </div>
-            )}
-            {result.entities?.length > 0 && (
-              <div className="tool-subsection">
-                <div className="tool-subsection-label">Entities Detected</div>
-                <div className="tool-entities">
-                  {result.entities.map((e: any, i: number) => (
-                    <span key={i} className="tool-entity">
-                      {e.text} <span className="tool-entity-type">{e.entity_type}</span>
-                    </span>
-                  ))}
+                        Start Transcription
+                    </Button>
                 </div>
-              </div>
+            </Card>
+
+            <div className="p-6 rounded-3xl bg-accent/5 border border-accent/10 flex gap-4 items-start">
+                <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center text-accent shrink-0">
+                    <Mic size={20} />
+                </div>
+                <p className="text-xs text-white/40 leading-relaxed">
+                    Powered by <strong>AssemblyAI Universal-2</strong>. Supports speaker detection, automated punctuation, and high-fidelity accuracy.
+                </p>
+            </div>
+        </div>
+
+        {/* Right: Results */}
+        <div className="lg:col-span-2 space-y-6">
+            <div className="flex justify-between items-center px-1">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-white/40">Transcript Output</h3>
+                {result && (
+                    <Tabs 
+                        activeTab={activeTab}
+                        onChange={id => setActiveTab(id as any)}
+                        tabs={[
+                            { id: 'raw', label: 'Raw Text' },
+                            { id: 'speakers', label: 'Speakers' },
+                        ]}
+                        className="scale-90 origin-right"
+                    />
+                )}
+            </div>
+
+            <div className="relative min-h-[500px] rounded-3xl bg-[#0a0a0a] border border-white/10 overflow-hidden shadow-2xl flex flex-col">
+                {result ? (
+                    <div className="flex-1 p-8 overflow-auto custom-scrollbar animate-in slide-in-from-bottom-4 duration-700">
+                        {activeTab === 'raw' ? (
+                            <p className="text-sm text-white/70 leading-relaxed whitespace-pre-wrap">{result.text}</p>
+                        ) : (
+                            <div className="space-y-6">
+                                {result.utterances?.map((u, i) => (
+                                    <div key={i} className="flex gap-4">
+                                        <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center shrink-0 border border-white/5">
+                                            <span className="text-[10px] font-black text-accent uppercase">S{u.speaker}</span>
+                                        </div>
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2">
+                                                <span className="text-[10px] font-bold text-white/40 uppercase">Speaker {u.speaker}</span>
+                                                <span className="text-[9px] font-mono text-white/10">{Math.round(u.start/1000)}s</span>
+                                            </div>
+                                            <p className="text-sm text-white/70 leading-relaxed">{u.text}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+                ) : (
+                    <div className="flex-1 flex flex-col items-center justify-center text-center p-12 opacity-20 group">
+                        <div className="w-20 h-20 rounded-3xl border-2 border-dashed border-white/40 flex items-center justify-center text-3xl mb-6">📝</div>
+                        <p className="text-sm font-bold">Waiting for audio processing</p>
+                    </div>
+                )}
+
+                {loading && (
+                    <div className="absolute inset-0 bg-black/60 backdrop-blur-sm flex flex-col items-center justify-center gap-4 z-20">
+                        <div className="w-12 h-12 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+                        <span className="text-xs font-black uppercase tracking-[0.2em] text-white">AI is Listening...</span>
+                    </div>
+                )}
+
+                {result && (
+                    <div className="p-4 bg-white/[0.02] border-t border-white/5 flex justify-between items-center px-8">
+                        <span className="text-[10px] font-bold text-white/20 uppercase">Length: {result.duration.toFixed(1)}s</span>
+                        <Button variant="ghost" size="sm" onClick={() => navigator.clipboard.writeText(result.text)}>Copy Text</Button>
+                    </div>
+                )}
+            </div>
+
+            {error && (
+                <div className="p-4 rounded-xl bg-danger/10 border border-danger/20 text-danger text-xs font-medium">
+                    {error}
+                </div>
             )}
-          </div>
-        )}
+        </div>
       </div>
     </div>
-    </ToolShell>
   );
 }

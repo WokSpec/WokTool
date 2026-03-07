@@ -1,122 +1,115 @@
 'use client';
 
 import { useState } from 'react';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
+import { Download, Search, File as FileIcon, Music, Video, Info } from 'lucide-react';
 
-interface MediaInfo {
+interface MediaItem {
   url: string;
-  type: 'image' | 'video' | 'audio' | 'document' | 'unknown';
+  type: string;
   filename: string;
-  contentType?: string;
-  size?: number;
+  size?: string;
 }
 
 export default function MediaDownloaderTool() {
-  const [url, setUrl] = useState('');
+  const [inputUrl, setInputUrl] = useState('');
   const [loading, setLoading] = useState(false);
-  const [media, setMedia] = useState<MediaInfo[]>([]);
+  const [results, setResults] = useState<MediaItem[]>([]);
   const [error, setError] = useState('');
 
-  async function handleFetch() {
-    if (!url.trim()) return;
-    setLoading(true);
-    setError('');
-    setMedia([]);
+  const handleFetch = async () => {
+    const url = inputUrl.trim();
+    if (!url) return;
+    setLoading(true); setError(''); setResults([]);
     try {
       const res = await fetch('/api/tools/media-downloader', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url: url.trim() }),
+        body: JSON.stringify({ url }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || 'Failed to fetch media');
-      setMedia(data.media || []);
-      if (data.media?.length === 0) setError('No downloadable media found at this URL.');
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error');
+      setResults(data.items || []);
+    } catch (e: any) {
+      setError(e.message);
     } finally {
       setLoading(false);
     }
-  }
-
-  function typeIcon(type: MediaInfo['type']) {
-    if (type === 'image') return 'IMG';
-    if (type === 'video') return 'VID';
-    if (type === 'audio') return 'AUD';
-    if (type === 'document') return 'DOC';
-    return 'FILE';
-  }
-
-  function formatBytes(bytes?: number) {
-    if (!bytes) return '';
-    if (bytes < 1024) return `${bytes} B`;
-    if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
-    return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
-  }
+  };
 
   return (
-    <div className="tool-page-root">
-      <div className="tool-page-header">
-        <h1 className="tool-page-title">Media Downloader</h1>
-        <p className="tool-page-desc">Paste any public URL to download images, audio, video, or other media files.</p>
-      </div>
-
-      <div className="tool-section">
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-          <input
-            type="url"
-            className="tool-input"
-            placeholder="https://example.com/image.png  or  https://example.com/page-with-media"
-            value={url}
-            onChange={e => setUrl(e.target.value)}
-            onKeyDown={e => e.key === 'Enter' && handleFetch()}
-            style={{ flex: 1 }}
-          />
-          <button className="btn btn-primary" onClick={handleFetch} disabled={loading || !url.trim()}>
-            {loading ? <><span style={{marginRight:8}}>⏳</span>Fetching...</> : 'Fetch Media'}
-          </button>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <Card title="Direct Media Extractor" description="Extract direct download links for images, audio, and video from any public webpage.">
+        <div className="flex flex-col sm:flex-row gap-3">
+          <div className="flex-1">
+            <Input
+                placeholder="https://example.com/gallery"
+                value={inputUrl}
+                onChange={e => setInputUrl(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleFetch()}
+                leftIcon={<Search size={18} className="text-accent" />}
+            />
+          </div>
+          <Button onClick={handleFetch} loading={loading} disabled={!inputUrl.trim()}>
+            Extract Media
+          </Button>
         </div>
-        <p style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '0.5rem' }}>
-          Only public URLs are supported. No media is stored on WokTool servers.
-        </p>
-      </div>
+        {error && (
+            <div className="mt-4 p-4 rounded-xl bg-danger/10 border border-danger/20 text-danger text-xs font-medium">
+                {error}
+            </div>
+        )}
+      </Card>
 
-      {error && (
-        <div className="tool-error">{error}</div>
-      )}
-
-      {media.length > 0 && (
-        <div className="tool-section">
-          <h2 style={{ fontSize: '0.875rem', fontWeight: 600, marginBottom: '0.75rem', color: 'var(--text-secondary)' }}>
-            Found {media.length} file{media.length !== 1 ? 's' : ''}
-          </h2>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-            {media.map((item, i) => (
-              <div key={i} className="card" style={{ display: 'flex', alignItems: 'center', gap: '0.75rem', padding: '0.75rem 1rem' }}>
-                <span style={{
-                  fontSize: '0.625rem', fontWeight: 700, letterSpacing: '0.05em',
-                  padding: '0.2rem 0.4rem', borderRadius: '4px',
-                  background: 'rgba(167,139,250,0.12)', color: '#a78bfa',
-                  flexShrink: 0, minWidth: '36px', textAlign: 'center'
-                }}>{typeIcon(item.type)}</span>
-                <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={{ fontSize: '0.875rem', fontWeight: 500, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{item.filename}</div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>
-                    {item.contentType}{item.size ? ` · ${formatBytes(item.size)}` : ''}
-                  </div>
+      {results.length > 0 && (
+        <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+          <h3 className="text-sm font-bold text-white flex items-center gap-2 px-1">
+            <span className="w-2 h-5 bg-accent rounded-full" />
+            Extracted Files ({results.length})
+          </h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {results.map((item, i) => (
+              <Card key={i} className="p-4 group hover:border-accent/30 transition-all flex items-center gap-4">
+                <div className="w-10 h-10 rounded-xl bg-white/5 flex items-center justify-center text-white/40 group-hover:text-accent transition-colors shrink-0">
+                    {item.type.startsWith('image') ? <Search size={20} /> : item.type.startsWith('audio') ? <Music size={20} /> : <Video size={20} />}
                 </div>
-                <a
-                  href={item.url}
-                  download={item.filename}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="btn btn-secondary"
-                  style={{ fontSize: '0.8125rem', padding: '0.375rem 0.75rem', flexShrink: 0 }}
+                <div className="flex-1 min-w-0">
+                    <div className="text-xs font-bold text-white/80 truncate mb-0.5">{item.filename}</div>
+                    <div className="text-[10px] font-black uppercase text-white/20 tracking-tighter">{item.type} {item.size && `• ${item.size}`}</div>
+                </div>
+                <Button 
+                    href={item.url} 
+                    target="_blank" 
+                    download={item.filename}
+                    variant="secondary" 
+                    size="sm"
+                    className="shrink-0"
+                    icon={<Download size={14} />}
                 >
-                  Download
-                </a>
-              </div>
+                    Save
+                </Button>
+              </Card>
             ))}
           </div>
+        </div>
+      )}
+
+      {!results.length && !loading && (
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-4 opacity-40">
+            <div className="p-5 rounded-2xl border border-white/5 bg-white/[0.01]">
+                <div className="text-[10px] font-black uppercase text-white/20 mb-2">Multi-Format</div>
+                <p className="text-xs text-white/40">Scans for common image (PNG, JPG, SVG), audio (MP3, WAV), and video (MP4) extensions.</p>
+            </div>
+            <div className="p-5 rounded-2xl border border-white/5 bg-white/[0.01]">
+                <div className="text-[10px] font-black uppercase text-white/20 mb-2">Deep Discovery</div>
+                <p className="text-xs text-white/40">We check HTML tags, meta properties, and common media subdirectories.</p>
+            </div>
+            <div className="p-5 rounded-2xl border border-white/5 bg-white/[0.01]">
+                <div className="text-[10px] font-black uppercase text-white/20 mb-2">Direct Links</div>
+                <p className="text-xs text-white/40">Get the raw underlying file URL instead of proxied or wrapper landing pages.</p>
+            </div>
         </div>
       )}
     </div>

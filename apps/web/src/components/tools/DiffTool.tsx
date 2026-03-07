@@ -1,6 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import Textarea from '@/components/ui/Textarea';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
 
 interface DiffLine {
   type: 'added' | 'removed' | 'unchanged';
@@ -12,12 +15,14 @@ function computeDiff(original: string, modified: string): DiffLine[] {
   const b = modified.split('\n');
   const result: DiffLine[] = [];
 
-  // Simple LCS-based line diff
   const m = a.length, n = b.length;
   const dp: number[][] = Array.from({ length: m + 1 }, () => new Array(n + 1).fill(0));
-  for (let i = m - 1; i >= 0; i--)
-    for (let j = n - 1; j >= 0; j--)
+  
+  for (let i = m - 1; i >= 0; i--) {
+    for (let j = n - 1; j >= 0; j--) {
       dp[i][j] = a[i] === b[j] ? dp[i+1][j+1] + 1 : Math.max(dp[i+1][j], dp[i][j+1]);
+    }
+  }
 
   let i = 0, j = 0;
   while (i < m || j < n) {
@@ -35,131 +40,134 @@ function computeDiff(original: string, modified: string): DiffLine[] {
   return result;
 }
 
-function diffToUnifiedString(lines: DiffLine[]): string {
-  return lines.map(l => {
-    if (l.type === 'added') return `+ ${l.text}`;
-    if (l.type === 'removed') return `- ${l.text}`;
-    return `  ${l.text}`;
-  }).join('\n');
-}
-
 export default function DiffTool() {
   const [original, setOriginal] = useState('');
   const [modified, setModified] = useState('');
   const [copied, setCopied] = useState(false);
 
-  const diff = original || modified ? computeDiff(original, modified) : null;
-  const stats = diff ? {
-    added:     diff.filter(l => l.type === 'added').length,
-    removed:   diff.filter(l => l.type === 'removed').length,
-    unchanged: diff.filter(l => l.type === 'unchanged').length,
-  } : null;
+  const diff = useMemo(() => {
+    if (!original && !modified) return null;
+    return computeDiff(original, modified);
+  }, [original, modified]);
+
+  const stats = useMemo(() => {
+    if (!diff) return null;
+    return {
+      added: diff.filter(l => l.type === 'added').length,
+      removed: diff.filter(l => l.type === 'removed').length,
+      unchanged: diff.filter(l => l.type === 'unchanged').length,
+    };
+  }, [diff]);
 
   const copyDiff = () => {
     if (!diff) return;
-    navigator.clipboard.writeText(diffToUnifiedString(diff)).then(() => {
-      setCopied(true);
-      setTimeout(() => setCopied(false), 1500);
-    });
+    const text = diff.map(l => {
+      const marker = l.type === 'added' ? '+' : l.type === 'removed' ? '-' : ' ';
+      return `${marker} ${l.text}`;
+    }).join('\n');
+    
+    navigator.clipboard.writeText(text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
-    <div className="diff-tool">
-      <div className="diff-tool__inputs">
-        <div className="diff-tool__input-col">
-          <label className="tool-label">Original</label>
-          <textarea
-            className="diff-tool__textarea"
-            rows={12}
-            value={original}
-            onChange={e => setOriginal(e.target.value)}
-            placeholder="Paste original text here..."
-            spellCheck={false}
-          />
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="space-y-2">
+            <div className="flex justify-between items-center px-1">
+                <label className="text-xs font-bold uppercase tracking-widest text-white/40">Original Text</label>
+                <Button variant="ghost" size="sm" onClick={() => setOriginal('')} className="h-7 text-[10px]">Clear</Button>
+            </div>
+            <Textarea
+                value={original}
+                onChange={e => setOriginal(e.target.value)}
+                placeholder="Paste original text here..."
+                className="min-h-[200px] font-mono text-xs leading-relaxed"
+                spellCheck={false}
+            />
         </div>
-        <div className="diff-tool__input-col">
-          <label className="tool-label">Modified</label>
-          <textarea
-            className="diff-tool__textarea"
-            rows={12}
-            value={modified}
-            onChange={e => setModified(e.target.value)}
-            placeholder="Paste modified text here..."
-            spellCheck={false}
-          />
+        <div className="space-y-2">
+            <div className="flex justify-between items-center px-1">
+                <label className="text-xs font-bold uppercase tracking-widest text-white/40">Modified Text</label>
+                <Button variant="ghost" size="sm" onClick={() => setModified('')} className="h-7 text-[10px]">Clear</Button>
+            </div>
+            <Textarea
+                value={modified}
+                onChange={e => setModified(e.target.value)}
+                placeholder="Paste modified text here..."
+                className="min-h-[200px] font-mono text-xs leading-relaxed"
+                spellCheck={false}
+            />
         </div>
       </div>
 
       {diff && (
-        <div className="diff-tool__result">
-          <div className="diff-tool__result-header">
-            {stats && (
-              <div className="diff-tool__stats">
-                <span className="diff-tool__stat diff-tool__stat--added">+{stats.added} added</span>
-                <span className="diff-tool__stat diff-tool__stat--removed">-{stats.removed} removed</span>
-                <span className="diff-tool__stat diff-tool__stat--unchanged">{stats.unchanged} unchanged</span>
-              </div>
-            )}
-            <button className="btn btn-secondary" onClick={copyDiff} style={{ marginLeft: 'auto' }}>
-              {copied ? 'Copied!' : 'Copy diff'}
-            </button>
-          </div>
-          <div className="diff-tool__lines">
-            {diff.map((line, i) => (
-              <div key={i} className={`diff-tool__line diff-tool__line--${line.type}`}>
-                <span className="diff-tool__line-marker">
-                  {line.type === 'added' ? '+' : line.type === 'removed' ? '-' : ' '}
-                </span>
-                <span className="diff-tool__line-text">{line.text || ' '}</span>
-              </div>
-            ))}
-          </div>
+        <div className="space-y-4 animate-in slide-in-from-bottom-4 duration-500">
+          <Card className="p-0 overflow-hidden border-white/10 shadow-2xl">
+            <div className="flex items-center justify-between px-6 py-4 bg-white/[0.03] border-b border-white/5">
+                <div className="flex gap-4">
+                    {stats && (
+                        <>
+                            <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-success" />
+                                <span className="text-xs font-bold text-white/70">{stats.added} additions</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <span className="w-2 h-2 rounded-full bg-danger" />
+                                <span className="text-xs font-bold text-white/70">{stats.removed} removals</span>
+                            </div>
+                        </>
+                    )}
+                </div>
+                <Button variant="secondary" size="sm" onClick={copyDiff}>
+                    {copied ? 'Copied Unified Diff' : 'Copy Unified Diff'}
+                </Button>
+            </div>
+            
+            <div className="overflow-x-auto bg-[#0d0d0d]">
+                <div className="min-w-full inline-block py-4">
+                    {diff.map((line, i) => (
+                        <div 
+                            key={i} 
+                            className={`
+                                flex font-mono text-xs leading-6 px-6 group
+                                ${line.type === 'added' ? 'bg-success/10' : ''}
+                                ${line.type === 'removed' ? 'bg-danger/10' : ''}
+                                ${line.type === 'unchanged' ? 'hover:bg-white/[0.02]' : ''}
+                            `}
+                        >
+                            <span className={`
+                                w-8 shrink-0 select-none font-bold
+                                ${line.type === 'added' ? 'text-success' : ''}
+                                ${line.type === 'removed' ? 'text-danger' : ''}
+                                ${line.type === 'unchanged' ? 'text-white/20' : ''}
+                            `}>
+                                {line.type === 'added' ? '+' : line.type === 'removed' ? '-' : ' '}
+                            </span>
+                            <span className={`
+                                whitespace-pre break-all
+                                ${line.type === 'added' ? 'text-success-hover' : ''}
+                                ${line.type === 'removed' ? 'text-danger-hover' : ''}
+                                ${line.type === 'unchanged' ? 'text-white/60' : ''}
+                            `}>
+                                {line.text || ' '}
+                            </span>
+                        </div>
+                    ))}
+                </div>
+            </div>
+          </Card>
         </div>
       )}
 
-      <style>{`
-        .diff-tool { display: flex; flex-direction: column; gap: 20px; }
-        .diff-tool__inputs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
-        @media (max-width: 640px) { .diff-tool__inputs { grid-template-columns: 1fr; } }
-        .diff-tool__input-col { display: flex; flex-direction: column; gap: 6px; }
-        .diff-tool__textarea {
-          padding: 10px 12px; font-size: 12px; font-family: 'Menlo','Consolas',monospace;
-          line-height: 1.5; background: var(--bg); color: var(--text);
-          border: 1px solid var(--surface-border); border-radius: 6px;
-          outline: none; resize: vertical; width: 100%;
-        }
-        .diff-tool__textarea:focus { border-color: #818cf8; }
-        .diff-tool__result {
-          background: var(--bg-surface); border: 1px solid var(--surface-border);
-          border-radius: 8px; overflow: hidden;
-        }
-        .diff-tool__result-header {
-          display: flex; align-items: center; flex-wrap: wrap; gap: 10px;
-          padding: 10px 14px; border-bottom: 1px solid var(--surface-border);
-          background: var(--surface-card);
-        }
-        .diff-tool__stats { display: flex; gap: 10px; flex-wrap: wrap; }
-        .diff-tool__stat { font-size: 12px; font-weight: 600; padding: 2px 8px; border-radius: 4px; }
-        .diff-tool__stat--added   { background: var(--success-bg); color: var(--success); }
-        .diff-tool__stat--removed { background: var(--danger-bg); color: var(--danger); }
-        .diff-tool__stat--unchanged { background: rgba(148,163,184,0.1); color: var(--text-muted); }
-        .diff-tool__lines { overflow: auto; }
-        .diff-tool__line {
-          display: flex; font-size: 12px; font-family: 'Menlo','Consolas',monospace;
-          line-height: 1.6; padding: 0 14px;
-        }
-        .diff-tool__line--added   { background: var(--success-bg); }
-        .diff-tool__line--removed { background: rgba(248,113,113,0.08); }
-        .diff-tool__line-marker {
-          width: 16px; flex-shrink: 0; font-weight: 700;
-          color: var(--text-muted);
-        }
-        .diff-tool__line--added   .diff-tool__line-marker { color: var(--success); }
-        .diff-tool__line--removed .diff-tool__line-marker { color: var(--danger); }
-        .diff-tool__line-text { color: var(--text-secondary); white-space: pre-wrap; word-break: break-all; }
-        .diff-tool__line--added   .diff-tool__line-text { color: #a7f3d0; }
-        .diff-tool__line--removed .diff-tool__line-text { color: #fca5a5; }
-      `}</style>
+      {!diff && (
+        <div className="p-12 rounded-3xl border-2 border-dashed border-white/5 bg-white/[0.01] flex flex-col items-center justify-center text-center">
+            <div className="w-16 h-16 rounded-2xl bg-white/[0.03] flex items-center justify-center mb-4 text-2xl">🔍</div>
+            <h3 className="text-lg font-bold text-white/80 mb-1">Waiting for input</h3>
+            <p className="text-sm text-white/30 max-w-xs">Paste text into both fields above to see a detailed line-by-line comparison.</p>
+        </div>
+      )}
     </div>
   );
 }

@@ -1,0 +1,1 @@
+"use strict";exports.id=7175,exports.ids=[7175],exports.modules={17175:(e,s,t)=>{t.r(s),t.d(s,{default:()=>o});let o=(0,t(53189).createProxy)(String.raw`/home/user9007/main/projects/wokspec/WokTool/apps/web/src/app/tools/svg-optimizer/_client.tsx#default`)}};

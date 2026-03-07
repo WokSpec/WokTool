@@ -1,6 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
+import Input from '@/components/ui/Input';
+import Card from '@/components/ui/Card';
+import Button from '@/components/ui/Button';
 
 interface StandardRatio { label: string; w: number; h: number }
 interface SocialPreset { label: string; w: number; h: number; platform: string }
@@ -18,14 +21,12 @@ const STD_RATIOS: StandardRatio[] = [
 
 const SOCIAL_PRESETS: SocialPreset[] = [
   { platform: 'YouTube', label: 'Cover', w: 1920, h: 1080 },
-  { platform: 'Instagram', label: 'Square', w: 1080, h: 1080 },
-  { platform: 'Instagram', label: 'Portrait', w: 1080, h: 1350 },
+  { platform: 'Instagram', label: 'Post', w: 1080, h: 1080 },
+  { platform: 'Instagram', label: 'Story', w: 1080, h: 1920 },
   { platform: 'Twitter/X', label: 'Post', w: 1600, h: 900 },
-  { platform: 'Twitter/X', label: 'Header', w: 1500, h: 500 },
   { platform: 'Facebook', label: 'Post', w: 1200, h: 630 },
   { platform: 'LinkedIn', label: 'Post', w: 1200, h: 627 },
   { platform: 'TikTok', label: 'Video', w: 1080, h: 1920 },
-  { platform: 'Pinterest', label: 'Pin', w: 1000, h: 1500 },
   { platform: 'OG Image', label: 'Default', w: 1200, h: 630 },
 ];
 
@@ -39,130 +40,151 @@ function simplify(w: number, h: number): string {
   return `${Math.round(w) / d}:${Math.round(h) / d}`;
 }
 
-function closestStd(w: number, h: number): string {
-  if (!w || !h) return '';
-  const ratio = w / h;
-  let best = STD_RATIOS[0];
-  let bestDiff = Infinity;
-  for (const r of STD_RATIOS) {
-    const diff = Math.abs(ratio - r.w / r.h);
-    if (diff < bestDiff) { bestDiff = diff; best = r; }
-  }
-  return best.label;
-}
-
 export default function AspectRatioTool() {
   const [width, setWidth] = useState(1920);
   const [height, setHeight] = useState(1080);
-  const [fixWidth, setFixWidth] = useState(1920);
-  const [fixHeight, setFixHeight] = useState(1080);
+  const [lockWidth, setLockWidth] = useState(1920);
+  const [lockHeight, setLockHeight] = useState(1080);
 
-  const ratio = width && height ? width / height : 1;
-  const simplified = simplify(width, height);
-  const closest = closestStd(width, height);
+  const ratio = useMemo(() => (width && height ? width / height : 1), [width, height]);
+  const simplified = useMemo(() => simplify(width, height), [width, height]);
 
-  const derivedHeight = width ? Math.round(fixWidth / (width / height || 1)) : 0;
-  const derivedWidth = height ? Math.round(fixHeight * (width / height || 1)) : 0;
+  const derivedHeight = useMemo(() => Math.round(lockWidth / ratio), [lockWidth, ratio]);
+  const derivedWidth = useMemo(() => Math.round(lockHeight * ratio), [lockHeight, ratio]);
 
   return (
-    <div className="tool-panel">
-      <div className="grad-layout">
-        <div className="grad-controls">
-          <div className="grad-form-row">
-            <label>Width (px)</label>
-            <input
-              type="number" min={1} value={width}
-              onChange={e => setWidth(Number(e.target.value))}
-              style={{ width: '100px' }}
-            />
-          </div>
-          <div className="grad-form-row">
-            <label>Height (px)</label>
-            <input
-              type="number" min={1} value={height}
-              onChange={e => setHeight(Number(e.target.value))}
-              style={{ width: '100px' }}
-            />
-          </div>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        {/* Left: Controls */}
+        <div className="space-y-6">
+            <Card title="Base Dimensions" description="Set your reference size to define the ratio.">
+                <div className="grid grid-cols-2 gap-4">
+                    <Input 
+                        label="Width (px)"
+                        type="number"
+                        value={width}
+                        onChange={e => setWidth(Number(e.target.value))}
+                        min={1}
+                    />
+                    <Input 
+                        label="Height (px)"
+                        type="number"
+                        value={height}
+                        onChange={e => setHeight(Number(e.target.value))}
+                        min={1}
+                    />
+                </div>
+            </Card>
 
-          <div style={{ marginTop: '1.5rem' }}>
-            <strong>Standard Ratios</strong>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem', marginTop: '0.5rem' }}>
-              {STD_RATIOS.map(r => {
-                const isClosest = r.label === closest;
-                return (
-                  <button
-                    key={r.label}
-                    className={`btn-ghost${isClosest ? ' active' : ''}`}
-                    style={{ fontSize: '0.8rem', padding: '0.2rem 0.6rem' }}
-                    onClick={() => {
-                      const newH = Math.round(width * r.h / r.w);
-                      setHeight(newH);
-                      setFixHeight(newH);
-                    }}
-                    title={isClosest ? 'Closest match' : ''}
-                  >
-                    {r.label}
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+            <Card title="Standards">
+                <div className="grid grid-cols-2 gap-2">
+                    {STD_RATIOS.map(r => (
+                        <button
+                            key={r.label}
+                            onClick={() => {
+                                setWidth(r.w * 100);
+                                setHeight(r.h * 100);
+                            }}
+                            className={`
+                                py-2 px-3 rounded-lg text-xs font-bold border transition-all
+                                ${simplified === r.label 
+                                    ? 'bg-accent border-accent text-white shadow-md' 
+                                    : 'bg-surface-raised border-white/5 text-white/40 hover:text-white hover:border-white/10'
+                                }
+                            `}
+                        >
+                            {r.label}
+                        </button>
+                    ))}
+                </div>
+            </Card>
 
-          <div style={{ marginTop: '1.5rem' }}>
-            <strong>Calculate Dimensions</strong>
-            <div style={{ marginTop: '0.75rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
-              <div className="grad-form-row">
-                <label>Fix width to</label>
-                <input type="number" min={1} value={fixWidth} onChange={e => setFixWidth(Number(e.target.value))} style={{ width: '90px' }} />
-                <span style={{ fontSize: '0.85rem', color: 'var(--fg-muted)' }}>→ height: <strong>{derivedHeight}px</strong></span>
-              </div>
-              <div className="grad-form-row">
-                <label>Fix height to</label>
-                <input type="number" min={1} value={fixHeight} onChange={e => setFixHeight(Number(e.target.value))} style={{ width: '90px' }} />
-                <span style={{ fontSize: '0.85rem', color: 'var(--fg-muted)' }}>→ width: <strong>{derivedWidth}px</strong></span>
-              </div>
-            </div>
-          </div>
+            <Card title="Calculator" description="Calculate new sizes while preserving the ratio.">
+                <div className="space-y-4">
+                    <div className="flex flex-col gap-2">
+                        <Input 
+                            label="If Width is..."
+                            type="number"
+                            value={lockWidth}
+                            onChange={e => setLockWidth(Number(e.target.value))}
+                            min={1}
+                            rightIcon={<span className="text-[10px] font-bold text-white/20 uppercase">PX</span>}
+                        />
+                        <div className="flex justify-between items-center px-2 py-3 bg-white/[0.03] rounded-xl border border-white/5">
+                            <span className="text-xs text-white/40 font-medium">Resulting Height</span>
+                            <span className="text-sm font-bold text-accent">{derivedHeight}px</span>
+                        </div>
+                    </div>
+
+                    <div className="h-px bg-white/5 mx-2" />
+
+                    <div className="flex flex-col gap-2">
+                        <Input 
+                            label="If Height is..."
+                            type="number"
+                            value={lockHeight}
+                            onChange={e => setLockHeight(Number(e.target.value))}
+                            min={1}
+                            rightIcon={<span className="text-[10px] font-bold text-white/20 uppercase">PX</span>}
+                        />
+                        <div className="flex justify-between items-center px-2 py-3 bg-white/[0.03] rounded-xl border border-white/5">
+                            <span className="text-xs text-white/40 font-medium">Resulting Width</span>
+                            <span className="text-sm font-bold text-accent">{derivedWidth}px</span>
+                        </div>
+                    </div>
+                </div>
+            </Card>
         </div>
 
-        <div className="br-preview-area">
-          {/* Visual ratio preview */}
-          <div style={{ background: 'var(--bg-surface)', borderRadius: '0.5rem', padding: '1.5rem', textAlign: 'center', marginBottom: '1rem' }}>
-            <div style={{ display: 'inline-block', position: 'relative' }}>
-              <div style={{
-                width: Math.min(200, 200 * Math.min(1, ratio)),
-                height: Math.min(150, 150 * Math.min(1, 1 / ratio)),
-                background: 'linear-gradient(135deg, var(--accent-primary), #06b6d4)',
-                borderRadius: '4px',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-              }}>
-                <span style={{ color: '#fff', fontWeight: 700, fontSize: '0.9rem' }}>{simplified}</span>
-              </div>
-            </div>
-            <div style={{ marginTop: '0.75rem', fontSize: '0.85rem', color: 'var(--fg-muted)' }}>
-              {width} × {height} px · closest: <strong>{closest}</strong>
-            </div>
-          </div>
-
-          {/* Social presets */}
-          <strong style={{ display: 'block', marginBottom: '0.5rem' }}>Social Media Dimensions</strong>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.3rem' }}>
-            {SOCIAL_PRESETS.map((p, i) => {
-              const isSelected = p.w === width && p.h === height;
-              return (
-                <button
-                  key={i}
-                  className={`btn-ghost${isSelected ? ' active' : ''}`}
-                  style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', padding: '0.3rem 0.6rem', textAlign: 'left' }}
-                  onClick={() => { setWidth(p.w); setHeight(p.h); setFixWidth(p.w); setFixHeight(p.h); }}
+        {/* Middle/Right: Preview */}
+        <div className="lg:col-span-2 space-y-8">
+            <div className="relative w-full aspect-video rounded-3xl bg-[#0a0a0a] border border-white/10 flex items-center justify-center p-12 overflow-hidden shadow-2xl">
+                <div className="absolute inset-0 opacity-10" 
+                    style={{ 
+                        backgroundImage: 'radial-gradient(circle at 2px 2px, rgba(255,255,255,0.15) 1px, transparent 0)',
+                        backgroundSize: '24px 24px'
+                    }} 
+                />
+                
+                <div 
+                    className="bg-gradient-to-br from-accent to-purple-500 rounded-2xl shadow-xl transition-all duration-500 flex items-center justify-center border border-white/20"
+                    style={{
+                        width: ratio > 1.77 ? '100%' : `${(ratio / 1.77) * 100}%`,
+                        aspectRatio: `${width} / ${height}`,
+                        maxHeight: '100%',
+                    }}
                 >
-                  <span><strong>{p.platform}</strong> — {p.label}</span>
-                  <span style={{ color: 'var(--fg-muted)' }}>{p.w}×{p.h}</span>
-                </button>
-              );
-            })}
-          </div>
+                    <div className="text-center p-4 bg-black/20 backdrop-blur-sm rounded-xl border border-white/10">
+                        <div className="text-2xl font-black text-white tracking-tighter">{simplified}</div>
+                        <div className="text-[10px] font-bold text-white/60 uppercase tracking-widest">{width} × {height}</div>
+                    </div>
+                </div>
+            </div>
+
+            <div className="space-y-4">
+                <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 px-1">Common Social Dimensions</h3>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    {SOCIAL_PRESETS.map((p, i) => (
+                        <button
+                            key={i}
+                            onClick={() => { setWidth(p.w); setHeight(p.h); }}
+                            className={`
+                                flex items-center justify-between p-4 rounded-xl border transition-all group
+                                ${width === p.w && height === p.h 
+                                    ? 'bg-accent/10 border-accent/30 shadow-inner' 
+                                    : 'bg-surface-raised border-white/5 hover:border-white/10'
+                                }
+                            `}
+                        >
+                            <div className="text-left">
+                                <div className="text-[10px] font-bold text-white/30 uppercase tracking-widest group-hover:text-accent/60 transition-colors">{p.platform}</div>
+                                <div className="text-sm font-bold text-white/80">{p.label}</div>
+                            </div>
+                            <code className="text-xs font-mono text-accent">{p.w}×{p.h}</code>
+                        </button>
+                    ))}
+                </div>
+            </div>
         </div>
       </div>
     </div>

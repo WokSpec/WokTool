@@ -1,6 +1,12 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Select from '@/components/ui/Select';
+import Button from '@/components/ui/Button';
+import CodeBlock from '@/components/ui/CodeBlock';
+import Textarea from '@/components/ui/Textarea';
 
 interface Snippet {
   id: string;
@@ -11,49 +17,23 @@ interface Snippet {
   createdAt: number;
 }
 
-const LANGUAGES = ['plaintext', 'javascript', 'typescript', 'python', 'bash', 'rust', 'go', 'css', 'html', 'json', 'sql', 'c', 'cpp', 'java', 'php', 'ruby', 'swift', 'kotlin', 'yaml', 'toml', 'dockerfile', 'graphql'];
+const LANGUAGES = [
+    { value: 'plaintext', label: 'Plain Text' },
+    { value: 'javascript', label: 'JavaScript' },
+    { value: 'typescript', label: 'TypeScript' },
+    { value: 'python', label: 'Python' },
+    { value: 'bash', label: 'Bash / Shell' },
+    { value: 'rust', label: 'Rust' },
+    { value: 'go', label: 'Go' },
+    { value: 'css', label: 'CSS' },
+    { value: 'html', label: 'HTML' },
+    { value: 'json', label: 'JSON' },
+    { value: 'sql', label: 'SQL' },
+    { value: 'yaml', label: 'YAML' },
+    { value: 'dockerfile', label: 'Dockerfile' },
+];
 
-const STORAGE_KEY = 'woktool_snippets';
-
-function load(): Snippet[] {
-  try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]');
-  } catch { return []; }
-}
-
-function save(snippets: Snippet[]) {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(snippets));
-}
-
-// Minimal syntax highlighting (keyword coloring via CSS classes)
-function highlight(code: string, lang: string): string {
-  const esc = code.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-  const keywords: Record<string, string[]> = {
-    javascript: ['const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while', 'class', 'import', 'export', 'default', 'async', 'await', 'new', 'this', 'typeof', 'instanceof', 'null', 'undefined', 'true', 'false', 'try', 'catch', 'throw', 'from', 'of', 'in'],
-    typescript: ['const', 'let', 'var', 'function', 'return', 'if', 'else', 'for', 'while', 'class', 'interface', 'type', 'import', 'export', 'default', 'async', 'await', 'new', 'this', 'typeof', 'null', 'undefined', 'true', 'false', 'from', 'extends', 'implements', 'enum', 'namespace', 'string', 'number', 'boolean', 'void', 'any', 'never', 'unknown'],
-    python: ['def', 'class', 'import', 'from', 'return', 'if', 'elif', 'else', 'for', 'while', 'with', 'as', 'in', 'not', 'and', 'or', 'is', 'None', 'True', 'False', 'try', 'except', 'finally', 'raise', 'lambda', 'yield', 'pass', 'break', 'continue', 'global', 'nonlocal', 'async', 'await'],
-    rust: ['fn', 'let', 'mut', 'pub', 'use', 'mod', 'struct', 'enum', 'impl', 'trait', 'return', 'if', 'else', 'for', 'while', 'match', 'in', 'self', 'Self', 'true', 'false', 'None', 'Some', 'Ok', 'Err', 'async', 'await', 'move', 'const', 'static', 'type', 'where', 'dyn', 'Box', 'Vec', 'String'],
-    go: ['func', 'var', 'const', 'type', 'struct', 'interface', 'return', 'if', 'else', 'for', 'range', 'switch', 'case', 'default', 'import', 'package', 'nil', 'true', 'false', 'go', 'chan', 'select', 'defer', 'map', 'make', 'new', 'append', 'len', 'cap', 'error'],
-  };
-
-  const kws = keywords[lang] || keywords.javascript;
-  let result = esc;
-
-  // Comments
-  result = result.replace(/(\/\/[^\n]*)$/gm, '<span class="snip-comment">$1</span>');
-  result = result.replace(/(#[^\n]*)$/gm, '<span class="snip-comment">$1</span>');
-  // Strings
-  result = result.replace(/(&quot;[^&]*?&quot;|&#39;[^&]*?&#39;|`[^`]*?`)/g, '<span class="snip-string">$1</span>');
-  // Keywords
-  kws.forEach(kw => {
-    result = result.replace(new RegExp(`\\b(${kw})\\b`, 'g'), '<span class="snip-keyword">$1</span>');
-  });
-  // Numbers
-  result = result.replace(/\b(\d+\.?\d*)\b/g, '<span class="snip-number">$1</span>');
-
-  return result;
-}
+const STORAGE_KEY = 'woktool_snippets_v2';
 
 export default function SnippetsTool() {
   const [snippets, setSnippets] = useState<Snippet[]>([]);
@@ -61,187 +41,184 @@ export default function SnippetsTool() {
   const [editing, setEditing] = useState<Snippet | null>(null);
   const [search, setSearch] = useState('');
   const [filterLang, setFilterLang] = useState('all');
-  const [copied, setCopied] = useState<string | null>(null);
 
-  useEffect(() => { setSnippets(load()); }, []);
+  useEffect(() => {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+        try { setSnippets(JSON.parse(saved)); } catch (e) { console.error(e); }
+    }
+  }, []);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(snippets));
+  }, [snippets]);
 
   const filtered = useMemo(() => snippets.filter(s => {
     const q = search.toLowerCase();
-    const matchQ = !q || s.title.toLowerCase().includes(q) || s.code.toLowerCase().includes(q) || s.tags.some(t => t.includes(q));
+    const matchQ = !q || s.title.toLowerCase().includes(q) || s.code.toLowerCase().includes(q) || s.tags.some(t => t.toLowerCase().includes(q));
     const matchL = filterLang === 'all' || s.language === filterLang;
     return matchQ && matchL;
   }), [snippets, search, filterLang]);
 
-  const newSnippet = (): Snippet => ({
-    id: crypto.randomUUID(),
-    title: '',
-    language: 'javascript',
-    code: '',
-    tags: [],
-    createdAt: Date.now(),
-  });
-
-  const startNew = () => { setEditing(newSnippet()); setView('edit'); };
-
-  const startEdit = (s: Snippet) => { setEditing({ ...s }); setView('edit'); };
+  const startNew = () => {
+    setEditing({
+      id: crypto.randomUUID(),
+      title: '',
+      language: 'javascript',
+      code: '',
+      tags: [],
+      createdAt: Date.now(),
+    });
+    setView('edit');
+  };
 
   const saveSnippet = () => {
-    if (!editing) return;
-    const next = snippets.some(s => s.id === editing.id)
-      ? snippets.map(s => s.id === editing.id ? editing : s)
-      : [editing, ...snippets];
-    setSnippets(next);
-    save(next);
+    if (!editing || !editing.code.trim()) return;
+    setSnippets(prev => {
+      const idx = prev.findIndex(s => s.id === editing.id);
+      if (idx >= 0) {
+        const next = [...prev];
+        next[idx] = editing;
+        return next;
+      }
+      return [editing, ...prev];
+    });
     setView('list');
     setEditing(null);
   };
 
   const deleteSnippet = (id: string) => {
-    const next = snippets.filter(s => s.id !== id);
-    setSnippets(next);
-    save(next);
-  };
-
-  const copySnippet = async (s: Snippet) => {
-    await navigator.clipboard.writeText(s.code);
-    setCopied(s.id);
-    setTimeout(() => setCopied(null), 2000);
-  };
-
-  const exportAll = () => {
-    const blob = new Blob([JSON.stringify(snippets, null, 2)], { type: 'application/json' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'woktool-snippets.json';
-    a.click();
-  };
-
-  const importJson = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const f = e.target.files?.[0];
-    if (!f) return;
-    const r = new FileReader();
-    r.onload = () => {
-      try {
-        const parsed = JSON.parse(r.result as string) as Snippet[];
-        const merged = [...parsed, ...snippets].filter((s, i, arr) => arr.findIndex(x => x.id === s.id) === i);
-        setSnippets(merged);
-        save(merged);
-      } catch { /* ignore bad import */ }
-    };
-    r.readAsText(f);
+    if (confirm('Delete this snippet?')) {
+        setSnippets(prev => prev.filter(s => s.id !== id));
+    }
   };
 
   if (view === 'edit' && editing) {
     return (
-      <div className="snippets-editor">
-        <div className="snippets-editor-header">
-          <button className="btn-ghost-xs" onClick={() => { setView('list'); setEditing(null); }}>Back</button>
-          <h3 className="snippets-editor-title">{editing.id ? 'Edit Snippet' : 'New Snippet'}</h3>
-          <button className="btn-primary btn-sm" onClick={saveSnippet}>Save</button>
-        </div>
-
-        <div className="snippets-editor-body">
-          <input
-            className="tool-input"
-            placeholder="Title…"
-            value={editing.title}
-            onChange={e => setEditing(prev => prev ? { ...prev, title: e.target.value } : null)}
-          />
-          <div className="snippets-meta-row">
-            <select
-              className="tool-select"
-              value={editing.language}
-              onChange={e => setEditing(prev => prev ? { ...prev, language: e.target.value } : null)}
-            >
-              {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
-            </select>
-            <input
-              className="tool-input"
-              placeholder="Tags (comma separated)"
-              value={editing.tags.join(', ')}
-              onChange={e => setEditing(prev => prev ? { ...prev, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean) } : null)}
-              style={{ flex: 1 }}
-            />
-          </div>
-          <textarea
-            className="json-textarea snippets-code-input"
-            spellCheck={false}
-            placeholder="Paste your code here…"
-            value={editing.code}
-            onChange={e => setEditing(prev => prev ? { ...prev, code: e.target.value } : null)}
-            rows={20}
-          />
-        </div>
-
-        {/* Live preview */}
-        {editing.code && (
-          <div className="snippets-preview">
-            <div className="json-panel-header">
-              <span className="json-panel-label">Preview — {editing.language}</span>
+      <div className="space-y-8 animate-in fade-in duration-500">
+        <div className="flex items-center justify-between px-1">
+            <Button variant="ghost" size="sm" onClick={() => { setView('list'); setEditing(null); }}>← Back to Library</Button>
+            <div className="flex gap-3">
+                <Button variant="primary" onClick={saveSnippet} disabled={!editing.code.trim()}>Save Snippet</Button>
             </div>
-            <pre
-              className="snippets-code-block"
-              dangerouslySetInnerHTML={{ __html: highlight(editing.code, editing.language) }}
-            />
-          </div>
-        )}
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            <div className="lg:col-span-2 space-y-6">
+                <Card title="Editor">
+                    <div className="space-y-4">
+                        <Input 
+                            label="Title"
+                            value={editing.title}
+                            onChange={e => setEditing({...editing, title: e.target.value})}
+                            placeholder="Descriptive name for this snippet..."
+                        />
+                        <Textarea 
+                            label="Source Code"
+                            value={editing.code}
+                            onChange={e => setEditing({...editing, code: e.target.value})}
+                            placeholder="Paste or write your code here..."
+                            className="min-h-[400px] font-mono text-sm"
+                            spellCheck={false}
+                        />
+                    </div>
+                </Card>
+            </div>
+
+            <div className="space-y-6">
+                <Card title="Metadata">
+                    <div className="space-y-6">
+                        <Select 
+                            label="Language"
+                            value={editing.language}
+                            onChange={e => setEditing({...editing, language: e.target.value})}
+                            options={LANGUAGES}
+                        />
+                        <Input 
+                            label="Tags"
+                            value={editing.tags.join(', ')}
+                            onChange={e => setEditing({...editing, tags: e.target.value.split(',').map(t => t.trim()).filter(Boolean)})}
+                            placeholder="React, CSS, Utility..."
+                            helper="Separate tags with commas"
+                        />
+                    </div>
+                </Card>
+
+                <div className="p-6 rounded-2xl bg-white/[0.02] border border-white/5">
+                    <h4 className="text-sm font-bold text-white/60 mb-2 uppercase tracking-widest">Live Preview</h4>
+                    <div className="rounded-xl overflow-hidden border border-white/10 bg-[#0d0d0d] p-4 text-[10px] font-mono text-white/40 italic">
+                        {editing.code ? 'Formatting will be applied in library view.' : 'Waiting for code...'}
+                    </div>
+                </div>
+            </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="snippets-tool">
-      {/* Header */}
-      <div className="snippets-header">
-        <div style={{ display: 'flex', gap: '0.5rem', flex: 1 }}>
-          <input className="tool-input" placeholder="Search snippets…" value={search} onChange={e => setSearch(e.target.value)} style={{ flex: 1 }} />
-          <select className="tool-select" value={filterLang} onChange={e => setFilterLang(e.target.value)}>
-            <option value="all">All languages</option>
-            {LANGUAGES.map(l => <option key={l} value={l}>{l}</option>)}
-          </select>
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex flex-col md:flex-row gap-4 items-center justify-between pb-6 border-b border-white/5">
+        <div className="flex flex-1 gap-3 w-full">
+            <Input 
+                placeholder="Search your snippets..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                className="flex-1"
+                leftIcon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>}
+            />
+            <div className="w-48 hidden md:block">
+                <Select 
+                    value={filterLang}
+                    onChange={e => setFilterLang(e.target.value)}
+                    options={[{ value: 'all', label: 'All Languages' }, ...LANGUAGES]}
+                />
+            </div>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button className="btn-ghost-xs" onClick={exportAll} title="Export all">Export</button>
-          <label className="btn-ghost-xs" title="Import JSON">
-            Import
-            <input type="file" accept=".json" onChange={importJson} style={{ display: 'none' }} />
-          </label>
-          <button className="btn-primary btn-sm" onClick={startNew}>+ New Snippet</button>
-        </div>
+        <Button onClick={startNew} icon={<svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" /></svg>}>
+            Create New
+        </Button>
       </div>
 
-      {filtered.length === 0 ? (
-        <div className="snippets-empty">
-          {snippets.length === 0
-            ? <><p>No snippets yet.</p><button className="btn-primary btn-sm" onClick={startNew}>Create your first snippet</button></>
-            : <p>No snippets match your search.</p>
-          }
+      {filtered.length > 0 ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {filtered.map(s => (
+                <Card key={s.id} className="p-0 overflow-hidden border-white/10 flex flex-col group hover:border-accent/30 transition-all">
+                    <div className="p-5 border-b border-white/5 flex items-start justify-between bg-white/[0.01]">
+                        <div>
+                            <h3 className="font-bold text-white text-lg group-hover:text-accent transition-colors">{s.title || 'Untitled Snippet'}</h3>
+                            <div className="flex items-center gap-2 mt-1">
+                                <span className="text-[10px] font-black text-white/20 uppercase tracking-widest bg-white/5 px-2 py-0.5 rounded-full">{s.language}</span>
+                                {s.tags.map(t => (
+                                    <span key={t} className="text-[10px] font-medium text-accent opacity-60">#{t}</span>
+                                ))}
+                            </div>
+                        </div>
+                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={() => setEditing(s) || setView('edit')} className="p-2 rounded-lg hover:bg-white/5 text-white/40 hover:text-white transition-all"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" /></svg></button>
+                            <button onClick={() => deleteSnippet(s.id)} className="p-2 rounded-lg hover:bg-danger/10 text-white/40 hover:text-danger transition-all"><svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg></button>
+                        </div>
+                    </div>
+                    <div className="p-5 flex-1 bg-[#0d0d0d]">
+                        <CodeBlock code={s.code} language={s.language} maxHeight="200px" />
+                    </div>
+                </Card>
+            ))}
         </div>
       ) : (
-        <div className="snippets-grid">
-          {filtered.map(s => (
-            <div key={s.id} className="snippet-card">
-              <div className="snippet-card-header">
-                <div>
-                  <p className="snippet-card-title">{s.title || 'Untitled'}</p>
-                  <span className="snippet-card-lang">{s.language}</span>
-                  {s.tags.map(t => <span key={t} className="snippet-card-tag">{t}</span>)}
-                </div>
-                <div style={{ display: 'flex', gap: '0.25rem' }}>
-                  <button className="tilemap-tool-btn" onClick={() => copySnippet(s)} title="Copy">
-                    {copied === s.id ? 'Copied!' : 'Copy'}
-                  </button>
-                  <button className="tilemap-tool-btn" onClick={() => startEdit(s)} title="Edit">Edit</button>
-                  <button className="tilemap-tool-btn" onClick={() => deleteSnippet(s.id)} title="Delete">Delete</button>
-                </div>
-              </div>
-              <pre
-                className="snippet-card-preview"
-                dangerouslySetInnerHTML={{ __html: highlight(s.code.slice(0, 300), s.language) }}
-              />
-              {s.code.length > 300 && <p className="snippet-card-more">…{Math.max(0, s.code.split('\n').length - 5)} more lines</p>}
-            </div>
-          ))}
+        <div className="h-96 rounded-3xl border-2 border-dashed border-white/5 bg-white/[0.01] flex flex-col items-center justify-center text-center p-12">
+            <div className="w-20 h-20 rounded-3xl bg-white/[0.03] flex items-center justify-center mb-6 text-3xl opacity-20">📑</div>
+            <h3 className="text-xl font-bold text-white/80 mb-2">
+                {snippets.length === 0 ? 'Your code library is empty' : 'No matches found'}
+            </h3>
+            <p className="text-sm text-white/30 max-w-sm mb-8">
+                {snippets.length === 0 
+                    ? 'Start building your collection of useful code snippets. Everything is stored locally in your browser.'
+                    : 'Try adjusting your search query or language filter.'}
+            </p>
+            {snippets.length === 0 && (
+                <Button onClick={startNew}>Create First Snippet</Button>
+            )}
         </div>
       )}
     </div>

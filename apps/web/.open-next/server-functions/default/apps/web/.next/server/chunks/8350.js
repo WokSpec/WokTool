@@ -1,0 +1,1 @@
+"use strict";exports.id=8350,exports.ids=[8350],exports.modules={58350:(e,s,t)=>{t.r(s),t.d(s,{default:()=>o});let o=(0,t(53189).createProxy)(String.raw`/home/user9007/main/projects/wokspec/WokTool/apps/web/src/app/tools/img-to-base64/_client.tsx#default`)}};

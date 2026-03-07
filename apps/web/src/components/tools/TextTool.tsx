@@ -1,8 +1,13 @@
 'use client';
 
 import { useState, useMemo } from 'react';
+import Tabs from '@/components/ui/Tabs';
+import Textarea from '@/components/ui/Textarea';
+import Button from '@/components/ui/Button';
+import Card from '@/components/ui/Card';
+import CodeBlock from '@/components/ui/CodeBlock';
 
-type Mode = 'count' | 'case' | 'slug' | 'dedup' | 'extract';
+type Mode = 'case' | 'clean' | 'extract' | 'analyze';
 
 const CASE_OPS = [
   { id: 'upper',  label: 'UPPER CASE',  fn: (s: string) => s.toUpperCase() },
@@ -20,9 +25,8 @@ function toSlug(s: string) {
 
 export default function TextTool() {
   const [text, setText] = useState('');
-  const [mode, setMode] = useState<Mode>('count');
+  const [mode, setMode] = useState<Mode>('case');
   const [output, setOutput] = useState('');
-  const [copied, setCopied] = useState(false);
 
   const stats = useMemo(() => {
     const chars = text.length;
@@ -30,137 +34,162 @@ export default function TextTool() {
     const lines = text ? text.split('\n').length : 0;
     const sentences = text.trim() ? (text.match(/[.!?]+/g) ?? []).length : 0;
     const paragraphs = text.trim() ? text.split(/\n\s*\n/).filter(Boolean).length : 0;
-    const readingTime = Math.ceil(words / 200);
-    return { chars, words, lines, sentences, paragraphs, readingTime };
+    return { chars, words, lines, sentences, paragraphs };
   }, [text]);
 
-  const run = (op?: string) => {
+  const handleOp = (fn: (s: string) => string) => {
     if (!text.trim()) return;
-    switch (mode) {
-      case 'count': break;
-      case 'case': {
-        const fn = CASE_OPS.find(o => o.id === op)?.fn;
-        if (fn) setOutput(fn(text));
-        break;
-      }
-      case 'slug': setOutput(toSlug(text)); break;
-      case 'dedup': {
-        const lines = text.split('\n');
-        const seen = new Set<string>();
-        const out: string[] = [];
-        for (const l of lines) {
-          const norm = l.trim();
-          if (!seen.has(norm)) { seen.add(norm); out.push(l); }
-        }
-        setOutput(out.join('\n'));
-        break;
-      }
-      case 'extract': {
-        const emails = [...new Set(text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g) ?? [])];
-        const urls = [...new Set(text.match(/https?:\/\/[^\s"'<>]+/g) ?? [])];
-        setOutput([
-          emails.length ? `Emails (${emails.length}):\n${emails.join('\n')}` : 'Emails: none',
-          urls.length ? `\nURLs (${urls.length}):\n${urls.join('\n')}` : '\nURLs: none',
-        ].join('\n'));
-        break;
-      }
-    }
+    setOutput(fn(text));
   };
 
-  const copy = async () => {
-    await navigator.clipboard.writeText(output || text);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const cleanText = (type: 'dedup' | 'trim' | 'empty' | 'spaces') => {
+    if (!text.trim()) return;
+    let result = '';
+    switch (type) {
+        case 'dedup':
+            result = [...new Set(text.split('\n').map(l => l.trim()))].join('\n');
+            break;
+        case 'trim':
+            result = text.split('\n').map(l => l.trim()).join('\n');
+            break;
+        case 'empty':
+            result = text.split('\n').filter(l => l.trim()).join('\n');
+            break;
+        case 'spaces':
+            result = text.replace(/\s+/g, ' ');
+            break;
+    }
+    setOutput(result);
+  };
+
+  const extract = (type: 'emails' | 'urls' | 'numbers') => {
+    if (!text.trim()) return;
+    let matches: string[] = [];
+    switch (type) {
+        case 'emails':
+            matches = text.match(/[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}/g) ?? [];
+            break;
+        case 'urls':
+            matches = text.match(/https?:\/\/[^\s"'<>]+/g) ?? [];
+            break;
+        case 'numbers':
+            matches = text.match(/\d+/g) ?? [];
+            break;
+    }
+    setOutput([...new Set(matches)].join('\n') || 'No matches found.');
   };
 
   return (
-    <div className="text-tool">
-      {/* Mode tabs */}
-      <div className="text-tool-modes">
-        {([
-          ['count', 'Count'],
-          ['case', 'Case'],
-          ['slug', 'Slug'],
-          ['dedup', 'Dedup'],
-          ['extract', 'Extract'],
-        ] as [Mode, string][]).map(([m, lbl]) => (
-          <button
-            key={m}
-            className={`json-mode-btn${mode === m ? ' active' : ''}`}
-            onClick={() => { setMode(m); setOutput(''); }}
-          >
-            {lbl}
-          </button>
-        ))}
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="flex justify-center">
+        <Tabs
+          activeTab={mode}
+          onChange={(id) => { setMode(id as Mode); setOutput(''); }}
+          tabs={[
+            { id: 'case', label: 'Transform Case', icon: 'Aa' },
+            { id: 'clean', label: 'Clean Text', icon: '🧹' },
+            { id: 'extract', label: 'Extract Data', icon: '🔍' },
+            { id: 'analyze', label: 'Quick Stats', icon: '📊' },
+          ]}
+          className="w-full max-w-2xl"
+        />
       </div>
 
-      <div className="text-tool-body">
-        {/* Input */}
-        <div className="json-panel">
-          <div className="json-panel-header">
-            <span className="json-panel-label">Input Text</span>
-            <button className="btn-ghost-xs" onClick={() => { setText(''); setOutput(''); }}>Clear</button>
-          </div>
-          <textarea
-            className="json-textarea"
-            value={text}
-            onChange={e => setText(e.target.value)}
-            placeholder="Paste or type your text here…"
-            rows={8}
-          />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Left Col: Input & Controls */}
+        <div className="space-y-6">
+            <div className="space-y-2">
+                <div className="flex justify-between items-center px-1">
+                    <label className="text-xs font-bold uppercase tracking-widest text-white/40">Input Text</label>
+                    <Button variant="ghost" size="sm" onClick={() => { setText(''); setOutput(''); }} className="h-7 text-[10px]">Clear</Button>
+                </div>
+                <Textarea
+                    value={text}
+                    onChange={e => setText(e.target.value)}
+                    placeholder="Paste or type text here..."
+                    className="min-h-[300px] text-sm leading-relaxed"
+                />
+            </div>
+
+            <Card title="Quick Actions">
+                <div className="space-y-4">
+                    {mode === 'case' && (
+                        <div className="grid grid-cols-2 gap-2">
+                            {CASE_OPS.map(op => (
+                                <Button key={op.id} variant="secondary" size="sm" onClick={() => handleOp(op.fn)}>
+                                    {op.label}
+                                </Button>
+                            ))}
+                        </div>
+                    )}
+
+                    {mode === 'clean' && (
+                        <div className="grid grid-cols-2 gap-2">
+                            <Button variant="secondary" size="sm" onClick={() => cleanText('trim')}>Trim Lines</Button>
+                            <Button variant="secondary" size="sm" onClick={() => cleanText('empty')}>Remove Empty Lines</Button>
+                            <Button variant="secondary" size="sm" onClick={() => cleanText('dedup')}>Remove Duplicates</Button>
+                            <Button variant="secondary" size="sm" onClick={() => cleanText('spaces')}>Collapse Spaces</Button>
+                        </div>
+                    )}
+
+                    {mode === 'extract' && (
+                        <div className="grid grid-cols-3 gap-2">
+                            <Button variant="secondary" size="sm" onClick={() => extract('emails')}>Emails</Button>
+                            <Button variant="secondary" size="sm" onClick={() => extract('urls')}>URLs</Button>
+                            <Button variant="secondary" size="sm" onClick={() => extract('numbers')}>Numbers</Button>
+                        </div>
+                    )}
+
+                    {mode === 'analyze' && (
+                        <div className="grid grid-cols-2 gap-3">
+                            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                                <div className="text-[10px] font-bold text-white/30 uppercase mb-1">Words</div>
+                                <div className="text-lg font-bold text-white">{stats.words}</div>
+                            </div>
+                            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                                <div className="text-[10px] font-bold text-white/30 uppercase mb-1">Characters</div>
+                                <div className="text-lg font-bold text-white">{stats.chars}</div>
+                            </div>
+                            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                                <div className="text-[10px] font-bold text-white/30 uppercase mb-1">Lines</div>
+                                <div className="text-lg font-bold text-white">{stats.lines}</div>
+                            </div>
+                            <div className="p-3 rounded-xl bg-white/[0.03] border border-white/5">
+                                <div className="text-[10px] font-bold text-white/30 uppercase mb-1">Sentences</div>
+                                <div className="text-lg font-bold text-white">{stats.sentences}</div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </Card>
         </div>
 
-        {/* Count stats */}
-        {mode === 'count' && (
-          <div className="text-stats-grid">
-            {[
-              ['Characters', stats.chars],
-              ['Words', stats.words],
-              ['Lines', stats.lines],
-              ['Sentences', stats.sentences],
-              ['Paragraphs', stats.paragraphs],
-              ['~Read time', `${stats.readingTime} min`],
-            ].map(([label, val]) => (
-              <div key={String(label)} className="text-stat-card">
-                <div className="text-stat-value">{val}</div>
-                <div className="text-stat-label">{label}</div>
-              </div>
-            ))}
-          </div>
-        )}
-
-        {/* Case buttons */}
-        {mode === 'case' && (
-          <div className="text-case-grid">
-            {CASE_OPS.map(op => (
-              <button
-                key={op.id}
-                className="btn-secondary text-case-btn"
-                onClick={() => run(op.id)}
-              >
-                {op.label}
-              </button>
-            ))}
-          </div>
-        )}
-
-        {/* Single-run modes */}
-        {(mode === 'slug' || mode === 'dedup' || mode === 'extract') && (
-          <button className="btn-primary text-run-btn" onClick={() => run()}>
-            {mode === 'slug' ? 'Generate Slug' : mode === 'dedup' ? 'Remove Duplicates' : 'Extract'}
-          </button>
-        )}
-
-        {/* Output */}
-        {output && (
-          <div className="json-panel">
-            <div className="json-panel-header">
-              <span className="json-panel-label">Output</span>
-              <button className="btn-ghost-xs" onClick={copy}>{copied ? 'Copied!' : 'Copy'}</button>
-            </div>
-            <textarea className="json-textarea output" value={output} readOnly rows={6} />
-          </div>
-        )}
+        {/* Right Col: Output */}
+        <div className="space-y-4">
+            <h3 className="text-xs font-bold uppercase tracking-widest text-white/40 px-1">Output</h3>
+            {output ? (
+                <div className="space-y-4 animate-in slide-in-from-right-4 duration-500">
+                    <CodeBlock 
+                        code={output} 
+                        label="Processed Text" 
+                        maxHeight="450px" 
+                    />
+                    <div className="flex gap-2">
+                        <Button variant="primary" className="flex-1" onClick={() => navigator.clipboard.writeText(output)}>
+                            Copy to Clipboard
+                        </Button>
+                        <Button variant="ghost" onClick={() => setOutput('')}>
+                            Clear Result
+                        </Button>
+                    </div>
+                </div>
+            ) : (
+                <div className="h-[400px] rounded-3xl border-2 border-dashed border-white/5 bg-white/[0.01] flex flex-col items-center justify-center text-center p-8">
+                    <div className="w-16 h-16 rounded-2xl bg-white/[0.03] flex items-center justify-center mb-4 text-2xl opacity-20">✍️</div>
+                    <p className="text-sm text-white/20">The transformed text will appear here.</p>
+                </div>
+            )}
+        </div>
       </div>
     </div>
   );

@@ -1,67 +1,128 @@
 'use client';
 
-import { useState } from 'react';
-
-function Row({ label, value, onCopy }: { label: string; value: string; onCopy?: (v: string, k: string) => void }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0.625rem 0', borderBottom: '1px solid var(--surface-card)' }}>
-      <span style={{ fontSize: '0.8125rem', color: 'var(--text-muted)' }}>{label}</span>
-      <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-        <code style={{ fontSize: '0.875rem', color: 'var(--text-primary)' }}>{value}</code>
-        <button onClick={() => onCopy?.(value, label)} style={{ background: 'none', border: 'none', color: 'var(--text-muted)', cursor: 'pointer', fontSize: '0.75rem' }}>Copy</button>
-      </div>
-    </div>
-  );
-}
+import { useState, useEffect } from 'react';
+import Card from '@/components/ui/Card';
+import Input from '@/components/ui/Input';
+import Button from '@/components/ui/Button';
 
 export default function TimestampTool() {
-  const [ts, setTs] = useState(String(Math.floor(Date.now() / 1000)));
-  const [dateStr, setDateStr] = useState(new Date().toISOString().slice(0, 16));
-  const [copied, setCopied] = useState('');
+  const [now, setNow] = useState(new Date());
+  const [ts, setTs] = useState('');
+  const [copied, setCopied] = useState<string | null>(null);
 
-  function copy(val: string, key: string) {
+  useEffect(() => {
+    const timer = setInterval(() => setNow(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const onCopy = (val: string, key: string) => {
     navigator.clipboard.writeText(val);
     setCopied(key);
-    setTimeout(() => setCopied(''), 1500);
-  }
+    setTimeout(() => setCopied(null), 1500);
+  };
 
-  const tsNum = parseInt(ts);
-  const fromTs = isNaN(tsNum) ? null : new Date(tsNum * 1000);
-  const fromDate = dateStr ? new Date(dateStr) : null;
+  const parsed = (() => {
+    if (!ts.trim()) return null;
+    const n = Number(ts);
+    if (isNaN(n)) return null;
+    // Guess seconds vs ms
+    const d = new Date(ts.length <= 10 ? n * 1000 : n);
+    if (isNaN(d.getTime())) return null;
+    return d;
+  })();
 
   return (
-    <div className="tool-section">
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '1rem', marginBottom: '1.5rem' }}>
-        <div>
-          <label style={{ display: 'block', fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '0.375rem' }}>Unix timestamp (seconds)</label>
-          <input value={ts} onChange={e => setTs(e.target.value)} style={{ width: '100%', background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.5rem 0.875rem', color: 'var(--text-primary)', fontFamily: 'monospace', fontSize: '0.9375rem', outline: 'none' }} />
+    <div className="space-y-8 animate-in fade-in duration-500">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Real-time Clock */}
+        <div className="space-y-6">
+            <Card title="Current System Time" description="Real-time precision clock with one-click copy for all common formats.">
+                <div className="space-y-4">
+                    <div className="p-8 rounded-3xl bg-accent/5 border border-accent/10 flex flex-col items-center justify-center text-center">
+                        <div className="text-[10px] font-black uppercase text-accent tracking-[0.2em] mb-2">Live Unix Epoch</div>
+                        <div className="text-4xl font-black text-white font-mono tracking-tighter">
+                            {Math.floor(now.getTime() / 1000)}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 gap-2">
+                        {[
+                            { l: 'ISO 8601', v: now.toISOString() },
+                            { l: 'RFC 2822', v: now.toUTCString() },
+                            { l: 'Local Time', v: now.toLocaleString() },
+                            { l: 'Milliseconds', v: String(now.getTime()) },
+                        ].map(item => (
+                            <div key={item.l} className="group flex items-center justify-between p-4 rounded-xl bg-surface-raised border border-white/5 hover:border-white/10 transition-all">
+                                <div>
+                                    <div className="text-[10px] font-black uppercase text-white/20 tracking-widest">{item.l}</div>
+                                    <code className="text-sm font-bold text-white/80">{item.v}</code>
+                                </div>
+                                <Button 
+                                    variant="ghost" 
+                                    size="sm" 
+                                    onClick={() => onCopy(item.v, item.l)}
+                                    className="opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    {copied === item.l ? 'Copied' : 'Copy'}
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            </Card>
         </div>
-        <div>
-          <label style={{ display: 'block', fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '0.375rem' }}>Date + time</label>
-          <input type="datetime-local" value={dateStr} onChange={e => setDateStr(e.target.value)} style={{ width: '100%', background: 'var(--surface-hover)', border: '1px solid var(--border)', borderRadius: '8px', padding: '0.5rem 0.875rem', color: 'var(--text-primary)', fontSize: '0.9375rem', outline: 'none' }} />
+
+        {/* Converter */}
+        <div className="space-y-6">
+            <Card title="Time Converter" description="Translate Unix timestamps into human-readable dates or vice versa.">
+                <div className="space-y-6">
+                    <Input 
+                        label="Unix Timestamp"
+                        value={ts}
+                        onChange={e => setTs(e.target.value)}
+                        placeholder="e.g. 1709760000"
+                        className="font-mono text-lg font-black text-accent"
+                        helper="Paste a 10-digit (seconds) or 13-digit (ms) value"
+                    />
+
+                    {parsed ? (
+                        <div className="space-y-4 animate-in slide-in-from-top-2">
+                            <div className="p-6 rounded-2xl bg-white/[0.03] border border-white/5 space-y-4">
+                                <div>
+                                    <div className="text-[10px] font-black uppercase text-white/20 tracking-widest mb-1">Interpreted Date</div>
+                                    <div className="text-lg font-bold text-white leading-tight">{parsed.toUTCString()}</div>
+                                    <div className="text-xs font-medium text-white/40 mt-1">{parsed.toLocaleString()} (Local)</div>
+                                </div>
+                                
+                                <div className="pt-4 border-t border-white/5 grid grid-cols-2 gap-4">
+                                    <div>
+                                        <div className="text-[9px] font-black uppercase text-white/20">Relative</div>
+                                        <div className="text-xs font-bold text-accent">...coming soon</div>
+                                    </div>
+                                    <div>
+                                        <div className="text-[9px] font-black uppercase text-white/20">Timezone</div>
+                                        <div className="text-xs font-bold text-white/60">UTC+0</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <Button variant="primary" className="w-full" onClick={() => onCopy(parsed.toISOString(), 'conv')}>Copy ISO String</Button>
+                        </div>
+                    ) : ts.trim() && (
+                        <div className="p-4 rounded-xl bg-danger/10 border border-danger/20 text-danger text-xs font-medium italic">
+                            Invalid timestamp format. Please provide a valid numeric epoch.
+                        </div>
+                    )}
+                </div>
+            </Card>
+
+            <div className="p-8 rounded-3xl bg-white/[0.02] border border-white/5 opacity-40">
+                <h4 className="text-xs font-bold text-white mb-2 uppercase tracking-widest">About Unix Time</h4>
+                <p className="text-[11px] text-white/40 leading-relaxed">
+                    Unix time (also known as Epoch time) is a system for describing a point in time. It is the number of seconds that have elapsed since the Unix epoch, minus leap seconds; the Unix epoch is 00:00:00 UTC on 1 January 1970.
+                </p>
+            </div>
         </div>
       </div>
-      <div style={{ border: '1px solid var(--border)', borderRadius: '10px', padding: '0 1rem', background: 'var(--surface-card)' }}>
-        <div style={{ padding: '0.75rem 0', borderBottom: '1px solid var(--surface-raised)', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>From timestamp</div>
-        {fromTs && !isNaN(fromTs.getTime()) ? (
-          <>
-            <Row label="ISO 8601" value={fromTs.toISOString()} onCopy={copy} />
-            <Row label="UTC" value={fromTs.toUTCString()} onCopy={copy} />
-            <Row label="Local" value={fromTs.toLocaleString()} onCopy={copy} />
-            <Row label="Date only" value={fromTs.toISOString().split('T')[0]} onCopy={copy} />
-            <Row label="Unix (ms)" value={String(fromTs.getTime())} onCopy={copy} />
-          </>
-        ) : <p style={{ padding: '0.75rem 0', color: 'var(--text-muted)', fontSize: '0.875rem' }}>Enter a valid timestamp above</p>}
-        {fromDate && !isNaN(fromDate.getTime()) && (
-          <>
-            <div style={{ padding: '0.75rem 0', borderTop: '1px solid var(--surface-raised)', marginTop: '0.25rem', fontSize: '0.75rem', fontWeight: 600, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>From date input</div>
-            <Row label="Unix (seconds)" value={String(Math.floor(fromDate.getTime() / 1000))} onCopy={copy} />
-            <Row label="Unix (ms)" value={String(fromDate.getTime())} onCopy={copy} />
-            <Row label="ISO 8601" value={fromDate.toISOString()} onCopy={copy} />
-          </>
-        )}
-      </div>
-      <button onClick={() => setTs(String(Math.floor(Date.now() / 1000)))} className="btn btn-secondary" style={{ marginTop: '0.875rem', padding: '0.5rem 1rem', fontSize: '0.875rem' }}>Use current time</button>
     </div>
   );
 }
