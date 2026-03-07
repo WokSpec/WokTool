@@ -282,9 +282,9 @@ export default function ToolsHubClient() {
             </div>
         </div>
         <div className="max-w-[1440px] mx-auto mt-32 pt-8 border-t border-white/5 flex flex-col md:flex-row justify-between items-center gap-8">
-            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/10">© 2026 WokSpec Global Protocol · Verified for production</p>
+            <p className="text-[10px] font-black uppercase tracking-[0.4em] text-white/10">© 2026 WokSpec Global Protocol · INDUSTRIAL_PREMIUM_V4_OVERHAUL</p>
             <div className="flex items-center gap-4 text-[10px] font-mono text-white/20">
-                <span>VER: 4.2.1-STABLE</span>
+                <span>BUILD_SIG: {new Date().toISOString().split('T')[0]}_STABLE</span>
                 <span>ENC: AES-256-GCM</span>
             </div>
         </div>

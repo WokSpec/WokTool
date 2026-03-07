@@ -221,7 +221,6 @@
       "browserDebugInfoInTerminal": false,
       "optimizeRouterScrolling": false,
       "middlewareClientMaxBodySize": 10485760,
-      "outputFileTracingRoot": "/home/user9007/main/projects/wokspec/WokTool/",
       "optimizePackageImports": [
         "lucide-react",
         "date-fns",
