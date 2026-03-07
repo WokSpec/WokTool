@@ -39,7 +39,7 @@ export default function WordFrequencyClient() {
 
   const stats = useMemo(() => {
     if (!text.trim()) return null;
-    const tokens = text.match(/\b[a-zA-Z']+\b/g) ?? [];
+    const tokens: string[] = text.match(/\b[a-zA-Z']+\b/g) ?? [];
     const freq: Record<string, number> = {};
     
     tokens.forEach(t => {
@@ -57,7 +57,7 @@ export default function WordFrequencyClient() {
       total: tokens.length,
       unique: entries.length,
       flesch: fleschReadingEase(text),
-      avgLen: tokens.length ? tokens.reduce((s, w) => s + w.length, 0) / tokens.length : 0
+      avgLen: tokens.length ? tokens.reduce((s: number, w: string) => s + w.length, 0) / tokens.length : 0
     };
   }, [text, ignoreStop]);
 

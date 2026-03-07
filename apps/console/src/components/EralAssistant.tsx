@@ -38,7 +38,23 @@ export default function EralAssistant() {
       const res = await fetch('/api/eral/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, sessionId, pageContext: 'console-dashboard' }),
+        body: JSON.stringify({
+          message: text,
+          sessionId,
+          pageContext: 'The user is in the WokTool console dashboard. Help them navigate tools, workflows, and account-level actions.',
+          integration: {
+            name: 'WokTool Console',
+            kind: 'console',
+            url: window.location.href,
+            origin: window.location.origin,
+            pageTitle: document.title,
+            capabilities: ['tool-guidance', 'workspace-assistant'],
+            metadata: {
+              pathname: window.location.pathname,
+              surface: 'dashboard-widget',
+            },
+          },
+        }),
       });
       const data = (await res.json()) as { reply?: string };
       setMessages((m) => [

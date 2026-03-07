@@ -111,7 +111,7 @@ export default function SkyboxPage() {
                             <div className="px-4 py-2 rounded-full bg-accent text-[10px] font-black uppercase tracking-widest text-white shadow-xl">Panoramic Texture Ready</div>
                             <div className="flex gap-3">
                                 <Button href={result.file_url} download="skybox.jpg" variant="primary" icon={<Download size={16} />}>Download JPG</Button>
-                                <Button variant="secondary" onClick={() => setResults(null)}>Reset</Button>
+                                <Button variant="secondary" onClick={() => setResult(null)}>Reset</Button>
                             </div>
                         </div>
                     </div>

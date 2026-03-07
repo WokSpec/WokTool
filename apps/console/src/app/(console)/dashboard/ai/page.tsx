@@ -44,7 +44,23 @@ export default function AIPage() {
       const res = await fetch('/api/eral/chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message: text, sessionId, pageContext: 'ai-workspace' }),
+        body: JSON.stringify({
+          message: text,
+          sessionId,
+          pageContext: 'The user is in the WokTool AI workspace. Focus on drafting, brainstorming, and practical business or tool workflows.',
+          integration: {
+            name: 'WokTool AI Workspace',
+            kind: 'workspace',
+            url: window.location.href,
+            origin: window.location.origin,
+            pageTitle: document.title,
+            capabilities: ['drafting', 'brainstorming', 'tool-guidance'],
+            metadata: {
+              pathname: window.location.pathname,
+              surface: 'ai-workspace',
+            },
+          },
+        }),
       });
       const data = (await res.json()) as { reply?: string };
       setMessages((m) => [

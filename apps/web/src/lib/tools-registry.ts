@@ -15,7 +15,7 @@ export interface ToolDef {
 
 export type ToolTag =
   | 'image' | 'design' | 'dev' | 'audio' | 'crypto' | 'text' 
-  | 'security' | 'network' | 'utility' | 'ai' | 'seo';
+  | 'security' | 'network' | 'utility' | 'ai' | 'seo' | 'gamedev' | 'collab';
 
 export const TAG_LABELS: Record<ToolTag, string> = {
   image:    'Imaging',
@@ -29,6 +29,8 @@ export const TAG_LABELS: Record<ToolTag, string> = {
   utility:  'Productivity',
   ai:       'AI / ML',
   seo:      'SEO',
+  gamedev:  'Game Dev',
+  collab:   'Collab',
 };
 
 export const TOOLS: ToolDef[] = [

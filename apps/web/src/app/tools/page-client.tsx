@@ -8,7 +8,7 @@ import {
   Youtube, Layers, RefreshCw, Maximize, PenTool, Code, Palette, Type, 
   Monitor, FileJson, Lock, ShieldCheck, Key, FileText, Share2, Edit3, 
   Save, Globe, Box, Download, Music, Video, Info, ArrowRight, Sparkles,
-  LayoutGrid, Terminal, Cpu, Network, Shield, MousePointer2
+  LayoutGrid, Terminal, Cpu, Network, Shield, MousePointer2, Github
 } from 'lucide-react';
 import { TOOLS, TAG_LABELS } from '@/lib/tools-registry';
 import type { ToolTag, ToolDef } from '@/lib/tools-registry';

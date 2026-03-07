@@ -134,44 +134,46 @@ export default function DnsLookupClient() {
 
       <div className="space-y-6">
         {results.map((r, ri) => (
-            <Card key={ri} className="p-0 overflow-hidden border-white/10 animate-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${ri * 100}ms` }}>
-                <div className="px-6 py-4 bg-white/[0.03] border-b border-white/5 flex justify-between items-center">
-                    <div className="flex items-center gap-3">
-                        <span className="px-2 py-0.5 rounded-md bg-accent text-white text-[10px] font-black uppercase tracking-tighter">{r.type}</span>
-                        <span className="text-sm font-bold text-white">{domain}</span>
-                    </div>
-                    <span className={`text-[10px] font-bold uppercase tracking-widest ${r.data.Status === 0 ? 'text-success' : 'text-danger'}`}>
-                        {STATUS_MSGS[r.data.Status] || `Error ${r.data.Status}`}
-                    </span>
-                </div>
-
-                <div className="overflow-x-auto">
-                    {r.data.Answer ? (
-                        <table className="w-full text-left border-collapse">
-                            <thead>
-                                <tr className="bg-white/[0.01]">
-                                    <th className="p-4 text-[10px] font-black uppercase text-white/20 tracking-widest">Name</th>
-                                    <th className="p-4 text-[10px] font-black uppercase text-white/20 tracking-widest">TTL</th>
-                                    <th className="p-4 text-[10px] font-black uppercase text-white/20 tracking-widest">Data</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-white/[0.03]">
-                                {r.data.Answer.map((ans, i) => (
-                                    <tr key={i} className="hover:bg-white/[0.01] transition-colors">
-                                        <td className="p-4 text-xs font-medium text-white/60">{ans.name}</td>
-                                        <td className="p-4 text-xs font-mono text-white/40">{ans.TTL}s</td>
-                                        <td className="p-4 text-xs font-mono text-accent break-all">{ans.data}</td>
-                                    </tr>
-                                ))}
-                            </tbody>
-                        </table>
-                    ) : (
-                        <div className="p-8 text-center text-white/20 text-xs font-medium italic">
-                            {r.error || `No ${r.type} records found for this domain.`}
+            <div key={ri} className="animate-in slide-in-from-bottom-4 duration-500" style={{ animationDelay: `${ri * 100}ms` }}>
+                <Card className="p-0 overflow-hidden border-white/10">
+                    <div className="px-6 py-4 bg-white/[0.03] border-b border-white/5 flex justify-between items-center">
+                        <div className="flex items-center gap-3">
+                            <span className="px-2 py-0.5 rounded-md bg-accent text-white text-[10px] font-black uppercase tracking-tighter">{r.type}</span>
+                            <span className="text-sm font-bold text-white">{domain}</span>
                         </div>
-                    )}
-                </div>
-            </Card>
+                        <span className={`text-[10px] font-bold uppercase tracking-widest ${r.data.Status === 0 ? 'text-success' : 'text-danger'}`}>
+                            {STATUS_MSGS[r.data.Status] || `Error ${r.data.Status}`}
+                        </span>
+                    </div>
+
+                    <div className="overflow-x-auto">
+                        {r.data.Answer ? (
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="bg-white/[0.01]">
+                                        <th className="p-4 text-[10px] font-black uppercase text-white/20 tracking-widest">Name</th>
+                                        <th className="p-4 text-[10px] font-black uppercase text-white/20 tracking-widest">TTL</th>
+                                        <th className="p-4 text-[10px] font-black uppercase text-white/20 tracking-widest">Data</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-white/[0.03]">
+                                    {r.data.Answer.map((ans, i) => (
+                                        <tr key={i} className="hover:bg-white/[0.01] transition-colors">
+                                            <td className="p-4 text-xs font-medium text-white/60">{ans.name}</td>
+                                            <td className="p-4 text-xs font-mono text-white/40">{ans.TTL}s</td>
+                                            <td className="p-4 text-xs font-mono text-accent break-all">{ans.data}</td>
+                                        </tr>
+                                    ))}
+                                </tbody>
+                            </table>
+                        ) : (
+                            <div className="p-8 text-center text-white/20 text-xs font-medium italic">
+                                {r.error || `No ${r.type} records found for this domain.`}
+                            </div>
+                        )}
+                    </div>
+                </Card>
+            </div>
         ))}
       </div>
 

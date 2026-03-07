@@ -16,19 +16,11 @@ export const TAG_COLORS: Partial<Record<ToolTag, string>> = {
   crypto:       '#fbbf24',
   collab:       '#2dd4bf',
   text:         '#818cf8',
-  pdf:          '#f87171',
-  css:          '#a78bfa',
-  json:         '#60a5fa',
   security:     '#f87171',
-  calculator:   '#fbbf24',
   network:      '#60a5fa',
-  converter:    '#4ade80',
-  devops:       '#60a5fa',
   seo:          '#2dd4bf',
-  productivity: '#34d399',
-  fun:          '#fb923c',
-  reference:    '#a1a1aa',
-  misc:         '#a1a1aa',
+  utility:      '#34d399',
+  ai:           '#fb923c',
 };
 
 // ── Curated popular tools ──────────────────────────────────────────────────

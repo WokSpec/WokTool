@@ -90,8 +90,8 @@ export default function FaviconExtractorTool() {
                         <div className="text-[10px] font-medium text-white/40 truncate" title={fav.rel}>{fav.rel}</div>
                     </div>
                     <Button 
-                        href={fav.url} 
-                        download 
+                        href={fav.url || ''} 
+                        download=""
                         variant="secondary" 
                         size="sm" 
                         className="w-full"

@@ -94,7 +94,7 @@ export default function PomodoroClient() {
       setHistory(h => [{
         id: crypto.randomUUID(),
         task: task || 'Untitled Session',
-        mode: 'work',
+        mode: mode as Mode,
         completedAt: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
       }, ...h].slice(0, 10));
 

@@ -13,10 +13,8 @@ const SIDEBAR_CATEGORIES: Array<{ tag: ToolTag | null; label: string }> = [
   { tag: 'image',   label: 'Image' },
   { tag: 'design',  label: 'Design' },
   { tag: 'dev',     label: 'Dev Tools' },
-  { tag: 'gamedev', label: 'Game Dev' },
   { tag: 'audio',   label: 'Audio' },
   { tag: 'crypto',  label: '₿ Crypto/Web3' },
-  { tag: 'collab',  label: 'Collab' },
 ];
 
 function countForTag(tag: ToolTag | null) {
