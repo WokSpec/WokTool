@@ -1,1 +1,0 @@
-"use strict";exports.id=2836,exports.ids=[2836],exports.modules={12836:(e,s,o)=>{o.r(s),o.d(s,{default:()=>t});let t=(0,o(53189).createProxy)(String.raw`/home/user9007/main/projects/wokspec/WokTool/apps/web/src/app/tools/lorem-ipsum/_client.tsx#default`)}};

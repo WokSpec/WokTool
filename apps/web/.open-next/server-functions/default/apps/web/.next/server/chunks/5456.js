@@ -1,1 +1,0 @@
-"use strict";exports.id=5456,exports.ids=[5456],exports.modules={5456:(e,o,r)=>{r.r(o),r.d(o,{default:()=>s});let s=(0,r(53189).createProxy)(String.raw`/home/user9007/main/projects/wokspec/WokTool/apps/web/src/app/tools/word-frequency/_client.tsx#default`)}};

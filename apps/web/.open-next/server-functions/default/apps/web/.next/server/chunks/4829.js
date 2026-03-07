@@ -1,1 +1,0 @@
-"use strict";exports.id=4829,exports.ids=[4829],exports.modules={4829:(e,t,s)=>{s.r(t),s.d(t,{default:()=>o});let o=(0,s(53189).createProxy)(String.raw`/home/user9007/main/projects/wokspec/WokTool/apps/web/src/app/tools/percentage-calc/_client.tsx#default`)}};

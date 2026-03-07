@@ -1,1 +1,0 @@
-"use strict";exports.id=2847,exports.ids=[2847],exports.modules={12847:(e,o,s)=>{s.r(o),s.d(o,{default:()=>t});let t=(0,s(53189).createProxy)(String.raw`/home/user9007/main/projects/wokspec/WokTool/apps/web/src/app/tools/docker-gen/_client.tsx#default`)}};

@@ -19,6 +19,7 @@ const nextConfig = {
   typescript: { ignoreBuildErrors: true },
   eslint: { ignoreDuringBuilds: true },
   poweredByHeader: false,
+  outputFileTracingRoot: path.join(__dirname, '../../'),
   webpack(config, { isServer }) {
     config.plugins = config.plugins ?? [];
     

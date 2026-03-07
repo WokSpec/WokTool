@@ -1,1 +1,0 @@
-"use strict";exports.id=8615,exports.ids=[8615],exports.modules={9334:(e,o,s)=>{s.r(o),s.d(o,{default:()=>t});let t=(0,s(53189).createProxy)(String.raw`/home/user9007/main/projects/wokspec/WokTool/apps/web/src/app/tools/dns-lookup/_client.tsx#default`)}};

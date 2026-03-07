@@ -1,1 +1,0 @@
-"use strict";exports.id=710,exports.ids=[710],exports.modules={710:(e,s,o)=>{o.r(s),o.d(s,{default:()=>t});let t=(0,o(53189).createProxy)(String.raw`/home/user9007/main/projects/wokspec/WokTool/apps/web/src/app/tools/neumorphism/_client.tsx#default`)}};

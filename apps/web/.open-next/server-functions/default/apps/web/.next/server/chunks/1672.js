@@ -1,1 +1,0 @@
-"use strict";exports.id=1672,exports.ids=[1672],exports.modules={51672:(e,t,s)=>{s.r(t),s.d(t,{default:()=>o});let o=(0,s(53189).createProxy)(String.raw`/home/user9007/main/projects/wokspec/WokTool/apps/web/src/app/tools/meta-tag-gen/_client.tsx#default`)}};

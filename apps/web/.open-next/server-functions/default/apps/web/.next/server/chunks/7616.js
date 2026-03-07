@@ -1,1 +1,0 @@
-"use strict";exports.id=7616,exports.ids=[7616],exports.modules={37616:(e,t,o)=>{o.r(t),o.d(t,{default:()=>s});let s=(0,o(53189).createProxy)(String.raw`/home/user9007/main/projects/wokspec/WokTool/apps/web/src/app/tools/compound-interest/_client.tsx#default`)}};

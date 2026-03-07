@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "functions": {
+    "/api/tools/exa-search": {},
+    "/api/tools/vectorize": {
+      "maxDuration": 60
+    },
+    "/api/tools/yt-download": {
+      "maxDuration": 60
+    }
+  }
+}
