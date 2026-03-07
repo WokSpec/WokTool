@@ -9,6 +9,11 @@ import Select from '@/components/ui/Select';
 import QRCode from 'qrcode';
 
 export default function WifiQrTool() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [ssid, setSsid] = useState('');
   const [password, setPassword] = useState('');
   const [encryption, setEncryption] = useState('WPA');

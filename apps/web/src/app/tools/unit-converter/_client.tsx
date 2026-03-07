@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -94,6 +94,11 @@ function formatNum(n: number): string {
 }
 
 export default function UnitConverterClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [category, setCategory] = useState<Category>('Length');
   const [value, setValue] = useState('1');
   const [fromUnit, setFromUnit] = useState('m');

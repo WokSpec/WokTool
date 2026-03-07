@@ -4,10 +4,9 @@ export const metadata: Metadata = {
   description: 'Look up DNS records via DNS-over-HTTPS (Cloudflare). A, AAAA, CNAME, MX, TXT, NS, SOA, PTR, CAA records.',
   openGraph: { title: 'DNS Lookup — WokTool', description: 'Look up DNS records via DNS-over-HTTPS (A, MX, TXT, etc.).', type: 'website' },
 };
-import dynamic from 'next/dynamic';
 import ToolShell from '@/components/tools/ToolShell';
 
-const Client = dynamic(() => import('./_client'), { ssr: false });
+import Client from './_client';
 
 export default function Page() {
   return (

@@ -33,6 +33,11 @@ async function fetchIpData(ip: string): Promise<IpData> {
 }
 
 export default function IpLookupClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [data, setData] = useState<IpData | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -26,6 +26,11 @@ async function hmac(message: string, key: string, algo: Algo): Promise<{ hex: st
 }
 
 export default function HmacGenClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [message, setMessage] = useState('');
   const [secretKey, setSecretKey] = useState('');
   const [showKey, setShowKey] = useState(false);

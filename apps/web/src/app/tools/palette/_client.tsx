@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Tabs from '@/components/ui/Tabs';
 import Button from '@/components/ui/Button';
@@ -21,6 +21,11 @@ const MODELS = [
 ];
 
 export default function PaletteGenClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [activeModel, setActiveModel] = useState('default');
   const [palette, setPalette] = useState<string[]>(['#818cf8', '#c084fc', '#fb7185', '#fbbf24', '#34d399']);
   const [loading, setLoading] = useState(false);

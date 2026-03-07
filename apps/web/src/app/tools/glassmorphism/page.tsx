@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
 import ToolShell from '@/components/tools/ToolShell';
-const Client = dynamic(() => import('./_client'), { ssr: false });
+import Client from './_client';
 export const metadata: Metadata = {
   title: 'Glassmorphism Generator — WokTool',
   description: 'Generate glassmorphism card CSS with live preview. Adjust blur, transparency, and more.',

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import Tabs from '@/components/ui/Tabs';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
@@ -47,6 +47,11 @@ function parseCSV(csv: string): { headers: string[]; rows: string[][] } {
 }
 
 export default function MarkdownTableClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [headers, setHeaders] = useState(['Feature', 'Description', 'Status']);
   const [rows, setRows] = useState<string[][]>([
     ['Live Preview', 'See your table as you build it', '✅ Done'],

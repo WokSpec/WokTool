@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
@@ -64,6 +64,11 @@ const CHARSETS = {
 };
 
 export default function PwStrengthClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [password, setPassword] = useState('');
   const [showPw, setShowPw] = useState(false);
   const [genLen, setGenLen] = useState(24);

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -98,6 +98,11 @@ function addBorder(text: string, style: string): string {
 }
 
 export default function AsciiArtClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [text, setText] = useState('WOKTOOL');
   const [font, setFont] = useState('Block');
   const [border, setBorder] = useState('none');

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { PDFDocument } from 'pdf-lib';
 import Tabs from '@/components/ui/Tabs';
 import Dropzone from '@/components/ui/Dropzone';
@@ -44,7 +44,12 @@ function parsePageRange(range: string, total: number): number[] {
 }
 
 export default function PdfTool() {
+  const [mounted, setMounted] = useState(false);
   const [activeTab, setActiveTab] = useState<Tab>('merge');
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   /* ── Merge state ── */
   const [mergeFiles, setMergeFiles] = useState<File[]>([]);
@@ -124,6 +129,8 @@ export default function PdfTool() {
       setIsAnalyzing(false);
     }
   };
+
+  if (!mounted) return null;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">

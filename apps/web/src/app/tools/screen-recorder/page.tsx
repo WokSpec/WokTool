@@ -1,13 +1,11 @@
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
 import ToolShell from '@/components/tools/ToolShell';
+import Client from '@/components/tools/ScreenRecorderTool';
 
 export const metadata: Metadata = {
   title: 'Screen Recorder — WokTool',
   description: 'Capture your screen, window, or tab instantly. Record system audio and microphone. No install required.',
 };
-
-const Client = dynamic(() => import('@/components/tools/ScreenRecorderTool'), { ssr: false });
 
 export default function Page() {
   return (

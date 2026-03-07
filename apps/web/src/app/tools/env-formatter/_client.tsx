@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 function parseEnv(content: string): Array<{key:string,value:string,comment:boolean,raw:string}> {
   return content.split('\n').map(raw => {
@@ -14,6 +14,11 @@ function parseEnv(content: string): Array<{key:string,value:string,comment:boole
 type Action = 'format'|'validate'|'keys'|'json'|'export';
 
 export default function EnvFormatterClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [input, setInput] = useState(`# App configuration
 DATABASE_URL=postgres://localhost/mydb
 API_KEY=abc123

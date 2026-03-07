@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
 import ToolShell from '@/components/tools/ToolShell';
-const Client = dynamic(() => import('./_client'), { ssr: false });
+import Client from './_client';
 export const metadata: Metadata = {
   title: 'Neumorphism Generator — WokTool',
   description: 'Generate neumorphism box-shadow CSS with live preview. Flat, concave, convex, and pressed styles.',

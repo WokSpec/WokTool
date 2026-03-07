@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Textarea from '@/components/ui/Textarea';
@@ -23,6 +23,11 @@ async function deriveKey(passphrase: string, salt: Uint8Array) {
 }
 
 export default function AesToolClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [tab, setTab] = useState<'encrypt' | 'decrypt'>('encrypt');
   const [plaintext, setPlaintext] = useState('');
   const [ciphertext, setCiphertext] = useState('');

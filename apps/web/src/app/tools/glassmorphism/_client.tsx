@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Slider from '@/components/ui/Slider';
 import Button from '@/components/ui/Button';
@@ -23,6 +23,11 @@ function hexToRgba(hex: string, alpha: number): string {
 }
 
 export default function GlassmorphismClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [blur, setBlur] = useState(12);
   const [transparency, setTransparency] = useState(0.1);
   const [borderOpacity, setBorderOpacity] = useState(0.2);

@@ -4,10 +4,9 @@ export const metadata: Metadata = {
   description: 'View EXIF metadata from JPEG images: camera info, GPS coordinates, exposure settings. Pure browser-side EXIF parser.',
   openGraph: { title: 'EXIF / Image Metadata Viewer — WokTool', description: 'View EXIF metadata and GPS data from images.', type: 'website' },
 };
-import dynamic from 'next/dynamic';
 import ToolShell from '@/components/tools/ToolShell';
 
-const Client = dynamic(() => import('./_client'), { ssr: false });
+import Client from './_client';
 
 export default function Page() {
   return (

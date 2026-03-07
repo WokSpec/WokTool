@@ -1,7 +1,6 @@
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
 import ToolShell from '@/components/tools/ToolShell';
-const Client = dynamic(() => import('./_client'), { ssr: false });
+import Client from './_client';
 export const metadata: Metadata = {
   title: 'Percentage Calculator — WokTool',
   description: 'Percentage calculations, tip calculator, percentage change, and more.',

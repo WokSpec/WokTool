@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
 import ToolShell from '@/components/tools/ToolShell';
 
 export const metadata: Metadata = {
@@ -7,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Generate complete nginx server block configuration for your use case.',
 };
 
-const Client = dynamic(() => import('./_client'), { ssr: false });
+import Client from './_client';
 
 export default function Page() {
   return (

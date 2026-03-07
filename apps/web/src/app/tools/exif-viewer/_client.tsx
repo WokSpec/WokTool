@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useMemo } from 'react';
+import { useState, useRef, useMemo, useEffect } from 'react';
 import Dropzone from '@/components/ui/Dropzone';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -94,6 +94,11 @@ function formatVal(k: string, v: any): string {
 }
 
 export default function ExifViewerClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [data, setData] = useState<{ exif: ExifData; gps: ExifData } | null>(null);
   const [fileInfo, setFileInfo] = useState<{ name: string; size: string; dims: string } | null>(null);
   const [preview, setPreview] = useState<string | null>(null);

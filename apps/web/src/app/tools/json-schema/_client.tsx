@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Textarea from '@/components/ui/Textarea';
 import Button from '@/components/ui/Button';
@@ -31,6 +31,11 @@ function generateSchema(obj: any, opts: { required: boolean }): any {
 }
 
 export default function JsonSchemaClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [input, setInput] = useState('{\n  "user": {\n    "id": 1,\n    "name": "John Doe",\n    "active": true\n  },\n  "tags": ["admin", "beta"]\n}');
   const [output, setOutput] = useState('');
   const [required, setRequired] = useState(true);

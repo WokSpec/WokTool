@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Dropzone from '@/components/ui/Dropzone';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
@@ -50,6 +50,11 @@ function fmtBytes(n: number): string {
 }
 
 export default function SvgOptimizerClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [input, setInput] = useState('');
   const [output, setOutput] = useState('');
   const [stats, setStats] = useState<{ orig: number; opt: number; pct: number } | null>(null);

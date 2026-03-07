@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Button from '@/components/ui/Button';
@@ -12,6 +12,11 @@ function fmt(n: number, decimals = 2): string {
 }
 
 export default function PercentageCalcClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   // Card 1: What is X% of Y?
   const [c1x, setC1x] = useState('15');
   const [c1y, setC1y] = useState('200');

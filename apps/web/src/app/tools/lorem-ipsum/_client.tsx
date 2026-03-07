@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Slider from '@/components/ui/Slider';
 import Switch from '@/components/ui/Switch';
@@ -36,6 +36,11 @@ function generateLorem(count: number, unit: 'words' | 'sentences' | 'paragraphs'
 }
 
 export default function LoremIpsumClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [count, setCount] = useState(3);
   const [unit, setUnit] = useState<'words' | 'sentences' | 'paragraphs'>('paragraphs');
   const [startWithLorem, setStartWithLorem] = useState(true);

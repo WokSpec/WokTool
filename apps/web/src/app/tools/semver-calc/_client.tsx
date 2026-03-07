@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -70,6 +70,11 @@ function satisfiesRange(ver: SemVer, range: string): boolean {
 }
 
 export default function SemverCalcClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [version, setVersion] = useState('1.2.3');
   const [bumpType, setBumpType] = useState<'major'|'minor'|'patch'|'prerelease'>('patch');
   const [compareA, setCompareA] = useState('1.2.3');

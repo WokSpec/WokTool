@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -55,6 +55,11 @@ interface LookupResult {
 }
 
 export default function DnsLookupClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [domain, setDomain] = useState('');
   const [type, setType] = useState<RecordType>('A');
   const [loading, setLoading] = useState(false);

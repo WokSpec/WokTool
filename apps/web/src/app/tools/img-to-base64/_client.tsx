@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Dropzone from '@/components/ui/Dropzone';
 import Button from '@/components/ui/Button';
 import Textarea from '@/components/ui/Textarea';
@@ -11,6 +11,11 @@ import Select from '@/components/ui/Select';
 type Mode = 'encode' | 'decode';
 
 export default function ImgToBase64Client() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [mode, setMode] = useState<Mode>('encode');
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [dataUri, setDataUri] = useState('');

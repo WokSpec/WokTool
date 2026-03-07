@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -110,6 +110,11 @@ function generateNginxConfig(opts: any): string {
 }
 
 export default function NginxConfigClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [domain, setDomain] = useState('example.com');
   const [serverType, setServerType] = useState<ServerType>('static');
   const [ssl, setSsl] = useState<SslType>('letsencrypt');

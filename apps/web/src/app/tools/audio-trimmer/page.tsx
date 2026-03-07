@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
 import ToolShell from '@/components/tools/ToolShell';
 
 export const metadata: Metadata = {
@@ -7,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Visually trim and cut audio files in your browser. Waveform editor with precision controls.',
 };
 
-const Client = dynamic(() => import('@/components/tools/AudioTrimmerTool'), { ssr: false });
+import Client from '@/components/tools/AudioTrimmerTool';
 
 export default function Page() {
   return (

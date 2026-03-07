@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "next build --webpack",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "build:cf": "next build && npx opennextjs-cloudflare build --skipNextBuild --dangerouslyUseUnsupportedNextVersion",
+    "build:cf": "next build --webpack && npx opennextjs-cloudflare build --skipNextBuild --dangerouslyUseUnsupportedNextVersion",
     "deploy": "npm run build:cf && npm run assemble && wrangler pages deploy .deploy --project-name woktool --branch main --commit-dirty=true",
     "assemble": "rm -rf .deploy && mkdir -p .deploy && cp -r .open-next/assets/. .deploy/ && cp .open-next/worker.js .deploy/_worker.js && cp -r .open-next/cloudflare .deploy/cloudflare && cp -r .open-next/server-functions .deploy/server-functions && cp -r .open-next/middleware .deploy/middleware; cp -r .open-next/.build .deploy/.build && node -e \"const r={version:1,include:['/*'],exclude:['/_next/static/*','/favicon.ico','/_next/image*','/*.png','/*.jpg','/*.svg','/*.ico','/*.webp','/*.woff2','/*.woff','/*.ttf','/og.png','/manifest.webmanifest','/robots.txt']};require('fs').writeFileSync('.deploy/_routes.json',JSON.stringify(r))\""
   },

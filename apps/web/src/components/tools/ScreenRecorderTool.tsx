@@ -7,10 +7,10 @@ import Card from '@/components/ui/Card';
 import Switch from '@/components/ui/Switch';
 
 export default function ScreenRecorderTool() {
+  const [mounted, setMounted] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [recording, setRecording] = useState(false);
   const [paused, setPaused] = useState(false);
-  const [recordedChunks, setRecordedChunks] = useState<Blob[]>([]);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [audioEnabled, setAudioEnabled] = useState(true);
   const [timer, setTimer] = useState(0);
@@ -18,14 +18,26 @@ export default function ScreenRecorderTool() {
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const chunksRef = useRef<Blob[]>([]);
 
   useEffect(() => {
+    setMounted(true);
     return () => {
       if (stream) stream.getTracks().forEach(track => track.stop());
       if (previewUrl) URL.revokeObjectURL(previewUrl);
       if (timerRef.current) clearInterval(timerRef.current);
     };
   }, [stream, previewUrl]);
+
+  const getSupportedMimeType = () => {
+    const types = [
+      'video/webm;codecs=vp9,opus',
+      'video/webm;codecs=vp8,opus',
+      'video/webm',
+      'video/mp4',
+    ];
+    return types.find(type => MediaRecorder.isTypeSupported(type)) || '';
+  };
 
   const startCapture = async () => {
     try {
@@ -40,7 +52,7 @@ export default function ScreenRecorderTool() {
       if (audioEnabled) {
         try {
           const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
-          const audioContext = new AudioContext();
+          const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
           const dest = audioContext.createMediaStreamDestination();
           
           if (videoStream.getAudioTracks().length > 0) {
@@ -79,12 +91,26 @@ export default function ScreenRecorderTool() {
   const startRecording = () => {
     if (!stream) return;
     
-    setRecordedChunks([]);
-    const recorder = new MediaRecorder(stream, { mimeType: 'video/webm; codecs=vp9' });
+    chunksRef.current = [];
+    const mimeType = getSupportedMimeType();
+    const recorder = new MediaRecorder(stream, { mimeType });
     
     recorder.ondataavailable = (e) => {
       if (e.data.size > 0) {
-        setRecordedChunks(prev => [...prev, e.data]);
+        chunksRef.current.push(e.data);
+      }
+    };
+
+    recorder.onstop = () => {
+      const blob = new Blob(chunksRef.current, { type: recorder.mimeType });
+      const url = URL.createObjectURL(blob);
+      setPreviewUrl(url);
+      setRecording(false);
+      
+      // Stop tracks
+      if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+        setStream(null);
       }
     };
 
@@ -101,21 +127,12 @@ export default function ScreenRecorderTool() {
   };
 
   const stopRecording = () => {
-    if (mediaRecorderRef.current && recording) {
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
         mediaRecorderRef.current.stop();
-        if (timerRef.current) clearInterval(timerRef.current);
-        
-        // Wait a bit for the last chunk
-        setTimeout(() => {
-            const blob = new Blob(recordedChunks, { type: 'video/webm' });
-            const url = URL.createObjectURL(blob);
-            setPreviewUrl(url);
-            
-            // Stop tracks
-            if (stream) stream.getTracks().forEach(track => track.stop());
-            setStream(null);
-            setRecording(false);
-        }, 500);
+        if (timerRef.current) {
+          clearInterval(timerRef.current);
+          timerRef.current = null;
+        }
     }
   };
 
@@ -134,6 +151,8 @@ export default function ScreenRecorderTool() {
     a.click();
     document.body.removeChild(a);
   };
+
+  if (!mounted) return null;
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
@@ -168,7 +187,7 @@ export default function ScreenRecorderTool() {
                         )}
                         
                         {previewUrl && (
-                            <Button onClick={() => { setPreviewUrl(null); setRecordedChunks([]); }} variant="secondary" className="w-full" icon={<RotateCcw size={16} />}>
+                            <Button onClick={() => { setPreviewUrl(null); chunksRef.current = []; }} variant="secondary" className="w-full" icon={<RotateCcw size={16} />}>
                                 New Recording
                             </Button>
                         )}

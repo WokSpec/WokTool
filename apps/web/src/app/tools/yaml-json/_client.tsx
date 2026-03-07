@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Select from '@/components/ui/Select';
 import Textarea from '@/components/ui/Textarea';
@@ -203,6 +203,11 @@ const FMTS = [
 ];
 
 export default function YamlJsonClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [input, setInput] = useState('{\n  "project": "WokTool",\n  "version": "2.0",\n  "features": ["conversion", "security", "design"],\n  "active": true\n}');
   const [output, setOutput] = useState('');
   const [inFmt, setInFmt] = useState<'yaml'|'json'|'toml'>('json');

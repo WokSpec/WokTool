@@ -4,10 +4,9 @@ export const metadata: Metadata = {
   description: 'Analyze password strength, estimate crack time, and generate secure passwords. Entropy-based scoring. Fully client-side.',
   openGraph: { title: 'Password Strength Analyzer — WokTool', description: 'Analyze password strength and generate secure passwords.', type: 'website' },
 };
-import dynamic from 'next/dynamic';
 import ToolShell from '@/components/tools/ToolShell';
 
-const Client = dynamic(() => import('./_client'), { ssr: false });
+import Client from './_client';
 
 export default function Page() {
   return (

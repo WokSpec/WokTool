@@ -94,6 +94,11 @@ function generateCss(config: AnimConfig): string {
 }
 
 export default function CssAnimationClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [config, setConfig] = useState<AnimConfig>(DEFAULT_CONFIG);
   const [animKey, setAnimKey] = useState(0);
 

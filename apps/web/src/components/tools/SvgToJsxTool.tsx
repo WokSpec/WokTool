@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { Code, Copy, Trash2, Settings, Check, Zap, FileCode } from 'lucide-react';
 import Button from '@/components/ui/Button';
 import Card from '@/components/ui/Card';
@@ -16,6 +16,11 @@ interface Options {
 }
 
 export default function SvgToJsxTool() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [svg, setSvg] = useState('');
   const [jsx, setJsx] = useState('');
   const [options, setOptions] = useState<Options>({

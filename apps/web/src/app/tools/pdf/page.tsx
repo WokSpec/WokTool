@@ -1,26 +1,21 @@
 import type { Metadata } from 'next';
-export const metadata: Metadata = {
-  title: 'PDF Toolkit',
-  description: 'Merge, extract pages, and inspect PDF metadata. All browser-side with pdf-lib.',
-  openGraph: { title: 'PDF Toolkit — WokTool', description: 'Merge, extract pages, and inspect PDF metadata. All browser-side with pdf-lib.', type: 'website' },
-};
-import dynamic from 'next/dynamic';
 import ToolShell from '@/components/tools/ToolShell';
+import Client from '@/components/tools/PdfTool';
 
-const PdfTool = dynamic(() => import('@/components/tools/PdfTool'), {
-  loading: () => <div className="tool-page-root"><div style={{padding:'2rem',textAlign:'center',color:'var(--text-muted)'}}>Loading PDF tools...</div></div>,
-  ssr: false,
-});
+export const metadata: Metadata = {
+  title: 'PDF Suite — WokTool',
+  description: 'Combine, split, compress, and convert PDF files directly in your browser.',
+};
 
 export default function Page() {
   return (
     <ToolShell
       id="pdf"
-      label="PDF Toolkit"
-      description="Merge, extract, convert, and watermark PDFs in your browser."
-      icon="PDF"
+      label="PDF Suite"
+      description="Professional PDF management toolkit. Merge, split, compress, and optimize PDF documents. 100% private, client-side processing."
+      icon="FileText"
     >
-      <PdfTool />
+      <Client />
     </ToolShell>
   );
 }

@@ -4,10 +4,9 @@ export const metadata: Metadata = {
   description: 'Build CSS keyframe animations visually. Timeline editor, live preview, presets, and generated CSS output.',
   openGraph: { title: 'CSS Animation Builder — WokTool', description: 'Build CSS keyframe animations with live preview.', type: 'website' },
 };
-import dynamic from 'next/dynamic';
 import ToolShell from '@/components/tools/ToolShell';
 
-const Client = dynamic(() => import('./_client'), { ssr: false });
+import Client from './_client';
 
 export default function Page() {
   return (

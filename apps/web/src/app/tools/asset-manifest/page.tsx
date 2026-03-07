@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
 import ToolShell from '@/components/tools/ToolShell';
 
 export const metadata: Metadata = {
@@ -7,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Generate Phaser/Pixi/Unity-compatible asset manifests.',
 };
 
-const Client = dynamic(() => import('@/components/tools/AssetManifestTool'), { ssr: false });
+import Client from '@/components/tools/AssetManifestTool';
 
 export default function Page() {
   return (

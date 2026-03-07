@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -47,6 +47,11 @@ function buildCurl(opts: any): string {
 }
 
 export default function CurlBuilderClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [url, setUrl] = useState('https://api.example.com/v1/resource');
   const [method, setMethod] = useState('GET');
   const [headers, setHeaders] = useState<Header[]>([{id: '1', key: 'Accept', value: 'application/json'}]);

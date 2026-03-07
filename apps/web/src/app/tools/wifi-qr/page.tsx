@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
 import ToolShell from '@/components/tools/ToolShell';
 
 export const metadata: Metadata = {
@@ -7,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Generate customized high-fidelity WiFi QR codes for instant network connectivity.',
 };
 
-const Client = dynamic(() => import('@/components/tools/WifiQrTool'), { ssr: false });
+import Client from '@/components/tools/WifiQrTool';
 
 export default function Page() {
   return (

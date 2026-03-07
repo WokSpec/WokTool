@@ -7,6 +7,11 @@ import Card from '@/components/ui/Card';
 import Dropzone from '@/components/ui/Dropzone';
 
 export default function AudioTrimmerTool() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [audioBuffer, setAudioBuffer] = useState<AudioBuffer | null>(null);
   const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);

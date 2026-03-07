@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Textarea from '@/components/ui/Textarea';
 import Button from '@/components/ui/Button';
@@ -29,6 +29,11 @@ function fleschReadingEase(text: string): number {
 }
 
 export default function WordFrequencyClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [text, setText] = useState('');
   const [ignoreStop, setIgnoreStop] = useState(true);
 

@@ -7,27 +7,30 @@ import {
   Search, X, Star, Zap, Clock, Grid, ChevronRight, Activity, Command, 
   Youtube, Layers, RefreshCw, Maximize, PenTool, Code, Palette, Type, 
   Monitor, FileJson, Lock, ShieldCheck, Key, FileText, Share2, Edit3, 
-  Save, Globe, Box, Download, Music, Video, Info
+  Save, Globe, Box, Download, Music, Video, Info, ArrowRight, Sparkles,
+  LayoutGrid, Terminal, Cpu, Network, Shield, MousePointer2
 } from 'lucide-react';
 import { TOOLS, TAG_LABELS } from '@/lib/tools-registry';
 import type { ToolTag, ToolDef } from '@/lib/tools-registry';
 import Button from '@/components/ui/Button';
-import Input from '@/components/ui/Input';
+import { motion, AnimatePresence } from 'framer-motion';
 
-const CATEGORIES: Array<{ tag: ToolTag | null; label: string; icon: any }> = [
-  { tag: null,       label: 'Overview',    icon: Command },
-  { tag: 'image',   label: 'Imaging',     icon: Layers },
-  { tag: 'design',  label: 'Design',      icon: Palette },
-  { tag: 'dev',     label: 'Engineering',  icon: Code },
-  { tag: 'audio',   label: 'Media',       icon: Music },
-  { tag: 'crypto',  label: 'Web3',        icon: Activity },
-  { tag: 'utility', label: 'Workflow',    icon: Zap },
+const CATEGORIES: Array<{ tag: ToolTag | null; label: string; icon: any; color: string }> = [
+  { tag: null,       label: 'All Modules', icon: LayoutGrid, color: 'oklch(100% 0 0)' },
+  { tag: 'image',   label: 'Imaging',      icon: Layers,     color: 'oklch(70% 0.2 340)' },
+  { tag: 'design',  label: 'Design',       icon: Palette,    color: 'oklch(75% 0.15 280)' },
+  { tag: 'dev',     label: 'Engineering',   icon: Code,       color: 'oklch(70% 0.15 200)' },
+  { tag: 'audio',   label: 'Media',        icon: Music,      color: 'oklch(75% 0.2 40)' },
+  { tag: 'crypto',  label: 'Web3',         icon: Activity,   color: 'oklch(80% 0.15 80)' },
+  { tag: 'utility', label: 'Workflow',     icon: Zap,        color: 'oklch(85% 0.2 100)' },
+  { tag: 'security', label: 'Security',     icon: Shield,     color: 'oklch(60% 0.2 20)' },
+  { tag: 'network',  label: 'Network',      icon: Network,    color: 'oklch(65% 0.15 240)' },
 ];
 
 const ICON_MAP: Record<string, any> = {
   Youtube, Layers, RefreshCw, Zap, Maximize, PenTool, Code, Palette, Type, 
   Monitor, FileJson, Search, Globe, Box, Lock, ShieldCheck, Key, FileText, 
-  Activity, Share2, Edit3, Clock, Save
+  Activity, Share2, Edit3, Clock, Save, Music, Video, Info, Shield, Network
 };
 
 function ToolIcon({ name, className }: { name: string; className?: string }) {
@@ -37,35 +40,56 @@ function ToolIcon({ name, className }: { name: string; className?: string }) {
 
 function ToolCard({ tool, starred, onStar, onVisit }: { tool: ToolDef; starred: boolean; onStar: any; onVisit: any }) {
   return (
-    <Link
-      href={tool.href}
-      onClick={() => onVisit(tool.id)}
-      className="group relative flex flex-col p-6 rounded-[1.5rem] bg-[#050505] border border-white/[0.06] hover:border-white/[0.15] transition-all duration-500 hover:shadow-[0_0_40px_rgba(255,255,255,0.02)]"
+    <motion.div
+      layout
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      exit={{ opacity: 0, scale: 0.95 }}
+      transition={{ duration: 0.4, ease: [0.16, 1, 0.3, 1] }}
     >
-      <div className="flex items-start justify-between mb-6">
-        <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.03] border border-white/[0.08] transition-all duration-500 group-hover:scale-110 group-hover:bg-white/[0.06] group-hover:border-white/[0.2]">
-          <ToolIcon name={tool.icon} className="w-6 h-6 text-zinc-400 group-hover:text-white transition-colors" />
+      <Link
+        href={tool.href}
+        onClick={() => onVisit(tool.id)}
+        className="card-v h-full flex flex-col group"
+      >
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white/[0.03] border border-white/[0.08] transition-all duration-500 group-hover:scale-110 group-hover:bg-accent/10 group-hover:border-accent/30 group-hover:shadow-[0_0_20px_rgba(var(--color-accent),0.1)]">
+            <ToolIcon name={tool.icon} className="w-6 h-6 text-zinc-400 group-hover:text-accent transition-colors" />
+          </div>
+          <button
+            onClick={(e) => { e.preventDefault(); e.stopPropagation(); onStar(tool.id); }}
+            className={`p-2 rounded-xl transition-all ${starred ? 'text-yellow-500 bg-yellow-500/10' : 'text-zinc-700 hover:text-white hover:bg-white/5'}`}
+          >
+            <Star size={14} fill={starred ? 'currentColor' : 'none'} />
+          </button>
         </div>
-        <button
-          onClick={(e) => { e.preventDefault(); e.stopPropagation(); onStar(tool.id); }}
-          className={`p-2 rounded-xl transition-all ${starred ? 'text-yellow-500 bg-yellow-500/10' : 'text-zinc-700 hover:text-white hover:bg-white/5'}`}
-        >
-          <Star size={14} fill={starred ? 'currentColor' : 'none'} />
-        </button>
-      </div>
 
-      <div className="flex-1">
-        <h3 className="text-[15px] font-bold text-white mb-1.5 flex items-center gap-2 tracking-tight">
-            {tool.label}
-            <ChevronRight size={14} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300 text-zinc-600" />
-        </h3>
-        <p className="text-[13px] text-zinc-500 leading-relaxed line-clamp-2 font-medium">{tool.description}</p>
-      </div>
+        <div className="flex-1">
+          <h3 className="text-[15px] font-bold text-white mb-2 flex items-center gap-2 tracking-tight group-hover:text-accent transition-colors">
+              {tool.label}
+              <ArrowRight size={14} className="opacity-0 -translate-x-2 group-hover:opacity-100 group-hover:translate-x-0 transition-all duration-300" />
+          </h3>
+          <p className="text-[13px] text-zinc-500 leading-relaxed line-clamp-2 font-medium group-hover:text-zinc-400 transition-colors">
+            {tool.description}
+          </p>
+        </div>
 
-      {tool.isNew && (
-        <div className="absolute top-4 right-12 px-2 py-0.5 rounded-full bg-accent text-[8px] font-black uppercase tracking-widest text-white">New</div>
-      )}
-    </Link>
+        <div className="mt-6 pt-4 border-t border-white/[0.04] flex items-center justify-between">
+            <div className="flex gap-1">
+                {tool.tags.slice(0, 2).map(tag => (
+                    <span key={tag} className="text-[9px] font-black uppercase tracking-widest text-zinc-600 px-2 py-0.5 rounded-full bg-white/[0.02] border border-white/[0.04]">
+                        {tag}
+                    </span>
+                ))}
+            </div>
+            {tool.isNew && (
+              <span className="flex items-center gap-1 text-accent text-[9px] font-black uppercase tracking-widest">
+                <Sparkles size={10} /> New
+              </span>
+            )}
+        </div>
+      </Link>
+    </motion.div>
   );
 }
 
@@ -77,8 +101,10 @@ export default function ToolsHubClient() {
   const [activeTag, setActiveTag] = useState<ToolTag | null>(() => (searchParams.get('category') as ToolTag | null) ?? null);
   const [recentIds, setRecentIds] = useState<string[]>([]);
   const [starredIds, setStarredIds] = useState<string[]>([]);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
     try {
       setRecentIds(JSON.parse(localStorage.getItem('toolhub-recent') ?? '[]'));
       setStarredIds(JSON.parse(localStorage.getItem('toolhub-starred') ?? '[]'));
@@ -124,7 +150,7 @@ export default function ToolsHubClient() {
     if (activeTag) list = list.filter(t => t.tags.includes(activeTag));
     if (search.trim()) {
       const q = search.toLowerCase();
-      list = list.filter(t => t.label.toLowerCase().includes(q) || t.description.toLowerCase().includes(q));
+      list = list.filter(t => t.label.toLowerCase().includes(q) || t.description.toLowerCase().includes(q) || t.tags.some(tag => tag.toLowerCase().includes(q)));
     }
     return list;
   }, [search, activeTag]);
@@ -132,30 +158,35 @@ export default function ToolsHubClient() {
   const recentTools = recentIds.map(id => TOOLS.find(t => t.id === id)).filter(Boolean) as ToolDef[];
   const starredTools = starredIds.map(id => TOOLS.find(t => t.id === id)).filter(Boolean) as ToolDef[];
 
-  const ytTool = TOOLS.find(t => t.id === 'yt-downloader');
+  if (!mounted) return null;
 
   return (
-    <div className="flex min-h-screen bg-black text-white font-sans selection:bg-white selection:text-black">
-      {/* ── Dashboard Sidebar ────────────────────────────────────────── */}
-      <aside className="fixed left-0 top-14 bottom-0 w-[260px] hidden xl:flex flex-col border-r border-white/[0.06] bg-black p-6 z-40">
-        <div className="space-y-10">
-            <div className="space-y-3">
-                <div className="flex items-center gap-2 px-3 text-[11px] font-black uppercase tracking-[0.2em] text-zinc-600">
-                    Explore
+    <div className="flex min-h-screen bg-bg-base text-white/90 font-sans selection:bg-accent/30 selection:text-white">
+      {/* ── Left Navigation (Command Center) ─────────────────────────── */}
+      <aside className="fixed left-0 top-14 bottom-0 w-[280px] hidden xl:flex flex-col border-r border-border-subtle bg-bg-base/50 backdrop-blur-md p-6 z-40">
+        <div className="space-y-12">
+            <div className="space-y-4">
+                <div className="flex items-center justify-between px-3">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">Categories</span>
+                    <div className="h-[1px] flex-1 ml-4 bg-border-subtle" />
                 </div>
-                <nav className="space-y-0.5">
+                <nav className="space-y-1">
                     {CATEGORIES.map(c => {
                         const Icon = c.icon;
+                        const isActive = activeTag === c.tag;
                         return (
                             <button
                                 key={c.label}
                                 onClick={() => handleCategoryChange(c.tag)}
-                                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-xl text-[13px] font-bold transition-all group ${activeTag === c.tag ? 'bg-white/[0.06] text-white shadow-inner' : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.02]'}`}
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-2xl text-[13px] font-bold transition-all group relative overflow-hidden ${isActive ? 'bg-white/5 text-white shadow-inner' : 'text-zinc-500 hover:text-zinc-200 hover:bg-white/[0.02]'}`}
                             >
-                                <span className="flex items-center gap-3">
-                                    <Icon size={16} className={`transition-all duration-300 ${activeTag === c.tag ? 'text-accent' : 'text-zinc-600 group-hover:text-zinc-400'}`} />
+                                <span className="flex items-center gap-3 relative z-10">
+                                    <Icon size={16} className={`transition-all duration-300 ${isActive ? 'text-accent' : 'text-zinc-600 group-hover:text-zinc-400'}`} />
                                     {c.label}
                                 </span>
+                                {isActive && (
+                                    <motion.div layoutId="active-nav" className="absolute left-0 w-1 h-6 bg-accent rounded-full" />
+                                )}
                             </button>
                         );
                     })}
@@ -163,172 +194,254 @@ export default function ToolsHubClient() {
             </div>
 
             {(recentTools.length > 0 || starredTools.length > 0) && (
-                <div className="space-y-3 pt-6 border-t border-white/[0.06]">
-                    <div className="flex items-center gap-2 px-3 text-[11px] font-black uppercase tracking-[0.2em] text-zinc-600">
-                        My Library
+                <div className="space-y-4">
+                    <div className="flex items-center justify-between px-3">
+                        <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">My Workspace</span>
+                        <div className="h-[1px] flex-1 ml-4 bg-border-subtle" />
                     </div>
-                    <nav className="space-y-0.5">
+                    <nav className="space-y-1">
                         {starredTools.length > 0 && (
-                            <button onClick={() => { setActiveTag(null); setSearch(''); }} className="w-full flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-zinc-500 hover:text-white transition-all"><Star size={14} className="text-yellow-500/40" /> Favorites</button>
+                            <button onClick={() => { setActiveTag(null); setSearch(''); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-[13px] font-bold text-zinc-500 hover:text-white hover:bg-white/[0.02] transition-all group">
+                                <Star size={16} className="text-yellow-500/40 group-hover:text-yellow-500 transition-colors" /> Favorites
+                            </button>
                         )}
                         {recentTools.length > 0 && (
-                            <button onClick={() => { setActiveTag(null); setSearch(''); }} className="w-full flex items-center gap-3 px-3 py-2 text-[13px] font-bold text-zinc-500 hover:text-white transition-all"><Clock size={14} className="text-accent/60" /> Recents</button>
+                            <button onClick={() => { setActiveTag(null); setSearch(''); }} className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-[13px] font-bold text-zinc-500 hover:text-white hover:bg-white/[0.02] transition-all group">
+                                <Clock size={16} className="text-accent/60 group-hover:text-accent transition-colors" /> Recently Used
+                            </button>
                         )}
                     </nav>
                 </div>
             )}
         </div>
 
-        <div className="mt-auto group">
-            <a 
-                href="https://wokspec.org" 
-                target="_blank" 
-                rel="noopener noreferrer"
-                className="flex items-center gap-3 p-4 rounded-2xl bg-white/[0.02] border border-white/[0.06] transition-all hover:bg-white/[0.04] hover:border-white/[0.1]"
-            >
-                <div className="h-8 w-8 rounded-lg bg-accent flex items-center justify-center font-black text-[10px]">W</div>
-                <div>
-                    <div className="text-[11px] font-bold text-white uppercase tracking-tighter">WokSpec Global</div>
-                    <div className="text-[10px] text-zinc-600 font-bold uppercase tracking-widest">Protocol V2</div>
+        <div className="mt-auto pt-6 border-t border-border-subtle">
+            <div className="px-4 py-4 rounded-2xl bg-gradient-to-br from-white/[0.03] to-transparent border border-white/[0.06]">
+                <div className="flex items-center gap-2 mb-2">
+                    <div className="h-2 w-2 rounded-full bg-green-500 animate-pulse" />
+                    <span className="text-[10px] font-black uppercase tracking-widest text-zinc-500">System Status</span>
                 </div>
-            </a>
+                <div className="text-[11px] font-bold text-zinc-400">All modules fully operational. Client-side isolated.</div>
+            </div>
         </div>
       </aside>
 
-      {/* ── Main Dashboard ─────────────────────────────────────────── */}
-      <main className="flex-1 xl:pl-[260px] bg-black">
-        {/* Spotlight Hero (YouTube) */}
-        {!activeTag && !search && ytTool && (
-            <section className="relative border-b border-white/[0.06] overflow-hidden group">
-                <div className="absolute inset-0 bg-gradient-to-br from-red-500/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
-                <div className="max-w-6xl mx-auto px-6 py-16 md:py-24 flex flex-col md:flex-row items-center justify-between gap-12 relative z-10">
-                    <div className="space-y-8 flex-1 text-center md:text-left">
-                        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/[0.03] border border-white/[0.08] text-[10px] font-black uppercase tracking-[0.2em] text-zinc-500">
-                            <Zap size={12} className="text-accent" /> Spotlight Feature
-                        </div>
-                        <div className="space-y-4">
-                            <h1 className="text-4xl md:text-7xl font-black text-white tracking-tight leading-[0.9]">
-                                YouTube Pro <br/>
-                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-red-500 to-orange-400">Downloader.</span>
-                            </h1>
-                            <p className="text-base md:text-xl text-zinc-500 max-w-xl font-medium leading-relaxed">
-                                High-fidelity media extraction. Convert any video to professional-grade <span className="text-white">MP3, WAV, or 4K MP4</span> instantly.
-                            </p>
-                        </div>
-                        <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                            <Button href={ytTool.href} size="lg" className="rounded-2xl px-10">Launch Tool</Button>
-                            <div className="flex items-center gap-6 text-[10px] font-black text-zinc-600 uppercase tracking-widest">
-                                <span className="flex items-center gap-2"><Music size={14} /> MP3/WAV</span>
-                                <span className="flex items-center gap-2"><Video size={14} /> 4K MP4</span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="relative w-full max-w-sm aspect-square md:aspect-auto md:h-80 rounded-[2.5rem] bg-[#050505] border border-white/[0.08] flex items-center justify-center shadow-2xl shadow-red-500/5 group-hover:border-red-500/20 transition-all duration-700">
-                        <Youtube size={120} className="text-red-500/20 group-hover:text-red-500 group-hover:scale-110 transition-all duration-700" strokeWidth={1.5} />
-                        <div className="absolute inset-0 bg-radial-glow opacity-20" />
-                    </div>
-                </div>
-            </section>
-        )}
+      {/* ── Main Workspace ─────────────────────────────────────────── */}
+      <main className="flex-1 xl:pl-[280px] bg-bg-base relative min-h-screen">
+        <div className="absolute inset-0 bg-grid opacity-[0.15] pointer-events-none" />
+        <div className="absolute top-0 left-0 right-0 h-96 bg-gradient-to-b from-accent/5 to-transparent pointer-events-none" />
 
-        {/* Regular Header (Search + Categories) */}
-        <header className={`sticky top-14 z-30 bg-black/80 backdrop-blur-xl border-b border-white/[0.06] p-6 lg:px-12 transition-all ${(!activeTag && !search) ? 'pt-12' : 'py-6'}`}>
-            <div className="max-w-6xl mx-auto space-y-8">
-                <div className="relative group max-w-2xl">
-                    <div className="absolute -inset-0.5 bg-gradient-to-r from-accent/20 to-white/10 rounded-2xl blur opacity-0 group-focus-within:opacity-100 transition duration-700" />
-                    <div className="relative">
+        {/* Hero Welcome Section */}
+        <section className="relative px-6 pt-20 pb-16 lg:px-12 lg:pt-32 lg:pb-24 max-w-6xl mx-auto z-10">
+            <motion.div 
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+                className="space-y-12"
+            >
+                <div className="space-y-6 max-w-3xl">
+                    <div className="inline-flex items-center gap-3 px-4 py-1.5 rounded-full bg-accent/10 border border-accent/20 text-accent text-[11px] font-black uppercase tracking-[0.2em] animate-pulse">
+                        <Sparkles size={14} /> New Protocol V4 Active
+                    </div>
+                    <h1 className="text-5xl lg:text-8xl font-black text-white tracking-tight leading-[0.85]">
+                        The Professional <br/>
+                        <span className="text-zinc-600">Toolbox.</span>
+                    </h1>
+                    <p className="text-lg lg:text-2xl text-zinc-400 font-medium leading-relaxed">
+                        80+ high-fidelity developer and design utilities. 100% browser-side, zero data retention, industrial grade performance.
+                    </p>
+                </div>
+
+                <div className="relative group max-w-3xl">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-accent/30 to-white/10 rounded-3xl blur-xl opacity-0 group-focus-within:opacity-100 transition duration-1000" />
+                    <div className="relative flex items-center">
                         <input 
                             type="text"
-                            placeholder="Find a professional utility (⌘K)..."
+                            placeholder="Initialize module by name or tag (e.g. 'image', 'aes')..."
                             value={search}
                             onChange={e => handleSearch(e.target.value)}
-                            className="w-full h-14 text-lg pl-14 pr-6 rounded-2xl bg-white/[0.03] border border-white/[0.08] text-white placeholder:text-zinc-700 focus:outline-none focus:ring-2 focus:ring-white/10 focus:bg-white/[0.05] transition-all"
+                            className="w-full h-20 text-xl lg:text-2xl pl-16 pr-8 rounded-3xl bg-bg-surface border border-border-strong text-white placeholder:text-zinc-700 focus:outline-none focus:ring-4 focus:ring-accent/10 focus:border-accent/40 transition-all shadow-2xl"
                         />
-                        <Search size={20} className="absolute left-5 top-1/2 -translate-y-1/2 text-zinc-700 group-focus-within:text-white transition-colors" />
+                        <Search size={28} className="absolute left-6 text-zinc-700 group-focus-within:text-accent transition-colors" />
                         {search && (
-                            <button onClick={() => handleSearch('')} className="absolute right-4 top-1/2 -translate-y-1/2 text-zinc-500 hover:text-white transition-colors">
+                            <button onClick={() => handleSearch('')} className="absolute right-6 p-2 text-zinc-500 hover:text-white transition-colors bg-white/5 rounded-xl">
                                 <X size={20} />
                             </button>
                         )}
+                        <div className="absolute right-20 hidden lg:flex items-center gap-2 px-3 py-1.5 rounded-xl bg-white/[0.03] border border-white/[0.06] text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+                            <span className="text-zinc-700 font-black">CTRL</span> K
+                        </div>
                     </div>
                 </div>
 
-                <div className="flex flex-wrap gap-2">
-                    {CATEGORIES.map(c => (
+                <div className="flex flex-wrap gap-3">
+                    <span className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 self-center mr-2">Top Tags:</span>
+                    {['image', 'design', 'dev', 'security', 'utility'].map(tag => (
                         <button
-                            key={c.label}
-                            onClick={() => handleCategoryChange(c.tag)}
-                            className={`px-4 py-1.5 rounded-full text-[11px] font-black uppercase tracking-widest border transition-all ${activeTag === c.tag ? 'bg-white text-black border-white shadow-[0_0_20px_rgba(255,255,255,0.15)]' : 'bg-white/5 border-white/[0.06] text-zinc-600 hover:text-zinc-200 hover:border-white/20'}`}
+                            key={tag}
+                            onClick={() => handleSearch(tag)}
+                            className="px-4 py-2 rounded-xl bg-white/[0.03] border border-white/[0.06] text-[11px] font-bold text-zinc-400 uppercase tracking-widest hover:bg-white/10 hover:border-accent/30 transition-all hover:-translate-y-0.5"
                         >
-                            {c.label}
+                            #{tag}
                         </button>
                     ))}
                 </div>
-            </div>
-        </header>
+            </motion.div>
+        </section>
 
-        {/* The Grid Area */}
-        <div className="p-6 lg:p-12 max-w-[1440px] mx-auto space-y-16">
-            {/* Conditional: Recents */}
-            {recentTools.length > 0 && !search && !activeTag && (
-                <section className="space-y-8 animate-in fade-in duration-1000">
-                    <div className="flex items-center gap-3 px-1">
-                        <div className="h-6 w-1 bg-accent/40 rounded-full" />
-                        <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-zinc-600">Recently Utilized</h2>
+        {/* Dynamic Content Area */}
+        <section className="px-6 lg:px-12 pb-32 max-w-[1440px] mx-auto space-y-24 z-10 relative">
+            {/* Featured Section (when no search/filter) */}
+            {!activeTag && !search && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <Link href="/tools/screen-recorder" className="relative group overflow-hidden rounded-[2.5rem] bg-gradient-to-br from-accent/20 to-bg-subtle border border-accent/20 p-10 h-80 flex flex-col justify-between hover:border-accent/40 transition-all">
+                        <div className="absolute -right-20 -top-20 w-64 h-64 bg-accent/10 rounded-full blur-3xl group-hover:bg-accent/20 transition-all duration-700" />
+                        <div className="space-y-4 relative z-10">
+                            <div className="h-14 w-14 rounded-2xl bg-accent flex items-center justify-center text-white shadow-2xl shadow-accent/40">
+                                <Monitor size={28} />
+                            </div>
+                            <h2 className="text-4xl font-black text-white tracking-tight">Screen Recorder</h2>
+                            <p className="text-zinc-400 font-medium max-w-xs">Professional browser-based capture. No installation required. Export high-fidelity WebM.</p>
+                        </div>
+                        <div className="flex items-center gap-2 text-accent text-sm font-black uppercase tracking-widest relative z-10">
+                            Launch Module <ArrowRight size={16} className="group-hover:translate-x-2 transition-transform" />
+                        </div>
+                    </Link>
+
+                    <div className="grid grid-cols-2 gap-6 h-80">
+                        <Link href="/tools/background-remover" className="group rounded-[2rem] bg-bg-surface border border-border-strong p-8 flex flex-col justify-between hover:bg-white/[0.03] transition-all">
+                            <Layers size={32} className="text-zinc-500 group-hover:text-white transition-colors" />
+                            <div className="space-y-2">
+                                <h3 className="font-bold text-white">BG Remover</h3>
+                                <p className="text-[11px] text-zinc-600 uppercase font-black tracking-widest">AI Isolated</p>
+                            </div>
+                        </Link>
+                        <Link href="/tools/aes-tool" className="group rounded-[2rem] bg-bg-surface border border-border-strong p-8 flex flex-col justify-between hover:bg-white/[0.03] transition-all">
+                            <Lock size={32} className="text-zinc-500 group-hover:text-white transition-colors" />
+                            <div className="space-y-2">
+                                <h3 className="font-bold text-white">Encryption</h3>
+                                <p className="text-[11px] text-zinc-600 uppercase font-black tracking-widest">AES-256 GCM</p>
+                            </div>
+                        </Link>
+                        <Link href="/tools/svg-to-jsx" className="group rounded-[2rem] bg-bg-surface border border-border-strong p-8 flex flex-col justify-between hover:bg-white/[0.03] transition-all">
+                            <Code size={32} className="text-zinc-500 group-hover:text-white transition-colors" />
+                            <div className="space-y-2">
+                                <h3 className="font-bold text-white">SVG to JSX</h3>
+                                <p className="text-[11px] text-zinc-600 uppercase font-black tracking-widest">React Ready</p>
+                            </div>
+                        </Link>
+                        <Link href="/tools/color-tools" className="group rounded-[2rem] bg-bg-surface border border-border-strong p-8 flex flex-col justify-between hover:bg-white/[0.03] transition-all">
+                            <Palette size={32} className="text-zinc-500 group-hover:text-white transition-colors" />
+                            <div className="space-y-2">
+                                <h3 className="font-bold text-white">Architect</h3>
+                                <p className="text-[11px] text-zinc-600 uppercase font-black tracking-widest">Color Sync</p>
+                            </div>
+                        </Link>
                     </div>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
-                        {recentTools.map(t => (
+                </div>
+            )}
+
+            {/* Recents Bar */}
+            {recentTools.length > 0 && !search && !activeTag && (
+                <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                    <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <div className="h-6 w-1 bg-accent/40 rounded-full" />
+                            <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-zinc-500">Recently Utilized</h2>
+                        </div>
+                        <button onClick={() => { localStorage.removeItem('toolhub-recent'); setRecentIds([]); }} className="text-[10px] font-bold text-zinc-700 hover:text-white uppercase tracking-widest transition-colors">Clear History</button>
+                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {recentTools.slice(0, 4).map(t => (
                             <ToolCard key={t.id} tool={t} starred={starredIds.includes(t.id)} onStar={toggleStar} onVisit={trackRecent} />
                         ))}
                     </div>
-                </section>
+                </div>
             )}
 
             {/* Main Result Area */}
-            <section className="space-y-8 animate-in fade-in duration-1000 delay-100">
-                <div className="flex items-center justify-between px-1">
+            <div className="space-y-8">
+                <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                        <div className="h-6 w-1 bg-white/10 rounded-full" />
-                        <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-zinc-600">
-                            {activeTag ? TAG_LABELS[activeTag] : 'Core Protocol Utilities'}
+                        <div className="h-6 w-1 bg-border-strong rounded-full" />
+                        <h2 className="text-[11px] font-black uppercase tracking-[0.3em] text-zinc-500">
+                            {activeTag ? TAG_LABELS[activeTag] : (search ? 'Protocol Matches' : 'Full Utility Registry')}
                         </h2>
                     </div>
-                    <span className="text-[10px] font-black font-mono text-zinc-800 tracking-tighter">{filtered.length} LOADED</span>
+                    <span className="text-[10px] font-black font-mono text-zinc-800 tracking-tighter">{filtered.length} ACTIVE MODULES</span>
                 </div>
 
-                {filtered.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5">
+                <motion.div 
+                    layout
+                    className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"
+                >
+                    <AnimatePresence mode="popLayout">
                         {filtered.map(t => (
                             <ToolCard key={t.id} tool={t} starred={starredIds.includes(t.id)} onStar={toggleStar} onVisit={trackRecent} />
                         ))}
-                    </div>
-                ) : (
-                    <div className="py-40 flex flex-col items-center justify-center text-center space-y-6">
-                        <div className="w-24 h-24 rounded-[2.5rem] border border-dashed border-white/10 flex items-center justify-center text-4xl grayscale opacity-10">🔍</div>
-                        <div className="space-y-1">
-                            <p className="font-black text-zinc-500 uppercase tracking-widest text-sm">Protocol Miss</p>
-                            <p className="text-xs text-zinc-700 font-bold uppercase tracking-widest">Search query yielded zero modules.</p>
+                    </AnimatePresence>
+                </motion.div>
+
+                {filtered.length === 0 && (
+                    <div className="py-40 flex flex-col items-center justify-center text-center space-y-8 glass rounded-[3rem]">
+                        <div className="w-24 h-24 rounded-[2.5rem] bg-white/[0.02] border border-dashed border-white/10 flex items-center justify-center text-5xl opacity-20">🔍</div>
+                        <div className="space-y-2">
+                            <h3 className="text-2xl font-black text-white tracking-tight">Module Not Found</h3>
+                            <p className="text-zinc-500 max-w-xs mx-auto">The protocol could not locate a module matching your current search parameters.</p>
                         </div>
-                        <Button onClick={() => { handleSearch(''); handleCategoryChange(null); }} variant="secondary" size="sm" className="rounded-xl">Reset Search</Button>
+                        <Button onClick={() => { handleSearch(''); handleCategoryChange(null); }} variant="secondary" size="md">Reset Search Parameters</Button>
                     </div>
                 )}
-            </section>
-        </div>
+            </div>
+        </section>
 
-        {/* Global Footer */}
-        <footer className="border-t border-white/[0.04] bg-[#050505] p-12 mt-32">
-            <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-center gap-8">
-                <div className="flex flex-col items-center md:items-start gap-4">
-                    <div className="flex items-center gap-3 grayscale opacity-40">
-                        <div className="h-6 w-6 rounded-md bg-white shadow-xl shadow-white/5" />
-                        <span className="text-sm font-black uppercase tracking-tighter">WokTool</span>
+        {/* Workspace Footer */}
+        <footer className="border-t border-border-subtle bg-bg-surface/50 backdrop-blur-xl p-12 lg:p-24 relative overflow-hidden">
+            <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-accent/5 rounded-full blur-[120px] pointer-events-none" />
+            <div className="max-w-6xl mx-auto flex flex-col lg:flex-row justify-between items-start lg:items-center gap-16 relative z-10">
+                <div className="space-y-6 flex-1">
+                    <div className="flex items-center gap-3">
+                        <div className="h-8 w-8 rounded-xl bg-white flex items-center justify-center font-black text-black">W</div>
+                        <span className="text-xl font-black uppercase tracking-tighter text-white">WokTool</span>
                     </div>
-                    <p className="text-[10px] text-zinc-700 font-black uppercase tracking-[0.2em]">© 2026 WokSpec Global · Autonomous Tool Protocol</p>
+                    <p className="text-zinc-500 max-w-sm font-medium leading-relaxed">
+                        A decentralized utility hub by WokSpec. Open source, privacy-first, and built for the next generation of digital builders.
+                    </p>
+                    <div className="flex gap-4">
+                        <a href="https://github.com/WokSpec/WokTool" target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/10 transition-all">
+                            <Github size={20} />
+                        </a>
+                        <a href="https://wokspec.org" target="_blank" rel="noopener noreferrer" className="p-3 rounded-xl bg-white/[0.03] border border-white/[0.06] hover:bg-white/10 transition-all">
+                            <Globe size={20} />
+                        </a>
+                    </div>
                 </div>
-                <div className="flex gap-10">
-                    <a href="https://wokspec.org" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 hover:text-white transition-colors">Ecosystem</a>
-                    <a href="https://github.com/WokSpec/WokTool" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 hover:text-white transition-colors">Repository</a>
-                    <a href="/tools/privacy-policy" className="text-[10px] font-black uppercase tracking-[0.2em] text-zinc-600 hover:text-white transition-colors">Privacy</a>
+
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-12 lg:gap-24">
+                    <div className="space-y-6">
+                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-accent">Ecosystem</h4>
+                        <nav className="flex flex-col gap-4">
+                            <a href="#" className="text-xs font-bold text-zinc-500 hover:text-white transition-colors">WokSpec Main</a>
+                            <a href="#" className="text-xs font-bold text-zinc-500 hover:text-white transition-colors">Module Registry</a>
+                            <a href="#" className="text-xs font-bold text-zinc-500 hover:text-white transition-colors">Open Source</a>
+                        </nav>
+                    </div>
+                    <div className="space-y-6">
+                        <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-white">Resources</h4>
+                        <nav className="flex flex-col gap-4">
+                            <a href="#" className="text-xs font-bold text-zinc-500 hover:text-white transition-colors">Documentation</a>
+                            <a href="#" className="text-xs font-bold text-zinc-500 hover:text-white transition-colors">API Reference</a>
+                            <a href="#" className="text-xs font-bold text-zinc-500 hover:text-white transition-colors">Privacy Policy</a>
+                        </nav>
+                    </div>
+                </div>
+            </div>
+            <div className="max-w-6xl mx-auto mt-24 pt-8 border-t border-white/[0.04] flex flex-col sm:flex-row justify-between items-center gap-4">
+                <p className="text-[10px] text-zinc-700 font-black uppercase tracking-widest">© 2026 WokSpec Global Protocol · Verified for production</p>
+                <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-800 uppercase tracking-widest">
+                    <span>Build 4.2.1-stable</span>
+                    <div className="h-1 w-1 rounded-full bg-zinc-800" />
+                    <span>Edge Optimized</span>
                 </div>
             </div>
         </footer>

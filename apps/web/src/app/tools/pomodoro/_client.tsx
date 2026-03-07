@@ -53,6 +53,11 @@ function formatTime(secs: number): string {
 }
 
 export default function PomodoroClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [workDur, setWorkDur] = useState(25);
   const [shortDur, setShortDur] = useState(5);
   const [longDur, setLongDur] = useState(15);

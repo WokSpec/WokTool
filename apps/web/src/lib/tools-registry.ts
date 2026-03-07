@@ -32,24 +32,14 @@ export const TAG_LABELS: Record<ToolTag, string> = {
 };
 
 export const TOOLS: ToolDef[] = [
-  // ── SPOTLIGHT (YouTube) ────────────────────────────────────────────────
-  {
-    id: 'yt-downloader',
-    label: 'YouTube Pro Downloader',
-    description: 'High-fidelity extraction of MP4 video and MP3/WAV/M4A audio. Direct from source.',
-    href: '/tools/yt-downloader',
-    icon: 'Youtube',
-    tags: ['audio', 'utility'],
-    status: 'live',
-    isNew: true,
-  },
+  // ── SPOTLIGHT ──────────────────────────────────────────────────────────
   {
     id: 'screen-recorder',
     label: 'Screen Recorder',
     description: 'Capture screen, window, or tab with system/mic audio. No install required. Export WebM.',
     href: '/tools/screen-recorder',
     icon: 'Monitor',
-    tags: ['utility', 'video'],
+    tags: ['utility'],
     status: 'live',
     clientOnly: true,
     isNew: true,
@@ -307,6 +297,15 @@ export const TOOLS: ToolDef[] = [
     href: '/tools/snippets',
     tags: ['dev', 'utility'],
     icon: 'Save',
+    status: 'live',
+  },
+  {
+    id: 'yt-downloader',
+    label: 'YouTube Pro Downloader',
+    description: 'High-fidelity extraction of MP4 video and MP3/WAV/M4A audio. Direct from source.',
+    href: '/tools/yt-downloader',
+    icon: 'Youtube',
+    tags: ['audio', 'utility'],
     status: 'live',
   },
 ];

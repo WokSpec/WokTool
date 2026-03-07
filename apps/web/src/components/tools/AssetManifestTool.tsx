@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Dropzone from '@/components/ui/Dropzone';
 import Input from '@/components/ui/Input';
@@ -69,6 +69,11 @@ function generateManifest(items: AssetItem[], format: string, prefix: string): s
 }
 
 export default function AssetManifestTool() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [items, setItems] = useState<AssetItem[]>([]);
   const [format, setFormat] = useState('json');
   const [prefix, setPrefix] = useState('assets');

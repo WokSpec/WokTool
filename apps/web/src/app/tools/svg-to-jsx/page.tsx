@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
 import ToolShell from '@/components/tools/ToolShell';
 
 export const metadata: Metadata = {
@@ -7,7 +6,7 @@ export const metadata: Metadata = {
   description: 'Convert raw SVG code into optimized, production-ready React components instantly.',
 };
 
-const Client = dynamic(() => import('@/components/tools/SvgToJsxTool'), { ssr: false });
+import Client from '@/components/tools/SvgToJsxTool';
 
 export default function Page() {
   return (

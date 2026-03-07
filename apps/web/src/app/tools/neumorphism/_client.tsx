@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Slider from '@/components/ui/Slider';
 import Button from '@/components/ui/Button';
@@ -22,6 +22,11 @@ function adjustBrightness(r: number, g: number, b: number, factor: number): stri
 }
 
 export default function NeumorphismClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [bgColor, setBgColor] = useState('#e0e5ec');
   const [size, setSize] = useState(200);
   const [radius, setRadius] = useState(40);

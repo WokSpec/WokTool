@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -53,6 +53,11 @@ const FREQS = [
 ];
 
 export default function CompoundInterestClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [principal, setPrincipal] = useState('10000');
   const [rate, setRate] = useState('7');
   const [years, setYears] = useState('20');

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, useCallback, useMemo } from 'react';
+import { useState, useRef, useCallback, useMemo, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Button from '@/components/ui/Button';
 import CodeBlock from '@/components/ui/CodeBlock';
@@ -23,6 +23,11 @@ const POINT_RADIUS = 8;
 const CANVAS_SIZE = 400;
 
 export default function CssClippathClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [shape, setShape] = useState<ShapeType>('hexagon');
   const [points, setPoints] = useState<Point[]>(PRESETS['hexagon']);
   const [dragging, setDragging] = useState<number | null>(null);

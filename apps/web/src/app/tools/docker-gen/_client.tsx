@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Card from '@/components/ui/Card';
 import Input from '@/components/ui/Input';
 import Select from '@/components/ui/Select';
@@ -43,6 +43,11 @@ function buildDockerRun(opts: any): string {
 }
 
 export default function DockerGenClient() {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
+  if (!mounted) return null;
+
   const [image, setImage] = useState('nginx:latest');
   const [containerName, setContainerName] = useState('my-web-server');
   const [ports, setPorts] = useState<KVRow[]>([{ id: '1', key: '8080', value: '80' }]);

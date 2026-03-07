@@ -4,10 +4,9 @@ export const metadata: Metadata = {
   description: 'Generate and verify HMAC signatures using SHA-1, SHA-256, SHA-384, SHA-512. Web Crypto API, all in-browser.',
   openGraph: { title: 'HMAC Generator — WokTool', description: 'Generate and verify HMAC signatures with SHA-256/512.', type: 'website' },
 };
-import dynamic from 'next/dynamic';
 import ToolShell from '@/components/tools/ToolShell';
 
-const Client = dynamic(() => import('./_client'), { ssr: false });
+import Client from './_client';
 
 export default function Page() {
   return (
